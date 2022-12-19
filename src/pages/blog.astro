@@ -1,0 +1,76 @@
+---
+import BaseHead from "../components/BaseHead.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import { SITE_TITLE, SITE_DESCRIPTION } from "../config";
+
+// Use Astro.glob() to fetch all posts, and then sort them by date.
+const posts = (await Astro.glob("./blog/*.{md,mdx}")).sort(
+	(a, b) =>
+		new Date(b.frontmatter.pubDate).valueOf() -
+		new Date(a.frontmatter.pubDate).valueOf()
+);
+---
+
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<BaseHead title={SITE_TITLE + ' - Blog'} description={SITE_DESCRIPTION} />
+		<style>
+			ul {
+				list-style-type: none;
+				padding: unset;
+			}
+			ul li {
+				display: flex;
+			}
+			ul li time {
+				flex: 0 0 130px;
+				font-style: italic;
+				color: #595959;
+			}
+			ul li a {
+				color: black;
+			}
+			ul li a:visited {
+				color: #860a10;
+			}
+		</style>
+	</head>
+	<body>
+		<Header />
+		<main>
+			<h3>Welcome 👋</h3>
+			<p>
+				This listing will present old (I'm in the process of gathering
+				content from old blogs) and new content on various personal
+				research (optics, astronomy, programming, various kind of
+				crafts) and work-related research & attempts (so, programming
+				again). I'm a french person but write mostly in english because
+				it allows me to be a bit more straightforward. Video material
+				should mostly be in French though.
+			</p>
+			<section>
+				<ul>
+					{
+						posts.map((post) => (
+							<li>
+								<time datetime={post.frontmatter.pubDate}>
+									{new Date(
+										post.frontmatter.pubDate
+									).toLocaleDateString("en-us", {
+										year: "numeric",
+										month: "short",
+										day: "numeric",
+									})}
+								</time>
+								<a href={post.url}>{post.frontmatter.title}</a>
+							</li>
+						))
+					}
+				</ul>
+			</section>
+		</main>
+		<Footer />
+	</body>
+</html>

@@ -1,0 +1,49 @@
+---
+import BaseHead from "../components/BaseHead.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import { SITE_TITLE, SITE_DESCRIPTION } from "../config";
+---
+
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+	</head>
+	<body>
+		<Header title={SITE_TITLE} />
+		<div id="app">
+			<main>
+				<h3>Work</h3>
+				<p>
+					I've been freelancing since 2015 doing consulting, spec discovery,
+					planning &&nbsp;development of web and internal projects for
+					various clients. <br />
+				</p>
+				<p>
+					I'm currently working on a low-code design
+					automation environment in Elixir & Typescript, for which I build Ovo2, a 
+					script language that you edit with
+					text or a visual editor.<br />
+				</p>
+				<p>
+					I'm looking to work as part of a team on
+					Elixir-related projects, either on the ecosystem itself or
+					products built with it.
+				</p>
+				<h3>Optics & Astronomy</h3>
+				<p>
+					A bit of my optics, telescopes or hardware fiddling can be
+					found on GitHub (see <a
+						href="https://github.com/Lucassifoni/hyperbolic-200mm-f3.5-"
+						>github.com/Lucassifoni/hyperbolic-200mm-f3.5-</a
+					>) or on instagram under the handle <a
+						href="https://instagram.com/chantepierre_"
+						>@chantepierre_</a
+					> I'd love to discuss that too, so feel free to reach out.
+				</p>
+			</main>
+			<Footer />
+		</div>
+	</body>
+</html>
