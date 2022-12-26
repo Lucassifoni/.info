@@ -1,7 +1,7 @@
 <template>
   <div>
     <textarea class="textarea" v-model="input" @change="parseAndDisplay"></textarea>
-      <foldable-pre>{{ result }}</foldable-pre>
+      <foldable-pre><pre>{{ result }}</pre></foldable-pre>
       <canvas id="parserthirdstep-canvas" width="300" height="300"></canvas>
   </div>
 </template>

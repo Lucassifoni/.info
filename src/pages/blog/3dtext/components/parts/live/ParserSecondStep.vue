@@ -8,7 +8,7 @@
       point present in a relative version of an instruction.</p>
     <textarea class="textarea" v-model="input" @change="parseAndDisplay"></textarea>
     <foldable-pre>
-      <code>
+      <pre>
 States : {{ JSON.stringify(STATES) }}
 
 Tokenizing : trim, then split at spaces.
@@ -16,11 +16,11 @@ Tokenizing : trim, then split at spaces.
 
 Lexing : transform this into a list of instructions.
 {{ JSON.stringify(result2, null, 2) }}
-</code>
+      </pre>
     </foldable-pre>
     <p>The JS code present in this sample, annotated :</p>
     <foldable-pre>
-      <code>
+      <pre>
 // "Enums" for positions and parser state
 export const STATES = fakeEnum('Undefined', 'Move', 'Cubic', 'End');
 const POSITIONS = fakeEnum('Absolute', 'Relative');
@@ -49,11 +49,11 @@ const cubic = (tokens, index, currentPoint, pos) => {
   const instr = { type: 'Cubic', points: [currentPoint, p1, p2, p3] };
   return { instr, current: instr.points[3] };
 };
-</code>
+</pre>
     </foldable-pre>
     <p>The lexing function, carrying state and switches, acts as a transition table :</p>
     <foldable-pre>
-      <code>
+      <pre>
 // For each token, depending on the state we're in, we'll try to parse a point or change state.
 // This is naïve, and will break on invalid input.
 
@@ -115,7 +115,7 @@ const lex = function(tokens) {
   }
   return instrs;
 };
-</code>
+</pre>
     </foldable-pre>
   </div>
 </template>

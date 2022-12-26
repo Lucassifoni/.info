@@ -4,7 +4,8 @@ section
   h3 SVG path data structure
   p Here's a box containing an outlined "h" in Vulf Mono Light Italic, a typeface by Oh No type company. We'll try to understand how this list of instructions work.
   <FoldablePre>
-    code      | &lt;path style="stroke:#130000;stroke-opacity:1;stroke-width:4.42498882;stroke-miterlimit:4;stroke-dasharray:none;paint-order:markers stroke fill;fill:#ff0000;fill-opacity:1"
+    pre
+      | &lt;path style="stroke:#130000;stroke-opacity:1;stroke-width:4.42498882;stroke-miterlimit:4;stroke-dasharray:none;paint-order:markers stroke fill;fill:#ff0000;fill-opacity:1"
       | d="m 205.47289,169.14572 c -1.08,0 -1.56,-0.6 -1.56,-1.64 0,-3.4 4.68,-7.48 4.68,-12.04 0,-3 -1.88,-4.52 -4.84,-4.52 -3.52,0 -6.96,1.48 -10.4,7.2 h -0.56 c 2.08,-4.8 3.48,-8.48 3.48,-11.48 0,-2.24 -1.28,-3.36 -3.52,-3.36 -1.52,0 -3.12,0.44 -4.8,1.12 0.36,0.68 0.64,1.44 0.84,2.08 1.48,-0.68 2.48,-1.04 3.64,-1.04 1.28,0 1.84,0.6 1.84,1.76 0,2.92 -3.32,10.88 -8,23.16 0.8,0.12 1.44,0.24 2,0.48 l 0.12,0.04 c 5.68,-15.48 11.24,-18 14.92,-18 1.88,0 3.04,0.8 3.04,2.72 0,3.52 -4.68,7.64 -4.68,11.96 0,2.44 1.64,3.52 3.48,3.52 2.48,0 4.04,-1.56 6.08,-4.2 -0.72,-0.48 -1.12,-0.8 -1.68,-1.28 -1.4,2.28 -2.52,3.52 -4.08,3.52 z"
       | id="path1702" /&gt;
   </FoldablePre>
@@ -64,35 +65,41 @@ section
     span.author early sketches of the process as I imagined it
   p With those elements in mind, we can decipher the above svg path, and annotate it :
   <FoldablePre>
-    code      | m 205.47289,169.14572 // Move to (205.47289, 169.14572)
+    pre
+      | m 205.47289,169.14572 // Move to (205.47289, 169.14572)  
       | c -1.08,0 -1.56,-0.6 -1.56,-1.64 // Cubic Bézier (relative, from last point, first tensor at (-1.08, 0), second tensor at (-1.56, -0.9), end point at (-1.56, -1.64))
   </FoldablePre>
   h3 Introducing a clearer notation for our research
   p This notation is a bit hard to read, so we'll introduce "functions", that return the current point. Points will be a kind of tuples (x, y).
   <FoldablePre>
-    code      | m 205.47289,169.14572 // move((205.47289, 169.14572))
+    pre
+      | m 205.47289,169.14572 // move((205.47289, 169.14572))
       | c -1.08,0 -1.56,-0.6 -1.56,-1.64 // cubicRel(lp, (-1.08,0), (-1.56,-0.6), (-1.56,-1.64))
   </FoldablePre>
   p We can see a pattern emerging : a dependency on a global "current point" state. To write a parser/an interpreter, this isn't too uncommon. We could also think of this in a functional way, and use referential transparency at our advantage :
   <FoldablePre>
-    code      | m 205.47289,169.14572 // move((205.47289, 169.14572)) -> returns ((205.47289, 169.14572))
+    pre
+      | m 205.47289,169.14572 // move((205.47289, 169.14572)) -> returns ((205.47289, 169.14572))
   </FoldablePre>
   p The last sample with two instructions becomes :
   <FoldablePre>
-    code      | cubicRel((-1.08,0), (-1.56,-0.6), (-1.56,-1.64))
+    pre
+      | cubicRel((-1.08,0), (-1.56,-0.6), (-1.56,-1.64))
   </FoldablePre>
   p If we introduce the following instruction in the original path, another cubic Bézier curve, our path now looks like :
   <FoldablePre>
-    code      | cubicRel(
+    pre
       | cubicRel(
-      |   move((205.47289, 169.14572)),
-      |   (-1.08,0), (-1.56,-0.6), (-1.56,-1.64))
-      |  , (0,-3.4), (4.68,-7.48), (4.68,-12.04))
+      |   cubicRel(
+      |     move((205.47289, 169.14572)),
+      |     (-1.08,0), (-1.56,-0.6), (-1.56,-1.64))
+      |    , (0,-3.4), (4.68,-7.48), (4.68,-12.04))
   </FoldablePre>
   p Well. As much as I like lisps, maybe a parser with a global state will be enough. I only aim to parse svg paths, so the table defined earlier on will be enough to guide us. Maybe, even, we could just avoid a global state and produce a list of instructions taking the last point as an argument, and reevaluating everything to absolute coordinates.
   <FoldablePre>
-    code      |  move((205.47289, 169.14572)) // -&gt; (205.47289, 169.14572)
-      | cubicRel((205.47289, 169.14572),
+    pre
+      |  move((205.47289, 169.14572)) // -&gt; (205.47289, 169.14572)
+      |  cubicRel((205.47289, 169.14572),
       |  (204,39289, 169.14572),
       |  (203,91289, 168,54572),
       |  (203,91289, 167,50572)) // -&gt; (203,91289, 167,50572)
@@ -108,17 +115,19 @@ section
     li a <em>number</em> is an optional hyphen, followed by multiple <em>digits</em>, an optional dot, and maybe multiple <em>digits</em> again
     li finally, a <em>digit</em> is any character in [0 1 2 3 4 5 6 7 8 9]
   <FoldablePre>
-    <code>path = instructions*</code>
-    <code>instruction = move point | cubic point point point point</code>
-    <code>point = '('number','number')'</code>
-    <code>number = '-'?digit+'.'?digit+</code>
-    <code>digit = [0-9]</code>
+    pre
+      | path = instructions*
+      | instruction = move point | cubic point point point point
+      | point = '('number','number')'
+      | number = '-'?digit+'.'?digit+
+      | digit = [0-9]
   </FoldablePre>
   p This is enough to write a basic parser that understands standalone <em>move</em> and <em>cubic</em> instructions.
-  <ParserFirstStep client:visible />
-  p This live example uses the following JS implementation : we have a regex to identify points, and define regexes for move and cubic instructions. We only tokenize the input by splitting at newlines, trimming the resulting lines, and filtering empty ones.
+  <ParserFirstStep/>
+  p This example uses the following JS implementation : we have a regex to identify points, and define regexes for move and cubic instructions. We only tokenize the input by splitting at newlines, trimming the resulting lines, and filtering empty ones.
   <FoldablePre>
-  code    | const Point = function(x, y) { this.x = x; this.y = y; };
+  pre
+    | const Point = function(x, y) { this.x = x; this.y = y; };
     | const pointR = '(?:([-]*\\d+\\.?(?:\\d+)?),([-]*\\d+\\.?(?:\\d+)?))';
     |
     | const moveRegex = new RegExp(`m\\s*${pointR}`, 'i');
@@ -169,16 +178,16 @@ section
   h3 Rendering to a list of expressions &amp; a canvas
   p Well, it seems to work for those two instructions ! The current point is carried on, and we have independent instructions that are sufficient to render something.
   p We can try to render it to a list of expressions, akin to an example shown higher, then to a canvas.
-  <ParserThirdStep/>
+  <ParserThirdStep client:visible/>
 
   h3 Adding H,h, L,l, and V,v instructions
   p Nice ! We're now able to transform raw SVG path data to an abstract syntax tree, and transform it back to a list of absolute-positioned subpaths, or draw it to a canvas. But many instructions are missing, and the examples to this point just silence errors.
   p Let's implement h, l, and v instructions. H and V are just special cases of L where the current point Y or X coordinate is carried on.
-  <ParserFourthStep/>
+  <ParserFourthStep client:visible/>
 
   h3 Converting curves to segments
   p Our next step is a conversion from curves to only-segments path data.
-  <ParserFifthStep/>
+  <ParserFifthStep client:visible/>
 
   h3 Transforming our original path to an offset reflection
   p I'm not sure how to proceed for this one, but : for three points (or vector) a, b, and c, the point b' will be equal to the vector b added to the vector going from the middle of the segment <em>ac</em> to b.<br/>

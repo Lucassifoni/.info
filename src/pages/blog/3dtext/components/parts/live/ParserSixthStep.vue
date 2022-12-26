@@ -1,7 +1,7 @@
 <template>
   <div>
       <textarea class="textarea" v-model="input" @change="parseAndDisplay"></textarea>
-      <foldable-pre>{{ result }}</foldable-pre>
+      <foldable-pre><pre>{{ result }}</pre></foldable-pre>
       <p>Point fog rendering, and a test of an intuition about path segment normals.</p>
       <canvas width="300" height="300"></canvas>
       <canvas width="300" height="300"></canvas>

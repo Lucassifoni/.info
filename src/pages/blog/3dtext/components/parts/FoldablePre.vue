@@ -1,6 +1,9 @@
 <template>
   <div class="FoldablePre">
-     <pre><code><slot></slot></code></pre>
+    <button @click="open = !open">Expand/Fold code sample</button>
+    <div :style="{maxHeight: !open ? '10rem' : 'none'}" style="overflow-y: scroll">
+      <slot></slot>
+    </div>
   </div>
 </template>
 
@@ -9,7 +12,7 @@
     name: 'FoldablePre',
     data() {
       return {
-        open: true,
+        open: false,
       };
     },
   };

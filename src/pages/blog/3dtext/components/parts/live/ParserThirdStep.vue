@@ -1,7 +1,7 @@
 <template>
   <div>
     <textarea class="textarea" v-model="input" @change="parseAndDisplay"></textarea>
-    <foldable-pre>{{ result }}</foldable-pre>
+    <foldable-pre><pre>{{ result }}</pre></foldable-pre>
     <p>Rendering to text is just a matter of pretty-printing AST nodes, while rendering to a canvas is conveniently a 1-to-1 mapping of our instructions to CanvasRenderingContext2D methods.</p>
     <ul>
       <li>move(point) -> c2d.moveTo(x, y)</li>
