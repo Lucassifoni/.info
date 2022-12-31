@@ -1,11 +1,17 @@
 <script lang="ts" setup>
 import { computed, onMounted, Ref, ref, watch } from 'vue';
+import { parabola_coords, parallel_rayfan_coords, reflection_coords, non_parallel_rayfan_coords, normal_coords, tangent_coords } from "./functions";
+import type { Point, Segment } from './types';
+
 const canvasRef: Ref<HTMLCanvasElement | null> = ref(null);
 const focus = ref(400);
 const radius = ref(57);
-const px_per_mm = ref(2);
 const rays = ref(2);
-const dist = ref(99999999);
+const zoom = ref(1);
+const dist = ref(10000);
+const draw_normals = ref(true);
+const draw_infinity = ref(true);
+const draw_tangents = ref(false);
 
 const draw = () => {
     const c = canvasRef.value;
@@ -18,19 +24,39 @@ const draw = () => {
     ctx.strokeStyle = "black";
     ctx.lineWidth = 1;
     ctx.fillRect(0, 0, c.width, c.height);
-    const a_mm = focus.value;
+    const f = focus.value;
     const max_y_mm = radius.value;
     const x_off = 10;
     const y_off = max_y_mm + 10;
 
-    const x_coord = (a: number, y: number) => {
-        return y * y / 4 / a;
+    const to_x = (n: number) => zoom.value * (n + x_off) + 0.5;
+    const to_y = (n: number) => zoom.value * (n + y_off) + 0.5;
+
+
+    const lineTo = (x: number, y: number) => {
+        ctx.lineTo(to_x(x), to_y(y));
+    };
+
+
+    const moveTo = (x: number, y: number) => {
+        ctx.moveTo(to_x(x), to_y(y));
+    };
+
+    const draw_segment = (s: Segment) => {
+        ctx.beginPath();
+        moveTo(s.a.x, s.a.y);
+        lineTo(s.b.x, s.b.y);
+        ctx.stroke();
+    };
+
+    const arc = (x: number, y: number, r: number, a: number) => {
+        ctx.arc(to_x(x), to_y(y), r, 0, a);
     };
 
     const axis = () => {
         ctx.beginPath();
-        ctx.moveTo(0, y_off + 0.5);
-        ctx.lineTo(1000, y_off + 0.5);
+        moveTo(0, 0);
+        lineTo(1000, 0);
         ctx.strokeStyle = "green";
         ctx.stroke();
     };
@@ -38,85 +64,60 @@ const draw = () => {
     const focalPoint = () => {
         ctx.beginPath();
         ctx.fillStyle = "red";
-        ctx.arc(a_mm + x_off, y_off + 0.5, 3, 0, Math.PI * 2);
+        arc(f, 0, 3, Math.PI * 2);
         ctx.fill();
-        ctx.closePath();
-    }
+    };
+
     const parabola = () => {
         ctx.beginPath();
-        for (let y = -1 * max_y_mm; y < max_y_mm; y += 1) {
-            const x = x_coord(a_mm, y);
-            const rx = x_off + x;
-            const ry = y + y_off;
-            ctx.lineTo(rx, ry + 0.5);
-        }
+        parabola_coords(max_y_mm, focus.value).forEach(p => {
+            lineTo(p.x, p.y);
+        });
         ctx.stroke();
-        ctx.closePath();
     };
 
     const rayfan = () => {
-        let base_y = -max_y_mm;
-        let step = Math.abs(max_y_mm) / rays.value * 2;
-        for (let i = 0; i <= rays.value; i++) {
-            let y = base_y + i * step;
-            let x = x_coord(a_mm, y);
-            ctx.strokeStyle = "green";
-            ctx.beginPath();
-            ctx.moveTo(x + x_off, y + y_off + 0.5);
-            ctx.lineTo(999999, y + y_off + 0.5);
-            ctx.moveTo(x + x_off, y + y_off + 0.5);
-            ctx.lineTo(a_mm + x_off, y_off + 0.5);
-            ctx.stroke();
-            ctx.closePath();
-        }
+        ctx.strokeStyle = "green";
+        parallel_rayfan_coords(max_y_mm, f, rays.value).forEach(s => {
+            draw_segment(s);
+        });
     };
 
     const nonparallelrayfan = () => {
-        let base_y = -max_y_mm;
-        let base_x = dist.value + x_off;
-        let step = Math.abs(max_y_mm) / rays.value * 2;
-        for (let i = 0; i <= rays.value; i++) {
-            let y = base_y + i * step;
-            let x = x_coord(a_mm, y);
-            ctx.strokeStyle = "blue";
-            ctx.beginPath();
-            ctx.moveTo(x + x_off, y + y_off + 0.5);
-            ctx.lineTo(base_x, y_off + 0.5);
-            ctx.stroke();
-            tangent(y);
-        }
+        ctx.strokeStyle = "orange";
+        const segments = non_parallel_rayfan_coords(f, max_y_mm, dist.value, rays.value);
+        ctx.fillStyle = "blue";
+        arc(dist.value, 0, 5, Math.PI * 2);
+        segments.forEach(s => {
+            draw_segment(s);
+            if (draw_normals.value) {
+                normal(s.a.y);
+            }
+            if (draw_tangents.value) {
+                tangent(s.a.y);
+            }
+            ctx.strokeStyle = "orange";
+            draw_segment(reflection_coords(f, s.a.y, dist.value));
+        });
     };
 
     const normal = (y: number) => {
-        ctx.beginPath();
         ctx.strokeStyle = "red";
-        const tx = x_coord(a_mm, y);
-        const xx = -tx;
-        const yy = 0;
-        const dx = xx - tx;
-        const dy = yy - y;
-        ctx.moveTo(-dy + tx + x_off, dx + y + y_off);
-        ctx.lineTo(dy + tx + x_off, -dx + y + y_off);
-        ctx.stroke();
+        const coords = normal_coords(f, y);
+        draw_segment(coords);
     };
 
     const tangent = (y: number) => {
-        ctx.beginPath();
         ctx.strokeStyle = "blue";
-        const x = x_coord(a_mm, y);
-        const xx = -x;
-        const yy = 0;
-        const dx = xx - x;
-        const dy = yy - y;
-        ctx.moveTo(xx + x_off, yy + y_off);
-        ctx.lineTo(x - dx + x_off, y - dy + y_off);
-        ctx.stroke();
-        normal(y);
-    }
+        const coords = tangent_coords(f, y);
+        draw_segment(coords);
+    };
 
     parabola();
     axis();
-    rayfan();
+    if (draw_infinity.value) {
+        rayfan();
+    }
     nonparallelrayfan();
     focalPoint();
 };
@@ -125,7 +126,16 @@ onMounted(() => {
     draw();
 });
 const params = computed(() => {
-    return JSON.stringify([px_per_mm.value, rays.value, dist.value, focus.value, radius.value]);
+    return JSON.stringify({
+        b: rays.value,
+        c: dist.value,
+        d: focus.value,
+        e: radius.value,
+        f: draw_normals.value,
+        g: draw_tangents.value,
+        i: draw_infinity.value,
+        z: zoom.value
+    });
 });
 watch(params, () => {
     draw();
@@ -138,13 +148,36 @@ watch(params, () => {
             <label for="">Mirror radius (mm) <input type="number" v-model="radius"></label>
         </div>
         <div>
+            <label for="">Draw tangents ? <input type="checkbox" v-model="draw_tangents"></label>
+        </div>
+        <div>
+            <label for="">Draw normals ? <input type="checkbox" v-model="draw_normals"></label>
+        </div>
+        <div>
+            <label for="">Draw infinity ray fan ? <input type="checkbox" v-model="draw_infinity"></label>
+        </div>
+        <div>
+            <label for="">Zoom <input type="number" v-model="zoom"></label>
+        </div>
+        <div>
             <label for="">Mirror focal length (mm) <input type="number" v-model="focus"></label>
         </div>
         <div>
             <label for="">Rays (min 2) <input type="number" min="2" step="1" v-model="rays"></label>
         </div>
         <div>
-            <label for="">Source distance (min. focal length) <input type="number" :min="focus" step="1" v-model="dist"></label>
+            <label for="">Source distance <input type="number" :min="focus + 1" step="1"
+                    v-model="dist"></label>
+        </div>
+        <div style="margin-top: 1em">
+            <h3>Calculation results :</h3>
+            <ul>
+                <li>1mm - radius focal point : {{ reflection_coords(focus, 1, dist).b.x.toFixed(2) }}mm</li>
+                <li>
+                    {{ radius }}mm - radius focal point : {{ reflection_coords(focus, radius, dist).b.x.toFixed(2) }}mm</li>
+                <li>Spherical aberration - related image spread : {{ (reflection_coords(focus, radius, dist).b.x - reflection_coords(focus, 1, dist).b.x).toFixed(2) }}mm</li>
+                <li>Outward focal plane push : {{ (reflection_coords(focus, radius, dist).b.x - focus).toFixed(2) }}mm</li>
+            </ul>
         </div>
         <canvas style="border: 1px solid lightcoral; border-radius: 3px" ref="canvasRef"></canvas>
     </div>
