@@ -53,15 +53,12 @@ const posts = (await Astro.glob("./blog/*.{md,mdx}")).sort(
 	<body>
 		<Header />
 		<main>
-			<h3>Welcome 👋</h3>
+			<h3>Hi 👋</h3>
 			<p>
-				This listing will present old (I'm in the process of gathering
-				content from old blogs) and new content on various personal
-				research (optics, astronomy, programming, various kind of
-				crafts) and work-related research & attempts (so, programming
-				again). I'm a french person but write mostly in english because
-				it allows me to be a bit more straightforward. Video material
-				should mostly be in French though.
+				This listing features content on various personal
+				research (optics, astronomy, programming) and work-related research (programming).
+				<br>I'm a french person but write mostly in english. It allows me to be more straightforward. Video material
+				is mostly in French.
 			</p>
 			<section>
 				<ul>
@@ -77,7 +74,7 @@ const posts = (await Astro.glob("./blog/*.{md,mdx}")).sort(
 										day: "2-digit",
 									})}
 								</time>
-								<a href={post.url}>{post.frontmatter.title}</a>
+								<a href={post.url} set:html="post.frontmatter.title.replace('--', '<br/>')"></a>
 							</li>
 						))
 					}

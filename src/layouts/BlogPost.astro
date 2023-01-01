@@ -38,10 +38,10 @@ const {
 		<main>
 			<article>
 				{heroImage && <img width={720} height={360} style="width:100%;height:auto;" src={heroImage} alt="" />}
-				<h1 class="title">{title}</h1>
+				<h1 class="title" set:html="title.replace('--', '<br/>')"></h1>
 				{pubDate && <time>{pubDate}</time>}
-				{
-					updatedDate && (
+				{updatedDate && 
+						(
 						<div>
 							Last updated on <time>{updatedDate}</time>
 						</div>
