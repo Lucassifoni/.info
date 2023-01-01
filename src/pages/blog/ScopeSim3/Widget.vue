@@ -6,8 +6,8 @@ import type { Point, Segment } from './types';
 const canvasRef: Ref<HTMLCanvasElement | null> = ref(null);
 const focus = ref(400);
 const radius = ref(57);
-const rays = ref(2);
-const zoom = ref(1);
+const rays = ref(4);
+const zoom = ref(1.5);
 const dist = ref(10000);
 const draw_normals = ref(true);
 const draw_infinity = ref(true);
@@ -18,29 +18,24 @@ const draw = () => {
     if (!c) return;
     const ctx = c.getContext("2d");
     if (!ctx) return;
-    c.width = 600;
-    c.height = 600;
+    c.width = focus.value * zoom.value + 100 * zoom.value;
+    c.height = 2 * radius.value * zoom.value + 20 * zoom.value;
     ctx.fillStyle = "white";
     ctx.strokeStyle = "black";
     ctx.lineWidth = 1;
     ctx.fillRect(0, 0, c.width, c.height);
     const f = focus.value;
     const max_y_mm = radius.value;
+
     const x_off = 10;
     const y_off = max_y_mm + 10;
 
     const to_x = (n: number) => zoom.value * (n + x_off) + 0.5;
     const to_y = (n: number) => zoom.value * (n + y_off) + 0.5;
 
-
-    const lineTo = (x: number, y: number) => {
-        ctx.lineTo(to_x(x), to_y(y));
-    };
-
-
-    const moveTo = (x: number, y: number) => {
-        ctx.moveTo(to_x(x), to_y(y));
-    };
+    const lineTo = (x: number, y: number) => ctx.lineTo(to_x(x), to_y(y));
+    const moveTo = (x: number, y: number) => ctx.moveTo(to_x(x), to_y(y));
+    const arc = (x: number, y: number, r: number, a: number) => ctx.arc(to_x(x), to_y(y), r, 0, a);
 
     const draw_segment = (s: Segment) => {
         ctx.beginPath();
@@ -49,9 +44,6 @@ const draw = () => {
         ctx.stroke();
     };
 
-    const arc = (x: number, y: number, r: number, a: number) => {
-        ctx.arc(to_x(x), to_y(y), r, 0, a);
-    };
 
     const axis = () => {
         ctx.beginPath();
@@ -143,42 +135,52 @@ watch(params, () => {
 </script>
 
 <template>
-    <div>
+    <div style="background: lightgray;
+        padding: 1em;
+        margin-bottom: 1em;
+        border-radius: 3px;
+        font-family: sans-serif;
+        overflow: hidden;">
         <div>
-            <label for="">Mirror radius (mm) <input type="number" v-model="radius"></label>
+            <label style="margin: 4px; display:block" for="">Mirror radius (mm) <input type="number" v-model="radius"></label>
         </div>
         <div>
-            <label for="">Draw tangents ? <input type="checkbox" v-model="draw_tangents"></label>
+            <label style="margin: 4px; display:block" for="">Draw tangents ? <input type="checkbox" v-model="draw_tangents"></label>
         </div>
         <div>
-            <label for="">Draw normals ? <input type="checkbox" v-model="draw_normals"></label>
+            <label style="margin: 4px; display:block" for="">Draw normals ? <input type="checkbox" v-model="draw_normals"></label>
         </div>
         <div>
-            <label for="">Draw infinity ray fan ? <input type="checkbox" v-model="draw_infinity"></label>
+            <label style="margin: 4px; display:block" for="">Draw infinity ray fan ? <input type="checkbox" v-model="draw_infinity"></label>
         </div>
         <div>
-            <label for="">Zoom <input type="number" v-model="zoom"></label>
+            <label style="margin: 4px; display:block" for="">Zoom <input type="number" v-model="zoom"></label>
         </div>
         <div>
-            <label for="">Mirror focal length (mm) <input type="number" v-model="focus"></label>
+            <label style="margin: 4px; display:block" for="">Mirror focal length (mm) <input type="number" v-model="focus"></label>
         </div>
         <div>
-            <label for="">Rays (min 2) <input type="number" min="2" step="1" v-model="rays"></label>
+            <label style="margin: 4px; display:block" for="">Rays (min 2) <input type="number" min="2" step="1" v-model="rays"></label>
         </div>
         <div>
-            <label for="">Source distance <input type="number" :min="focus + 1" step="1"
-                    v-model="dist"></label>
+            <label style="margin: 4px; display:block" for="">Source distance <input type="number" :min="focus + 1" step="1" v-model="dist"></label>
         </div>
         <div style="margin-top: 1em">
-            <h3>Calculation results :</h3>
-            <ul>
+            <h4>Calculation results :</h4>
+            <ul style="padding: 0; list-style: none;">
                 <li>1mm - radius focal point : {{ reflection_coords(focus, 1, dist).b.x.toFixed(2) }}mm</li>
                 <li>
-                    {{ radius }}mm - radius focal point : {{ reflection_coords(focus, radius, dist).b.x.toFixed(2) }}mm</li>
-                <li>Spherical aberration - related image spread : {{ (reflection_coords(focus, radius, dist).b.x - reflection_coords(focus, 1, dist).b.x).toFixed(2) }}mm</li>
-                <li>Outward focal plane push : {{ (reflection_coords(focus, radius, dist).b.x - focus).toFixed(2) }}mm</li>
+                    {{ radius }}mm - radius focal point : {{ reflection_coords(focus, radius, dist).b.x.toFixed(2) }}mm
+                </li>
+                <li>Longitudinal aberration : {{ (reflection_coords(focus, radius, dist).b.x -
+        reflection_coords(focus, 1, dist).b.x).toFixed(2)
+}}mm</li>
+                <li>Outward focal plane push : {{ (reflection_coords(focus, radius, dist).b.x - focus).toFixed(2) }}mm
+                </li>
             </ul>
         </div>
-        <canvas style="border: 1px solid lightcoral; border-radius: 3px" ref="canvasRef"></canvas>
+        <div style="width: 100%; padding-bottom: 32px; overflow-x: scroll;">
+            <canvas style="border: 1px solid lightcoral; border-radius: 3px" ref="canvasRef"></canvas>
+        </div>
     </div>
 </template>

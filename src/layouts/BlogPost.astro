@@ -1,7 +1,7 @@
 ---
-import BaseHead from '../components/BaseHead.astro';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
+import BaseHead from "../components/BaseHead.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
 
 export interface Props {
 	content: {
@@ -29,7 +29,21 @@ const {
 			hr {
 				margin: 1rem 0;
 			}
-			
+			.footer_additions ul,
+			li {
+				display: inline;
+				margin: 0;
+				padding: 0;
+			}
+			.footer_additions li::after {
+				content: " / ";
+			}
+			.footer_additions li.noslash::after {
+				content: "";
+			}
+			.footer_additions li:last-child::after {
+				content: "";
+			}
 		</style>
 	</head>
 
@@ -37,20 +51,30 @@ const {
 		<Header />
 		<main>
 			<article>
-				{heroImage && <img width={720} height={360} style="width:100%;height:auto;" src={heroImage} alt="" />}
-				<h1 class="title" set:html="title.replace('--', '<br/>')"></h1>
+				{
+					heroImage && (
+						<img
+							width={720}
+							height={360}
+							style="width:100%;height:auto;"
+							src={heroImage}
+							alt=""
+						/>
+					)
+				}
+				<h1 class="title" set:html="title.replace('--', '<br/>')" />
 				{pubDate && <time>{pubDate}</time>}
-				{updatedDate && 
-						(
+				{
+					updatedDate && (
 						<div>
 							Last updated on <time>{updatedDate}</time>
 						</div>
 					)
 				}
-				<hr style="height:1px;border:none;background: black;"/>
+				<hr style="height:1px;border:none;background: black;" />
 				<slot />
 			</article>
 		</main>
-		<Footer />
+		<Footer></Footer>
 	</body>
 </html>
