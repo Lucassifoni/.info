@@ -264,3 +264,77 @@ Here is the resulting interactive widget (mobile users, you can scroll the graph
 ### Why did I need this information ?
 
 Remember that my goal is to simulate the telescope in software before plugging the physical telescope to the same software. I want to simulate depth of field on an image. For that, I need to know where an object at a known distance images from the mirror. Yes, I could have used OSLO Edu or any raytracing program for that. But that's no fun&nbsp;!
+
+### Benchmarking
+
+Here are benchmark results for Elixir or Elixir + Rustler implementations. I used a high number of rays to lessen the cost of calling the FFI.
+
+[Here is the commit with the rust implementation](https://github.com/Lucassifoni/oiseaux/commit/0f60d4780b4286b849dde1333f392b554ee547c1).
+It is very close to the Typescript one and could probably be optimized a lot.
+
+```elixir
+for n <- [1001, 10001, 100001] do
+  Benchee.run(
+    %{
+      "Elixir, #{n} rays" => fn -> Optics.Parabola.non_parallel_rayfan_coords(400.0, 57.0, 10000.0, n) end,
+      "Rust  , #{n} rays" => fn -> Optics.Parabola.non_parallel_rayfan_coords_rs(400.0, 57.0, 10000.0, n) end
+    })
+end
+```
+
+```
+$ MIX_ENV=prod mix run bench/rays.exs
+
+Operating System: macOS
+CPU Information: Apple M1
+Number of Available Cores: 8
+Available memory: 16 GB
+Elixir 1.14.0
+Erlang 25.0
+
+Benchmark suite executing with the following configuration:
+warmup: 2 s
+time: 5 s
+memory time: 0 ns
+reduction time: 0 ns
+parallel: 1
+inputs: none specified
+Estimated total run time: 14 s
+
+Benchmarking Elixir, 10001 rays ...
+Benchmarking Rust  , 10001 rays ...
+
+Name                         ips        average  deviation         median         99th %
+Rust  , 10001 rays        177.48        5.63 ms    ±35.69%        5.66 ms        8.39 ms
+Elixir, 10001 rays        111.83        8.94 ms     ±9.72%        8.58 ms       11.39 ms
+
+Comparison:
+Rust  , 10001 rays        177.48
+Elixir, 10001 rays        111.83 - 1.59x slower +3.31 ms
+Operating System: macOS
+CPU Information: Apple M1
+Number of Available Cores: 8
+Available memory: 16 GB
+Elixir 1.14.0
+Erlang 25.0
+
+Benchmark suite executing with the following configuration:
+warmup: 2 s
+time: 5 s
+memory time: 0 ns
+reduction time: 0 ns
+parallel: 1
+inputs: none specified
+Estimated total run time: 14 s
+
+Benchmarking Elixir, 100001 rays ...
+Benchmarking Rust  , 100001 rays ...
+
+Name                          ips        average  deviation         median         99th %
+Rust  , 100001 rays         15.62       64.03 ms    ±43.96%       58.55 ms      106.98 ms
+Elixir, 100001 rays          8.31      120.40 ms    ±15.90%      117.09 ms      159.32 ms
+
+Comparison:
+Rust  , 100001 rays         15.62
+Elixir, 100001 rays          8.31 - 1.88x slower +56.38 ms
+```
