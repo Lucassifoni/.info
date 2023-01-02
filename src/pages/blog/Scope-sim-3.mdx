@@ -15,11 +15,9 @@ To answer those two questions, I first made a prototype with a visualizer in Vue
 
 ### Raytracing a parabolic mirror
 
-As stated before in other articles, I'm not too good in math, but am able to gather info & deduce. That's what I'll do here. Let's follow along.
+The **equation of a parabola**, symmetric on the `Y axis`, can be defined as `y^2 = 4ax`, where `a` is the focal point (so, the `paraxial focal length`) of the parabola.
 
-The **equation of a parabola**, symmetric on the Y axis, can be defined as `y^2 = 4ax`, where `a` is the focal point (so, paraxial focal length) of the parabola.
-
-We'll work with our parabola symmetric to the X axis, so we'll go from Y values to X values, to simulate rays hitting the parabola at height y.
+We'll work with our parabola symmetric to the `X axis`, so we'll go `from Y values to X values`, to simulate rays hitting the parabola at `height y`.
 
 ```ts
 /*
@@ -31,7 +29,7 @@ const x_coord_on_parabola = (focal_length: number, y: number) => {
 };
 ```
 
-With that, we can draw a parabolic mirror slice of radius r, by getting x coordinates every mm for y values -r to r. I define a few types beforehand.
+With that, we can draw a parabolic mirror slice of `radius r`, by getting `x` coordinates `every mm` for `y` values `-r to r`. I define a few types beforehand.
 
 ```ts
 export type Point = {
@@ -69,6 +67,7 @@ const draw_segment = (s: Segment) => {
 ```
 
 And voilà, here's a parabolic surface (and its axis).
+
 ```ts
 const parabola = () => {
     ctx.beginPath();
@@ -78,15 +77,16 @@ const parabola = () => {
     ctx.stroke();
 };
 ```
+
 ![](/pics/photoscope_3/parabola.png)
 
-Then, I have drawn the beam of rays coming from infinity, hitting the parabola, and reflecting back to (focal_length, 0).
+I then have drawn the beam of rays coming from infinity, hitting the parabola, and reflecting back to `(focal_length, 0)`.
 
 ![](/pics/photoscope_3/parallel_rays.png)
 
-Then, I'll need to be able to actually trace rays coming from a non-infinity distance, and bouncing on the parabolic surface. For that, you just need to remember that a ray reflects on the other side of the normal to a curve, with the same angle to this normal.
+The next step is to be able to actually trace rays coming from a non-infinity distance, and bouncing on the parabolic surface. For that, you just need to remember that a ray reflects on the other side of the normal to a curve, with the same angle to this normal.
 
-So we first need to get tangents to points on the parabola, then, from there, normals to points on the parabola. The tangent to a point on a curve can be seen as the derivative of the curve at this point, and the normal can be seen as the tangent rotated 90°.
+We first need to get tangents to points on the parabola, then, from there, normals to points on the parabola. The tangent to a point on a curve can be seen as the derivative of the curve at this point, and the normal can be seen as the tangent rotated 90°.
 
 ```ts
 export const tangent_coords = (focal_length: number, y: number): Segment => {
@@ -158,7 +158,7 @@ We draw them :
 
 ![](/pics/photoscope_3/nonparallel.png)
 
-And we'll compute their reflections, that is, the ray going from the (x, y) point on the parabola, to the (x1, 0) point on the X axis. For that, I need to know the angle between the incoming ray and the normal. I don't know how to do that, but I've been able to transform the problem to something else. I know how to get angles in a right-angled triangle. So I can just "translate" my segments to have their first point at the (0, 0) coordinate, and take the X axis as a side of the triangle.
+And we'll compute their reflections, that is, the ray going from the `(x, y)` point on the parabola, to an `(x1, 0)` point on the `X axis`. For that, I need to know the angle between the incoming ray and the normal. I've been able to transform the problem to something else. I know how to get angles in a right-angled triangle. So I can just "translate" my segments to have their first point at the `(0, 0)` coordinate, and see the `X axis` as a side of the triangle.
 
 Two segments :
 
@@ -168,7 +168,7 @@ Two segments moved back to origin simplify the problem :
 
 ![](/pics/photoscope_3/c4.png)
 
-So let's code that !
+Translated into code :
 
 ```ts
 const angle_between_segments = (a: Segment, b: Segment) : number => {
@@ -202,7 +202,7 @@ const angle = angle_between_segments(ray, normal);
 const output_angle = angle_with_x_axis(ray) + (2 * angle);
 ```
 
-Then, as we have an origin point (x, y) on the parabola, and an angle from that point, we can just project it to get the X coordinate where Y = 0. I must admit that it took me a fair bit of imaginary triangles for that :
+Then, as we have an origin point `(x, y)` on the parabola, and an `angle` from that point, we can just project it to get the `X coordinate where Y = 0`. It took me a fair bit of imaginary triangles to figure it out :
 
 ![](/pics/photoscope_3/c6.png)
 
@@ -270,7 +270,7 @@ Remember that my goal is to simulate the telescope in software before plugging t
 Here are benchmark results for Elixir or Elixir + Rustler implementations. I used a high number of rays to lessen the cost of calling the FFI.
 
 [Here is the commit with the rust implementation](https://github.com/Lucassifoni/oiseaux/commit/0f60d4780b4286b849dde1333f392b554ee547c1).
-It is very close to the Typescript one and could probably be optimized a lot.
+It is very close to the Typescript one and could probably be optimized a lot. Still, there's a 2x improvement from the elixir implementation. A 2x reduction in compute, for free, is always a good thing.
 
 ```elixir
 for n <- [1001, 10001, 100001] do
