@@ -76,7 +76,7 @@ export const tangent_coords = (focal_length: number, y: number): Segment => {
     };
 };
 
-export const non_parallel_rayfan_coords = (focal_length: number, radius: number, source_distance: number, rays: number): Segment[] => {
+export const non_parallel_rayfan_coords = (focal_length: number, radius: number, source_distance: number, source_height: number, rays: number): Segment[] => {
     const out: Segment[] = [];
     const base_y = -radius;
     const base_x = source_distance;
@@ -91,7 +91,7 @@ export const non_parallel_rayfan_coords = (focal_length: number, radius: number,
             },
             b: {
                 x: base_x,
-                y: 0,
+                y: source_height,
             }
         });
     }
@@ -126,7 +126,11 @@ export const point_and_angle_to_x_coord = (p: Point, angle: number) => {
     return x;
 };
 
-export const reflection_coords = (focal_length: number, y: number, source_distance: number) : Segment => {
+export const point_and_angle_to_y_coord = (p: Point, angle: number, x_value: number) => {
+    return p.y - x_value * Math.sin(angle);
+};
+
+export const reflection_coords = (focal_length: number, y: number, source_distance: number, source_height: number) : Segment => {
     const x = x_coord_on_parabola(focal_length, y);
     const v1 : Segment = {
         b: {
@@ -135,21 +139,21 @@ export const reflection_coords = (focal_length: number, y: number, source_distan
         },
         a: {
             x: source_distance,
-            y: 0,
+            y: source_height,
         },
     };
     const normal = normal_coords(focal_length, y);
     const angle = angle_between_segments(v1, normal);
     const output_angle = angle_with_x_axis(v1) + (2 * angle);
-    const x_coord = point_and_angle_to_x_coord({x, y}, output_angle);
+    const y_coord = point_and_angle_to_y_coord({x, y}, output_angle, 999999);
     return {
         a: {
             x,
             y,
         },
         b: {
-            x: x_coord,
-            y: 0
+            x: 999999,
+            y: y_coord
         }
     };
 };
