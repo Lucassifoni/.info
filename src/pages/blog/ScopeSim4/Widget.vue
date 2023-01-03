@@ -171,72 +171,72 @@ watch(params, () => {
         font-family: sans-serif;
         overflow: hidden;">
         <div>
-            <label style="margin: 4px; display:block" for="">Mirror radius (mm) <input type="number"
+            <label style="margin: 8px 0; display:block" for="">Mirror radius (mm) <input type="number"
                     v-model="radius"></label>
         </div>
         <div>
-            <label style="margin: 4px; display:block" for="">Draw tangents ? <input type="checkbox"
+            <label style="margin: 8px 0; display:block" for="">Draw tangents ? <input type="checkbox"
                     v-model="draw_tangents"></label>
         </div>
         <div>
-            <label style="margin: 4px; display:block" for="">Draw normals ? <input type="checkbox"
+            <label style="margin: 8px 0; display:block" for="">Draw normals ? <input type="checkbox"
                     v-model="draw_normals"></label>
         </div>
         <div>
-            <label style="margin: 4px; display:block" for="">Draw infinity ray fan ? <input type="checkbox"
+            <label style="margin: 8px 0; display:block" for="">Draw infinity ray fan ? <input type="checkbox"
                     v-model="draw_infinity"></label>
         </div>
         <div>
-            <label style="margin: 4px; display:block" for="">Zoom <input type="number" v-model="zoom"></label>
+            <label style="margin: 8px 0; display:block" for="">Zoom <input type="number" v-model="zoom"></label>
         </div>
         <div>
-            <label style="margin: 4px; display:block" for="">Mirror focal length (mm) <input type="number"
+            <label style="margin: 8px 0; display:block" for="">Mirror focal length (mm) <input type="number"
                     v-model="focus"></label>
         </div>
         <div>
-            <label style="margin: 4px; display:block" for="">Rays (min 2) <input type="number" min="2" step="1"
+            <label style="margin: 8px 0; display:block" for="">Rays (min 2) <input type="number" min="2" step="1"
                     v-model="rays"></label>
         </div>
         <div>
-            <label style="margin: 4px; display:block" for="">Source distance <input type="number" :min="focus + 1"
+            <label style="margin: 8px 0; display:block" for="">Source distance <input type="number" :min="focus + 1"
                     step="1" v-model="dist"></label>
         </div>
         <div>
-            <label style="margin: 4px; display:block" for="">Sensor position <input type="number" step="0.1"
+            <label style="margin: 8px 0; display:block" for="">Sensor position <input type="number" step="0.1"
                     v-model="sensor_distance"></label>
         </div>
         <div>
-            <label style="margin: 4px; display:block" for="">Sensor width <input type="number" step="0.1"
+            <label style="margin: 8px 0; display:block" for="">Sensor width <input type="number" step="0.1"
                     v-model="sensor_width"></label>
         </div>
         <div>
-            <label style="margin: 4px; display:block" for="">Sensor height <input type="number" step="0.1"
+            <label style="margin: 8px 0; display:block" for="">Sensor height <input type="number" step="0.1"
                     v-model="sensor_height"></label>
         </div>
         <div>
-            <label style="margin: 4px; display:block" for="">Pixel size <input type="number" step="0.0001"
+            <label style="margin: 8px 0; display:block" for="">Pixel size <input type="number" step="0.0001"
                     v-model="pixel_size"></label>
         </div>
         <div>
-            <label style="margin: 4px; display:block" for="">Source height <input type="number" step="1"
+            <label style="margin: 8px 0; display:block" for="">Source height <input type="number" step="1"
                     v-model="source_height"></label>
         </div>
         <h4>Some information :</h4>
         <ul style="padding: 0; list-style: none">
-            <li>Average focal plane location for on-axis object at {{ dist }}mm : {{ efl.toFixed(2) }}mm</li>
-            <li>FoV : {{ (hfov / Math.PI * 180).toFixed(2) }}° x {{ (vfov / Math.PI * 180).toFixed(2) }}° (at {{ dist
+            <li style="margin: 8px 0;">Average focal plane location for on-axis object at {{ dist }}mm : {{ efl.toFixed(2) }}mm</li>
+            <li style="margin: 8px 0;">FoV : {{ (hfov / Math.PI * 180).toFixed(2) }}° x {{ (vfov / Math.PI * 180).toFixed(2) }}° (at {{ dist
 }}mm, that
                 is
                 {{ phfov.toFixed(2) }}mm x
                 {{ pvfov.toFixed(2) }}mm)</li>
-            <li>Longitudinal aberration : {{ Math.abs(spread).toFixed(2) }}mm</li>
-            <li>Geometric blur circle for sensor position : {{ Math.abs(blur).toFixed(4) }}mm ({{ Math.abs(blur /
+            <li style="margin: 8px 0;">Longitudinal aberration : {{ Math.abs(spread).toFixed(2) }}mm</li>
+            <li style="margin: 8px 0;">Geometric blur circle for sensor position : {{ Math.abs(blur).toFixed(4) }}mm ({{ Math.abs(blur /
         pixel_size).toFixed(2)
 }} px wide)</li>
-            <li>Minimal blur circle @ 550nm (airy disk diameter) : {{ (airy).toFixed(4) }}mm ({{ (airy /
+            <li style="margin: 8px 0;">Minimal blur circle @ 550nm (airy disk diameter) : {{ (airy).toFixed(4) }}mm ({{ (airy /
         pixel_size).toFixed(2)
 }}px wide)</li>
-            <li>Dawes limit : {{ dawes.toFixed(2) }} arcsec</li>
+            <li style="margin: 8px 0;">Dawes limit : {{ dawes.toFixed(2) }} arcsec</li>
         </ul>
 
         <div style="width: 100%; padding-bottom: 32px; overflow-x: scroll;">

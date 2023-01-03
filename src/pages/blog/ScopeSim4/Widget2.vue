@@ -8,7 +8,7 @@ const canvas2: Ref<HTMLCanvasElement | null> = ref(null);
 const step = ref("");
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 const scene_distance = ref(20000);
-const distance = ref(408.11);
+const distance = ref(408.3);
 const drawing = ref(false);
 const scene_width = computed(() => scene_distance.value * Math.tan(0.51 * Math.PI / 180));
 const tile_size = computed(() => scene_width.value / 3.69);
@@ -135,21 +135,25 @@ onMounted(async () => {
 
 <template>
     <div style="font-family: sans-serif; background: lightgray; padding: 4px; border-radius: 4px;">
-        <div style="margin: 4px;">
+        <div style="margin: 8px 0;">
             <label for="">Scene front distance to the mirror {{ scene_distance }}mm<br><input type="number" min="5000"
-                    max="10000" v-model="scene_distance" step="0.05"></label></div>
-                    <div style="margin: 4px;">
-                        Tile size : {{ tile_size.toFixed(2) }}mm / Scene width : {{ scene_width.toFixed(2) }}mm / Scene depth : {{ scene_depth.toFixed(2) }}mm
-                    </div>
-                    <div style="margin: 4px;"><label for="">Sensor distance to the mirror (ideal : around {{ fns.effective_fl(400, 57,
+                    max="10000" v-model="scene_distance" step="0.05"></label>
+        </div>
+        <div style="margin: 8px 0;">
+            Tile size : {{ tile_size.toFixed(2) }}mm / Scene width : {{ scene_width.toFixed(2) }}mm / Scene depth : {{
+        scene_depth.toFixed(2)
+}}mm
+        </div>
+        <div style="margin: 8px 0;"><label for="">Sensor distance to the mirror (ideal : around {{ fns.effective_fl(400,
+        57,
         scene_distance).toFixed(2)
-}}mm): {{ distance }}mm<br><input type="number" min="405" max="411"
-                    v-model="distance" step="0.05"></label></div>
-                    <div style="margin: 4px;">Step : {{ step }}.</div>
-                    <div style="margin: 4px;"><button :disabled="drawing" @click="draw">Redraw</button></div>
-                    <div style="display: flex; width: 100%; gap: 10px; flex-wrap: wrap;">
-                        <canvas ref="canvas" style="width: 280px;"></canvas>
-                        <canvas ref="canvas2" style="width: 280px;"></canvas>
-                    </div>
+}}mm): {{ distance }}mm<br><input type="number" min="405" max="411" v-model="distance"
+                    step="0.05"></label></div>
+        <div style="margin: 8px 0;">Step : {{ step }}.</div>
+        <div style="margin: 8px 0;"><button :disabled="drawing" @click="draw">Redraw</button></div>
+        <div style="display: flex; width: 100%; gap: 10px; flex-wrap: wrap;">
+            <canvas ref="canvas" style="width: 280px;"></canvas>
+            <canvas ref="canvas2" style="width: 280px;"></canvas>
+        </div>
     </div>
 </template>

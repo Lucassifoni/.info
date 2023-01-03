@@ -1,9 +1,8 @@
 ---
 layout: "../../layouts/BlogPost.astro"
-title: "A remote-controlled telescope with Elixir & Vue -- Part 4 : Simulating image capture and focus"
+title: "A remote-controlled telescope with Elixir & Vue -- Part 4 : Simulating image capture and focusing"
 description: "Fourth entry of my build log"
-draft: true
-pubDate: "Jan 4 2023"
+pubDate: "Jan 3 2023"
 ---
 import Widget from './ScopeSim4/Widget.vue';
 import Widget2 from './ScopeSim4/Widget2.vue';
@@ -51,3 +50,6 @@ Let's also keep in mind that our telescope is bound by physics and has a `resolu
 Our scene when imaged at `20 meters` is ~`175.4mm wide` and `2015 pixels` wide. If we can discern `0.1mm wide features` at that distance, those features are {(2015/1754).toFixed(2)}px wide. This is very close to 1px resolution on the virtual scene. I will stay at that level of abstraction.
 
 <Widget2 client:visible></Widget2>
+
+The repository has been updated ([commit 766eee9](https://github.com/Lucassifoni/oiseaux/commit/766eee95f1c76c0b647aeaa7bc7cbab8ac7b0657)) to contain all the building blocks to implement this image generation on the Elixir side. The focusing mechanism also has been added to the `Telescope` GenServer.
+Even if we stay in the realm of geometric optics, in these four posts, I have gathered everything needed to actually build the interactive telescope and remote control simulator.
