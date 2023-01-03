@@ -3,4 +3,8 @@ export type Point = {
     y: number
 };
 
+export type AngledPoint = Point & {
+    angle: number
+};
+
 export type Segment = {a: Point, b: Point};

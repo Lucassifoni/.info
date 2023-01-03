@@ -1,6 +1,6 @@
 import type { Point, Segment } from './types';
 
-const x_coord_on_parabola = (focal_length: number, y: number) => {
+export const x_coord_on_parabola = (focal_length: number, y: number) => {
     return y * y / 4 / focal_length;
 };
 
@@ -98,7 +98,7 @@ export const non_parallel_rayfan_coords = (focal_length: number, radius: number,
     return out;
 };
 
-const segment_delta = (s: Segment) : Segment => {
+const segment_delta = (s: Segment): Segment => {
     return {
         a: {
             x: 0,
@@ -111,12 +111,12 @@ const segment_delta = (s: Segment) : Segment => {
     };
 };
 
-const angle_with_x_axis = (s: Segment) : number => {
+const angle_with_x_axis = (s: Segment): number => {
     const derived = segment_delta(s);
     return Math.atan2(derived.b.y, derived.b.x);
 };
 
-const angle_between_segments = (a: Segment, b: Segment) : number => {
+const angle_between_segments = (a: Segment, b: Segment): number => {
     return angle_with_x_axis(b) - angle_with_x_axis(a);
 };
 
@@ -126,13 +126,9 @@ export const point_and_angle_to_x_coord = (p: Point, angle: number) => {
     return x;
 };
 
-export const point_and_angle_to_y_coord = (p: Point, angle: number, x_value: number) => {
-    return p.y - x_value * Math.sin(angle);
-};
-
-export const reflection_coords = (focal_length: number, y: number, source_distance: number, source_height: number) : Segment => {
-    const x = x_coord_on_parabola(focal_length, y);
-    const v1 : Segment = {
+export const reflection_angle = (f: number, y: number, source_distance: number, source_height: number): number => {
+    const x = x_coord_on_parabola(f, y);
+    const v1: Segment = {
         b: {
             x,
             y,
@@ -142,18 +138,97 @@ export const reflection_coords = (focal_length: number, y: number, source_distan
             y: source_height,
         },
     };
-    const normal = normal_coords(focal_length, y);
+    const normal = normal_coords(f, y);
     const angle = angle_between_segments(v1, normal);
     const output_angle = angle_with_x_axis(v1) + (2 * angle);
-    const y_coord = point_and_angle_to_y_coord({x, y}, output_angle, 999999);
+    return output_angle;
+};
+
+export const reflection_coords = (focal_length: number, y: number, source_distance: number, source_height: number): Segment => {
+    const output_angle = reflection_angle(focal_length, y, source_distance, source_height);
+    const x = x_coord_on_parabola(focal_length, y);
+    const ray_length = 2.5 * focal_length;
     return {
         a: {
             x,
             y,
         },
         b: {
-            x: 999999,
-            y: y_coord
+            x: x + Math.abs(ray_length * Math.cos(output_angle)),
+            y: y + ray_length * Math.sin(-output_angle),
         }
     };
+};
+
+export const reflection_coords_onaxis = (focal_length: number, y: number, source_distance: number): Segment => {
+    const x = x_coord_on_parabola(focal_length, y);
+    const v1: Segment = {
+        b: {
+            x,
+            y,
+        },
+        a: {
+            x: source_distance,
+            y: 0,
+        },
+    };
+    const normal = normal_coords(focal_length, y);
+    const angle = angle_between_segments(v1, normal);
+    const output_angle = angle_with_x_axis(v1) + (2 * angle);
+    const x_coord = point_and_angle_to_x_coord({ x, y }, output_angle);
+    return {
+        a: {
+            x,
+            y,
+        },
+        b: {
+            x: x_coord,
+            y: 0
+        }
+    };
+};
+
+export const effective_fl = (focal_length: number, radius: number, source_distance: number): number => {
+    return (
+        reflection_coords_onaxis(focal_length, radius, source_distance).b.x
+        + reflection_coords_onaxis(focal_length, 1, source_distance).b.x
+    ) / 2;
+    //return xs.reduce((sum, i) => sum + i) / xs.length;
+};
+
+export const spread = (focal_length: number, radius: number, source_distance: number): number => {
+    const min = reflection_coords_onaxis(focal_length, 1, source_distance).b.x;
+    const max = reflection_coords_onaxis(focal_length, radius, source_distance).b.x;
+    return min - max;
+};
+
+export const vfov = (sensor_height: number, efl: number): number => {
+    return 2 * Math.atan(sensor_height / 2 / efl);
+};
+export const hfov = (sensor_width: number, efl: number): number => {
+    return 2 * Math.atan(sensor_width / 2 / efl);
+};
+export const phfov = (hfov: number, dist: number): number => {
+    return (Math.tan(hfov) * dist);
+};
+
+export const pvfov = (vfov: number, dist: number): number => {
+    return (Math.tan(vfov) * dist);
+};
+
+export const blur = (radius: number,
+    efl: number,
+    sensor_distance: number,
+    lspread: number): number => {
+    const angle = Math.tan(radius / efl);
+    const pos = efl - (sensor_distance + 0.66 * lspread);
+  //  console.log(angle, pos, efl, sensor_distance, lspread);
+    return Math.sin(angle) * pos * 2;
+};
+
+export const airy = (focal_length: number, radius: number): number => {
+    return 2.44 * 550 / 1000 / 1000 * (focal_length / (2 * radius));
+};
+export const dawes = (radius: number): number => {
+    return 11.6 / (radius * 2 / 10);
 };

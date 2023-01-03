@@ -1,177 +1,155 @@
-<script lang="ts" setup>
-import { computed, onMounted, Ref, ref, watch } from 'vue';
-import { parabola_coords, parallel_rayfan_coords, reflection_coords, non_parallel_rayfan_coords, normal_coords, tangent_coords } from "./functions";
-import type { Point, Segment } from './types';
+<script setup lang="ts">
+import { onMounted, Ref, ref, computed } from 'vue';
+import type { Point } from './types';
+import * as fns from "./functions";
 
-const canvasRef: Ref<HTMLCanvasElement | null> = ref(null);
-const focus = ref(400);
-const radius = ref(57);
-const rays = ref(4);
-const zoom = ref(1.5);
-const dist = ref(10000);
-const draw_normals = ref(true);
-const draw_infinity = ref(false);
-const draw_tangents = ref(false);
-const source_height = ref(250);
+const canvas: Ref<HTMLCanvasElement | null> = ref(null);
+const canvas2: Ref<HTMLCanvasElement | null> = ref(null);
+const step = ref("");
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+const scene_distance = ref(20000);
+const distance = ref(408.11);
+const drawing = ref(false);
+const scene_width = computed(() => scene_distance.value * Math.tan(0.51 * Math.PI / 180));
+const tile_size = computed(() => scene_width.value / 3.69);
+const scene_depth = computed(() => ((tile_size.value * Math.sqrt(2) * 6) / 2) * Math.sqrt(3));
 
-const draw = () => {
-    const c = canvasRef.value;
-    if (!c) return;
-    const ctx = c.getContext("2d");
-    if (!ctx) return;
-    c.width = focus.value * zoom.value + 100 * zoom.value;
-    c.height = 2 * radius.value * zoom.value + 20 * zoom.value;
-    ctx.fillStyle = "white";
-    ctx.strokeStyle = "black";
-    ctx.lineWidth = 1;
-    ctx.fillRect(0, 0, c.width, c.height);
-    const f = focus.value;
-    const max_y_mm = radius.value;
-    const z = source_height.value;
-    const x_off = 10;
-    const y_off = max_y_mm + 10;
+const draw = async () => {
+    if (!canvas.value) return;
+    if (!canvas2.value) return;
+    drawing.value = true;
+    const c = canvas.value;
+    const ctx = canvas.value.getContext("2d") as CanvasRenderingContext2D;
+    const c2 = canvas2.value;
+    const ctx2 = canvas2.value.getContext("2d") as CanvasRenderingContext2D;
+    const depth = document.getElementById('img-depth') as HTMLImageElement;
+    const pic = document.getElementById('img-image') as HTMLImageElement;
+    const width = 1280 / 2;
+    const height = 720 / 2;
 
-    const to_x = (n: number) => zoom.value * (n + x_off) + 0.5;
-    const to_y = (n: number) => zoom.value * (n + y_off) + 0.5;
+    c.width = width;
+    c.height = height;
+    c2.width = width;
+    c2.height = height;
 
-    const lineTo = (x: number, y: number) => ctx.lineTo(to_x(x), to_y(y));
-    const moveTo = (x: number, y: number) => ctx.moveTo(to_x(x), to_y(y));
-    const arc = (x: number, y: number, r: number, a: number) => ctx.arc(to_x(x), to_y(y), r, 0, a);
+    step.value = "Initializing canvas";
+    await sleep(1000);
+    step.value = "Drawing depth map";
+    ctx.save();
+    ctx.scale(-1, -1);
+    ctx.drawImage(depth, 0, 0, -width, -height);
+    ctx.restore();
 
-    const draw_segment = (s: Segment) => {
-        ctx.beginPath();
-        moveTo(s.a.x, s.a.y);
-        lineTo(s.b.x, s.b.y);
-        ctx.stroke();
-    };
+    await sleep(1000);
+    step.value = "Collecting depth and coordinates, and sorting them from farthest to nearest";
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+    const coords_distances = [];
+    const mul = (scene_depth.value) / 255;
+    const map_to_distance = (r_value: number): number => Math.abs(255 - r_value) * mul + scene_distance.value;
 
-
-    const axis = () => {
-        ctx.beginPath();
-        moveTo(0, 0);
-        lineTo(1000, 0);
-        ctx.strokeStyle = "green";
-        ctx.stroke();
-    };
-
-    const focalPoint = () => {
-        ctx.beginPath();
-        ctx.fillStyle = "red";
-        arc(f, 0, 3, Math.PI * 2);
-        ctx.fill();
-    };
-
-    const parabola = () => {
-        ctx.beginPath();
-        parabola_coords(max_y_mm, focus.value).forEach(p => {
-            lineTo(p.x, p.y);
-        });
-        ctx.stroke();
-    };
-
-    const rayfan = () => {
-        ctx.strokeStyle = "green";
-        parallel_rayfan_coords(max_y_mm, f, rays.value).forEach(s => {
-            draw_segment(s);
-        });
-    };
-
-    const nonparallelrayfan = () => {
-        const segments = non_parallel_rayfan_coords(f, max_y_mm, dist.value, z, rays.value);
-        ctx.fillStyle = "blue";
-        arc(dist.value, 0, 5, Math.PI * 2);
-        segments.forEach(s => {
-            ctx.strokeStyle = "orange";
-            draw_segment(s);
-            if (draw_normals.value) {
-                normal(s.a.y);
-            }
-            if (draw_tangents.value) {
-                tangent(s.a.y);
-            }
-            ctx.strokeStyle = "pink";
-            draw_segment(reflection_coords(f, s.a.y, dist.value, z));
-        });
-    };
-
-    const normal = (y: number) => {
-        ctx.strokeStyle = "red";
-        const coords = normal_coords(f, y);
-        draw_segment(coords);
-    };
-
-    const tangent = (y: number) => {
-        ctx.strokeStyle = "blue";
-        const coords = tangent_coords(f, y);
-        draw_segment(coords);
-    };
-
-    parabola();
-    axis();
-    if (draw_infinity.value) {
-        rayfan();
+    for (let x = 0; x < width; x++) {
+        for (let y = 0; y < height; y++) {
+            const r_value = data[(x + y * width) * 4];
+            coords_distances.push({ d: map_to_distance(r_value), r: r_value, x, y });
+        }
     }
-    nonparallelrayfan();
-    focalPoint();
+
+    coords_distances.sort((b, a) => b.d < a.d ? 1 : -1);
+
+    const coords_distances_indices = coords_distances.reduce((out: Record<number, Record<number, number>>, { x, y }, i) => {
+        if (!out[x]) out[x] = {};
+        out[x][y] = i;
+        return out;
+    }, {});
+
+    const redata = coords_distances.flatMap(({ r }) => [r, r, r, 255]);
+
+    await sleep(1000);
+
+    step.value = "Drawing source image";
+    ctx.save();
+    ctx.scale(-1, -1);
+    ctx.drawImage(pic, 0, 0, -width, -height);
+    ctx.restore();
+    await sleep(1000);
+    step.value = "Sampling pixels on source image";
+
+    const data2 = ctx.getImageData(0, 0, width, height).data;
+
+    const dist = parseFloat(distance.value);
+    const pxsize = 2.8 / 1000;
+    const len = coords_distances.length;
+    const tmp_canvas = document.createElement('canvas');
+    tmp_canvas.width = width;
+    tmp_canvas.height = height;
+    const ctx3 = tmp_canvas.getContext("2d") as CanvasRenderingContext2D;
+    const tmp_canvas2 = document.createElement('canvas');
+    tmp_canvas2.width = width;
+    tmp_canvas2.height = height;
+    const ctx4 = tmp_canvas2.getContext("2d") as CanvasRenderingContext2D;
+
+    let current_blur = -1;
+    for (let k = 0; k < len; k++) {
+        const { x, y, d } = coords_distances[k];
+        const dindex = (x + y * width) * 4;
+        const [r, g, b] = [data2[dindex], data2[dindex + 1], data2[dindex + 2]];
+        const rd = d;
+        const elf = fns.effective_fl(400, 57, rd);
+        const spread = fns.spread(elf, 57, rd)
+        const blur_diam_px = Math.abs(fns.blur(57, elf, dist, spread) / pxsize);
+        const area_px = Math.PI * Math.pow((blur_diam_px / 2), 2);
+        const alpha = 0.5 + 1 / area_px;
+        const color = `rgb(${r}, ${g}, ${b})`;
+        ctx4.fillStyle = color;
+        const bv = parseFloat((blur_diam_px / 4).toFixed(1));
+        if (bv !== current_blur) {
+            const blurb = `blur(${bv}px)`;
+            ctx3.filter = blurb;
+            ctx3.drawImage(tmp_canvas2, 0, 0);
+            ctx4.clearRect(0, 0, width, height);
+            current_blur = bv;
+        } else {
+            ctx4.beginPath();
+            ctx4.arc(x, y, 1, 0, Math.PI * 2);
+            ctx4.fill();
+        }
+        if (k % 1000 === 0) {
+            await sleep(0);
+            ctx2.drawImage(tmp_canvas, 0, 0);
+        }
+    }
+    const blurb = `blur(${current_blur}px)`;
+    ctx3.filter = blurb;
+    ctx3.drawImage(tmp_canvas2, 0, 0);
+    ctx4.clearRect(0, 0, width, height);
+    ctx2.drawImage(tmp_canvas, 0, 0);
+    drawing.value = false;
+    step.value = "Drawing done."
 };
 
-onMounted(() => {
-    draw();
-});
-const params = computed(() => {
-    return JSON.stringify({
-        b: rays.value,
-        c: dist.value,
-        d: focus.value,
-        e: radius.value,
-        f: draw_normals.value,
-        g: draw_tangents.value,
-        i: draw_infinity.value,
-        z: zoom.value,
-        h: source_height.value,
-    });
-});
-watch(params, () => {
+onMounted(async () => {
     draw();
 });
 </script>
 
 <template>
-    <div style="background: lightgray;
-        padding: 1em;
-        margin-bottom: 1em;
-        border-radius: 3px;
-        font-family: sans-serif;
-        overflow: hidden;">
-        <div>
-            <label style="margin: 4px; display:block" for="">Mirror radius (mm) <input type="number" v-model="radius"></label>
-        </div>
-        <div>
-            <label style="margin: 4px; display:block" for="">Draw tangents ? <input type="checkbox" v-model="draw_tangents"></label>
-        </div>
-        <div>
-            <label style="margin: 4px; display:block" for="">Draw normals ? <input type="checkbox" v-model="draw_normals"></label>
-        </div>
-        <div>
-            <label style="margin: 4px; display:block" for="">Draw infinity ray fan ? <input type="checkbox" v-model="draw_infinity"></label>
-        </div>
-        <div>
-            <label style="margin: 4px; display:block" for="">Zoom <input type="number" v-model="zoom"></label>
-        </div>
-        <div>
-            <label style="margin: 4px; display:block" for="">Mirror focal length (mm) <input type="number" v-model="focus"></label>
-        </div>
-        <div>
-            <label style="margin: 4px; display:block" for="">Rays (min 2) <input type="number" min="2" step="1" v-model="rays"></label>
-        </div>
-        <div>
-            <label style="margin: 4px; display:block" for="">Source distance <input type="number" :min="focus + 1" step="1" v-model="dist"></label>
-        </div>
-        <div>
-            <label style="margin: 4px; display:block" for="">Source height <input type="number" step="1" v-model="source_height"></label>
-        </div>
-        <div style="width: 100%; padding-bottom: 32px; overflow-x: scroll;">
-            <canvas style="border: 1px solid lightcoral; border-radius: 3px" ref="canvasRef"></canvas>
-        </div>
+    <div style="font-family: sans-serif; background: lightgray; padding: 4px; border-radius: 4px;">
+        <div style="margin: 4px;">
+            <label for="">Scene front distance to the mirror {{ scene_distance }}mm<br><input type="number" min="5000"
+                    max="10000" v-model="scene_distance" step="0.05"></label></div>
+                    <div style="margin: 4px;">
+                        Tile size : {{ tile_size.toFixed(2) }}mm / Scene width : {{ scene_width.toFixed(2) }}mm / Scene depth : {{ scene_depth.toFixed(2) }}mm
+                    </div>
+                    <div style="margin: 4px;"><label for="">Sensor distance to the mirror (ideal : around {{ fns.effective_fl(400, 57,
+        scene_distance).toFixed(2)
+}}mm): {{ distance }}mm<br><input type="number" min="405" max="411"
+                    v-model="distance" step="0.05"></label></div>
+                    <div style="margin: 4px;">Step : {{ step }}.</div>
+                    <div style="margin: 4px;"><button :disabled="drawing" @click="draw">Redraw</button></div>
+                    <div style="display: flex; width: 100%; gap: 10px; flex-wrap: wrap;">
+                        <canvas ref="canvas" style="width: 280px;"></canvas>
+                        <canvas ref="canvas2" style="width: 280px;"></canvas>
+                    </div>
     </div>
 </template>

@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { computed, onMounted, Ref, ref, watch } from 'vue';
-import { parabola_coords, parallel_rayfan_coords, reflection_coords, non_parallel_rayfan_coords, normal_coords, tangent_coords } from "./functions";
+import * as fns from "./functions";
 import type { Point, Segment } from './types';
 
 const canvasRef: Ref<HTMLCanvasElement | null> = ref(null);
@@ -13,6 +13,10 @@ const draw_normals = ref(true);
 const draw_infinity = ref(false);
 const draw_tangents = ref(false);
 const source_height = ref(250);
+const sensor_distance = ref(416);
+const sensor_height = ref(2.02);
+const sensor_width = ref(3.58);
+const pixel_size = ref(2.8 / 1000);
 
 const draw = () => {
     const c = canvasRef.value;
@@ -63,7 +67,7 @@ const draw = () => {
 
     const parabola = () => {
         ctx.beginPath();
-        parabola_coords(max_y_mm, focus.value).forEach(p => {
+        fns.parabola_coords(max_y_mm, focus.value).forEach(p => {
             lineTo(p.x, p.y);
         });
         ctx.stroke();
@@ -71,13 +75,13 @@ const draw = () => {
 
     const rayfan = () => {
         ctx.strokeStyle = "green";
-        parallel_rayfan_coords(max_y_mm, f, rays.value).forEach(s => {
+        fns.parallel_rayfan_coords(max_y_mm, f, rays.value).forEach(s => {
             draw_segment(s);
         });
     };
 
     const nonparallelrayfan = () => {
-        const segments = non_parallel_rayfan_coords(f, max_y_mm, dist.value, z, rays.value);
+        const segments = fns.non_parallel_rayfan_coords(f, max_y_mm, dist.value, z, rays.value);
         ctx.fillStyle = "blue";
         arc(dist.value, 0, 5, Math.PI * 2);
         segments.forEach(s => {
@@ -90,19 +94,23 @@ const draw = () => {
                 tangent(s.a.y);
             }
             ctx.strokeStyle = "pink";
-            draw_segment(reflection_coords(f, s.a.y, dist.value, z));
+            draw_segment(fns.reflection_coords(f, s.a.y, dist.value, z));
         });
     };
 
     const normal = (y: number) => {
         ctx.strokeStyle = "red";
-        const coords = normal_coords(f, y);
+        const coords = fns.normal_coords(f, y);
         draw_segment(coords);
     };
 
+    const sensor = () => {
+        ctx.fillStyle = "black";
+        ctx.fillRect(to_x(sensor_distance.value), to_y(-sensor_height.value / 2), 1, sensor_height.value * zoom.value);
+    }
     const tangent = (y: number) => {
         ctx.strokeStyle = "blue";
-        const coords = tangent_coords(f, y);
+        const coords = fns.tangent_coords(f, y);
         draw_segment(coords);
     };
 
@@ -113,11 +121,13 @@ const draw = () => {
     }
     nonparallelrayfan();
     focalPoint();
+    sensor();
 };
 
 onMounted(() => {
     draw();
 });
+
 const params = computed(() => {
     return JSON.stringify({
         b: rays.value,
@@ -129,8 +139,25 @@ const params = computed(() => {
         i: draw_infinity.value,
         z: zoom.value,
         h: source_height.value,
+        sd: sensor_distance.value,
+        sh: sensor_height.value
     });
 });
+
+const efl = computed(() => {
+    return fns.effective_fl(focus.value, radius.value, dist.value);
+});
+
+
+const hfov = computed(() => fns.hfov(sensor_width.value, efl.value));
+const vfov = computed(() => fns.vfov(sensor_height.value, efl.value));
+const phfov = computed(() => fns.phfov(hfov.value, dist.value));
+const pvfov = computed(() => fns.pvfov(vfov.value, dist.value));
+const spread = computed(() => fns.spread(focus.value, radius.value, dist.value));
+const blur = computed(() => fns.blur(radius.value, efl.value, sensor_distance.value, spread.value));
+const airy = computed(() => fns.airy(focus.value, radius.value));
+const dawes = computed(() => fns.dawes(radius.value));
+
 watch(params, () => {
     draw();
 });
@@ -144,32 +171,74 @@ watch(params, () => {
         font-family: sans-serif;
         overflow: hidden;">
         <div>
-            <label style="margin: 4px; display:block" for="">Mirror radius (mm) <input type="number" v-model="radius"></label>
+            <label style="margin: 4px; display:block" for="">Mirror radius (mm) <input type="number"
+                    v-model="radius"></label>
         </div>
         <div>
-            <label style="margin: 4px; display:block" for="">Draw tangents ? <input type="checkbox" v-model="draw_tangents"></label>
+            <label style="margin: 4px; display:block" for="">Draw tangents ? <input type="checkbox"
+                    v-model="draw_tangents"></label>
         </div>
         <div>
-            <label style="margin: 4px; display:block" for="">Draw normals ? <input type="checkbox" v-model="draw_normals"></label>
+            <label style="margin: 4px; display:block" for="">Draw normals ? <input type="checkbox"
+                    v-model="draw_normals"></label>
         </div>
         <div>
-            <label style="margin: 4px; display:block" for="">Draw infinity ray fan ? <input type="checkbox" v-model="draw_infinity"></label>
+            <label style="margin: 4px; display:block" for="">Draw infinity ray fan ? <input type="checkbox"
+                    v-model="draw_infinity"></label>
         </div>
         <div>
             <label style="margin: 4px; display:block" for="">Zoom <input type="number" v-model="zoom"></label>
         </div>
         <div>
-            <label style="margin: 4px; display:block" for="">Mirror focal length (mm) <input type="number" v-model="focus"></label>
+            <label style="margin: 4px; display:block" for="">Mirror focal length (mm) <input type="number"
+                    v-model="focus"></label>
         </div>
         <div>
-            <label style="margin: 4px; display:block" for="">Rays (min 2) <input type="number" min="2" step="1" v-model="rays"></label>
+            <label style="margin: 4px; display:block" for="">Rays (min 2) <input type="number" min="2" step="1"
+                    v-model="rays"></label>
         </div>
         <div>
-            <label style="margin: 4px; display:block" for="">Source distance <input type="number" :min="focus + 1" step="1" v-model="dist"></label>
+            <label style="margin: 4px; display:block" for="">Source distance <input type="number" :min="focus + 1"
+                    step="1" v-model="dist"></label>
         </div>
         <div>
-            <label style="margin: 4px; display:block" for="">Source height <input type="number" step="1" v-model="source_height"></label>
+            <label style="margin: 4px; display:block" for="">Sensor position <input type="number" step="0.1"
+                    v-model="sensor_distance"></label>
         </div>
+        <div>
+            <label style="margin: 4px; display:block" for="">Sensor width <input type="number" step="0.1"
+                    v-model="sensor_width"></label>
+        </div>
+        <div>
+            <label style="margin: 4px; display:block" for="">Sensor height <input type="number" step="0.1"
+                    v-model="sensor_height"></label>
+        </div>
+        <div>
+            <label style="margin: 4px; display:block" for="">Pixel size <input type="number" step="0.0001"
+                    v-model="pixel_size"></label>
+        </div>
+        <div>
+            <label style="margin: 4px; display:block" for="">Source height <input type="number" step="1"
+                    v-model="source_height"></label>
+        </div>
+        <h4>Some information :</h4>
+        <ul style="padding: 0; list-style: none">
+            <li>Average focal plane location for on-axis object at {{ dist }}mm : {{ efl.toFixed(2) }}mm</li>
+            <li>FoV : {{ (hfov / Math.PI * 180).toFixed(2) }}° x {{ (vfov / Math.PI * 180).toFixed(2) }}° (at {{ dist
+}}mm, that
+                is
+                {{ phfov.toFixed(2) }}mm x
+                {{ pvfov.toFixed(2) }}mm)</li>
+            <li>Longitudinal aberration : {{ Math.abs(spread).toFixed(2) }}mm</li>
+            <li>Geometric blur circle for sensor position : {{ Math.abs(blur).toFixed(4) }}mm ({{ Math.abs(blur /
+        pixel_size).toFixed(2)
+}} px wide)</li>
+            <li>Minimal blur circle @ 550nm (airy disk diameter) : {{ (airy).toFixed(4) }}mm ({{ (airy /
+        pixel_size).toFixed(2)
+}}px wide)</li>
+            <li>Dawes limit : {{ dawes.toFixed(2) }} arcsec</li>
+        </ul>
+
         <div style="width: 100%; padding-bottom: 32px; overflow-x: scroll;">
             <canvas style="border: 1px solid lightcoral; border-radius: 3px" ref="canvasRef"></canvas>
         </div>
