@@ -129,7 +129,7 @@ const draw = async () => {
 };
 
 onMounted(async () => {
-    draw();
+    //draw();
 });
 </script>
 
@@ -149,8 +149,8 @@ onMounted(async () => {
         scene_distance).toFixed(2)
 }}mm): {{ distance }}mm<br><input type="number" min="405" max="411" v-model="distance"
                     step="0.05"></label></div>
-        <div style="margin: 8px 0;">Step : {{ step }}.</div>
-        <div style="margin: 8px 0;"><button :disabled="drawing" @click="draw">Redraw</button></div>
+        <div style="margin: 8px 0;">Step : {{ step }}</div>
+        <div style="margin: 8px 0;"><button :disabled="drawing" @click="draw">Click to Draw</button></div>
         <div style="display: flex; width: 100%; gap: 10px; flex-wrap: wrap;">
             <canvas ref="canvas" style="width: 280px;"></canvas>
             <canvas ref="canvas2" style="width: 280px;"></canvas>

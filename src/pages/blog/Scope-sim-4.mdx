@@ -49,9 +49,22 @@ Let's also keep in mind that our telescope is bound by physics and has a `resolu
 
 Our scene when imaged at `20 meters` is ~`175.4mm wide` and `2015 pixels` wide. If we can discern `0.1mm wide features` at that distance, those features are {(2015/1754).toFixed(2)}px wide. This is very close to 1px resolution on the virtual scene. I will stay at that level of abstraction.
 
-**Safari/iOS users** : the below demo does not work. I will have to consider using [this polyfill](https://github.com/davidenke/context-filter-polyfill).
+**Safari/iOS users** : the below demo does not work because of lack of support for CanvasRenderingContext2D filters. Screenshots lower down the page show the effect.
 
+<div style="margin-bottom: 1em;">
 <Widget2 client:visible></Widget2>
+</div>
+
+### Screenshots for Safari/iOS users
+
+#### Scene at 2km, large depth of field
+![](/pics/photoscope_4/dof1.png)
+
+#### Scene at 5m, shallow depth of field
+![](/pics/photoscope_4/dof2.png)
+
+#### Scene at 20m, less shallow depth of field
+![](/pics/photoscope_4/dof3.png)
 
 The repository has been updated ([commit 766eee9](https://github.com/Lucassifoni/oiseaux/commit/766eee95f1c76c0b647aeaa7bc7cbab8ac7b0657)) to contain all the building blocks to implement this image generation on the Elixir side. The focusing mechanism also has been added to the `Telescope` GenServer.
 Even if we stay in the realm of geometric optics, in these four posts, I have gathered everything needed to actually build the interactive telescope and remote control simulator.
