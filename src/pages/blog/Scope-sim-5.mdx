@@ -1,11 +1,18 @@
 ---
 layout: "../../layouts/BlogPost.astro"
-title: "A remote-controlled telescope with Elixir & Vue -- Part 5 : Porting the depth of field simulation to Elixir + Rust"
+title: "A remote-controlled telescope with Elixir, Vue, & Rust -- Part 5 : Porting the depth of field simulation to Elixir + Rust"
 description: "Fifth entry of my build log"
 pubDate: "Jan 5 2023"
 ---
 
-In [the last entry](/blog/Scope-sim-4), I finished with a plausible depth of field simulation.
+Entries up to this point : 
+
+- [Part 4 : Simulating image capture and focusing](/blog/Scope-sim-4)
+- [Part 3 : Raytracing a parabolic mirror from scratch](/blog/Scope-sim-3)
+- [Part 2 : Primary mirror design & calculation](/blog/Scope-sim-2)
+- [Part 1 : Simulating movement & state with Elixir](/blog/Scope-sim)
+
+In [the last entry](/blog/Scope-sim-4), I finished with a plausible depth of field simulation. What counts for me isn't the physical reality of the values obtained, but the plausibility of the effect of depth of field with a quite-open objective (f/3.51) and short or long object distances.
 
 Since this simulation must run server-side, I ported it to Elixir with Rust and Rustler to speed up the image processing.
 

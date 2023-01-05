@@ -1,11 +1,17 @@
 ---
 layout: "../../layouts/BlogPost.astro"
-title: "A remote-controlled telescope with Elixir & Vue -- Part 4 : Simulating image capture and focusing"
+title: "A remote-controlled telescope with Elixir, Vue, & Rust -- Part 4 : Simulating image capture and focusing"
 description: "Fourth entry of my build log"
 pubDate: "Jan 3 2023"
 ---
 import Widget from './ScopeSim4/Widget.vue';
 import Widget2 from './ScopeSim4/Widget2.vue';
+
+Entries up to this point : 
+
+- [Part 3 : Raytracing a parabolic mirror from scratch](/blog/Scope-sim-3)
+- [Part 2 : Primary mirror design & calculation](/blog/Scope-sim-2)
+- [Part 1 : Simulating movement & state with Elixir](/blog/Scope-sim)
 
 In [the last entry](/blog/Scope-sim-3) of this series, we've seen how we could calculate the effective focal length and resultant longitudinal aberration of a parabolic mirror imaging non-infinity located objects. We could still have a few problems before we can use this model to actually image scenes.
 
