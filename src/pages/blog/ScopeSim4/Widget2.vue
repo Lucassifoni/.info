@@ -14,18 +14,16 @@ const scene_width = computed(() => scene_distance.value * Math.tan(0.51 * Math.P
 const tile_size = computed(() => scene_width.value / 3.69);
 const scene_depth = computed(() => ((tile_size.value * Math.sqrt(2) * 6) / 2) * Math.sqrt(3));
 
-const draw = async () => {
+const draw = async (width: number, height: number, pxsize: number, radius: number, base_fl: number, distance: number, scene_depth: number, scene_distance: number) => {
     if (!canvas.value) return;
     if (!canvas2.value) return;
     drawing.value = true;
     const c = canvas.value;
     const ctx = canvas.value.getContext("2d") as CanvasRenderingContext2D;
     const c2 = canvas2.value;
-    const ctx2 = canvas2.value.getContext("2d") as CanvasRenderingContext2D;
+    const output_ctx = canvas2.value.getContext("2d") as CanvasRenderingContext2D;
     const depth = document.getElementById('img-depth') as HTMLImageElement;
     const pic = document.getElementById('img-image') as HTMLImageElement;
-    const width = 1280 / 2;
-    const height = 720 / 2;
 
     c.width = width;
     c.height = height;
@@ -45,8 +43,8 @@ const draw = async () => {
     const imageData = ctx.getImageData(0, 0, width, height);
     const data = imageData.data;
     const coords_distances = [];
-    const mul = (scene_depth.value) / 255;
-    const map_to_distance = (r_value: number): number => Math.abs(255 - r_value) * mul + scene_distance.value;
+    const mul = scene_depth / 255;
+    const map_to_distance = (r_value: number): number => Math.abs(255 - r_value) * mul + scene_distance;
 
     for (let x = 0; x < width; x++) {
         for (let y = 0; y < height; y++) {
@@ -56,14 +54,6 @@ const draw = async () => {
     }
 
     coords_distances.sort((b, a) => b.d < a.d ? 1 : -1);
-
-    const coords_distances_indices = coords_distances.reduce((out: Record<number, Record<number, number>>, { x, y }, i) => {
-        if (!out[x]) out[x] = {};
-        out[x][y] = i;
-        return out;
-    }, {});
-
-    const redata = coords_distances.flatMap(({ r }) => [r, r, r, 255]);
 
     await sleep(1000);
 
@@ -77,17 +67,15 @@ const draw = async () => {
 
     const data2 = ctx.getImageData(0, 0, width, height).data;
 
-    const dist = parseFloat(distance.value);
-    const pxsize = 2.8 / 1000;
     const len = coords_distances.length;
-    const tmp_canvas = document.createElement('canvas');
-    tmp_canvas.width = width;
-    tmp_canvas.height = height;
-    const ctx3 = tmp_canvas.getContext("2d") as CanvasRenderingContext2D;
-    const tmp_canvas2 = document.createElement('canvas');
-    tmp_canvas2.width = width;
-    tmp_canvas2.height = height;
-    const ctx4 = tmp_canvas2.getContext("2d") as CanvasRenderingContext2D;
+    const blur_canvas = document.createElement('canvas');
+    blur_canvas.width = width;
+    blur_canvas.height = height;
+    const blur_ctx = blur_canvas.getContext("2d") as CanvasRenderingContext2D;
+    const drawing_canvas = document.createElement('canvas');
+    drawing_canvas.width = width;
+    drawing_canvas.height = height;
+    const drawing_ctx = drawing_canvas.getContext("2d") as CanvasRenderingContext2D;
 
     let current_blur = -1;
     for (let k = 0; k < len; k++) {
@@ -95,41 +83,38 @@ const draw = async () => {
         const dindex = (x + y * width) * 4;
         const [r, g, b] = [data2[dindex], data2[dindex + 1], data2[dindex + 2]];
         const rd = d;
-        const elf = fns.effective_fl(400, 57, rd);
-        const spread = fns.spread(elf, 57, rd)
-        const blur_diam_px = Math.abs(fns.blur(57, elf, dist, spread) / pxsize);
-        const area_px = Math.PI * Math.pow((blur_diam_px / 2), 2);
-        const alpha = 0.5 + 1 / area_px;
+        const elf = fns.effective_fl(base_fl, radius, rd);
+        const spread = fns.spread(elf, radius, rd)
+        const blur_diam_px = Math.abs(fns.blur(radius, elf, distance, spread) / pxsize);
         const color = `rgb(${r}, ${g}, ${b})`;
-        ctx4.fillStyle = color;
+        drawing_ctx.fillStyle = color;
         const bv = parseFloat((blur_diam_px / 4).toFixed(1));
         if (bv !== current_blur) {
             const blurb = `blur(${bv}px)`;
-            ctx3.filter = blurb;
-            ctx3.drawImage(tmp_canvas2, 0, 0);
-            ctx4.clearRect(0, 0, width, height);
+            blur_ctx.filter = blurb;
+            blur_ctx.drawImage(drawing_canvas, 0, 0);
+            drawing_ctx.clearRect(0, 0, width, height);
             current_blur = bv;
         } else {
-            ctx4.beginPath();
-            ctx4.arc(x, y, 1, 0, Math.PI * 2);
-            ctx4.fill();
-        }
-        if (k % 1000 === 0) {
-            await sleep(0);
-            ctx2.drawImage(tmp_canvas, 0, 0);
+            drawing_ctx.beginPath();
+            drawing_ctx.arc(x, y, 1, 0, Math.PI * 2);
+            drawing_ctx.fill();
         }
     }
     const blurb = `blur(${current_blur}px)`;
-    ctx3.filter = blurb;
-    ctx3.drawImage(tmp_canvas2, 0, 0);
-    ctx4.clearRect(0, 0, width, height);
-    ctx2.drawImage(tmp_canvas, 0, 0);
+    blur_ctx.filter = blurb;
+    blur_ctx.drawImage(drawing_canvas, 0, 0);
+    drawing_ctx.clearRect(0, 0, width, height);
+    output_ctx.drawImage(blur_canvas, 0, 0);
     drawing.value = false;
     step.value = "Drawing done."
 };
 
+const redraw = () => {
+    draw(640, 360, 2.8 / 1000, 57, 400, distance.value, scene_depth.value, scene_distance.value);
+};
 onMounted(async () => {
-    //draw();
+    redraw();
 });
 </script>
 
@@ -145,12 +130,12 @@ onMounted(async () => {
 }}mm
         </div>
         <div style="margin: 8px 0;"><label for="">Sensor distance to the mirror (ideal : around {{ fns.effective_fl(400,
-        57,
+        radius,
         scene_distance).toFixed(2)
 }}mm): {{ distance }}mm<br><input type="number" min="405" max="411" v-model="distance"
                     step="0.05"></label></div>
         <div style="margin: 8px 0;">Step : {{ step }}</div>
-        <div style="margin: 8px 0;"><button :disabled="drawing" @click="draw">Click to Draw</button></div>
+        <div style="margin: 8px 0;"><button :disabled="drawing" @click="redraw">Click to Draw</button></div>
         <div style="display: flex; width: 100%; gap: 10px; flex-wrap: wrap;">
             <canvas ref="canvas" style="width: 280px;"></canvas>
             <canvas ref="canvas2" style="width: 280px;"></canvas>
