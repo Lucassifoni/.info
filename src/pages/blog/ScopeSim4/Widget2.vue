@@ -88,7 +88,7 @@ const draw = async (width: number, height: number, pxsize: number, radius: numbe
         const blur_diam_px = Math.abs(fns.blur(radius, elf, distance, spread) / pxsize);
         const color = `rgb(${r}, ${g}, ${b})`;
         drawing_ctx.fillStyle = color;
-        const bv = parseFloat((blur_diam_px / 4).toFixed(1));
+        const bv = parseFloat((blur_diam_px / 4).toFixed(2));
         if (bv !== current_blur) {
             const blurb = `blur(${bv}px)`;
             blur_ctx.filter = blurb;
@@ -126,13 +126,14 @@ onMounted(async () => {
         </div>
         <div style="margin: 8px 0;">
             Tile size : {{ tile_size.toFixed(2) }}mm / Scene width : {{ scene_width.toFixed(2) }}mm / Scene depth : {{
-        scene_depth.toFixed(2)
-}}mm
+                scene_depth.toFixed(2)
+            }}mm
         </div>
-        <div style="margin: 8px 0;"><label for="">Sensor distance to the mirror (ideal : around {{ fns.effective_fl(400,
-        radius,
-        scene_distance).toFixed(2)
-}}mm): {{ distance }}mm<br><input type="number" min="405" max="411" v-model="distance"
+        <div style="margin: 8px 0;"><label for="">Sensor distance to the mirror (ideal : around {{
+            fns.effective_fl(400,
+                57,
+                scene_distance).toFixed(2)
+        }}mm): {{ distance }}mm<br><input type="number" min="405" max="411" v-model="distance"
                     step="0.05"></label></div>
         <div style="margin: 8px 0;">Step : {{ step }}</div>
         <div style="margin: 8px 0;"><button :disabled="drawing" @click="redraw">Click to Draw</button></div>

@@ -222,7 +222,6 @@ export const blur = (radius: number,
     lspread: number): number => {
     const angle = Math.tan(radius / efl);
     const pos = efl - (sensor_distance + 0.66 * lspread);
-  //  console.log(angle, pos, efl, sensor_distance, lspread);
     return Math.sin(angle) * pos * 2;
 };
 
