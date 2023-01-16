@@ -1,9 +1,13 @@
 ---
 const today = new Date();
+import { sites } from "./sites";
 ---
 
 <footer>
-	<p>2022 - {today.getFullYear()} Lucas Sifoni / chantepierre - L'Isle-Jourdain (32), France</p>
+	<p>
+		2022 - {today.getFullYear()} Lucas Sifoni / chantepierre - L'Isle-Jourdain
+		(32), France
+	</p>
 	<ul>
 		<li class="noslash">links :</li>
 		<li><a href="https://github.com/lucassifoni">github</a></li>
@@ -12,26 +16,40 @@ const today = new Date();
 		<li><a href="https://www.malt.fr/profile/lucassifoni1">malt</a></li>
 		<li><a href="mailto:contact@lucassifoni.info">email</a></li>
 	</ul>
-	<br/>
+
 	<ul>
 		<li class="noslash">get new posts :</li>
 		<li><a href="/rss.xml">RSS Feed</a></li>
-		<li><a href="https://fda0e546.sibforms.com/serve/MUIEAIaDIXiSA03h2vF2UQtizUGfPx1B5E56umwpW-VweXoZ36E8q9HpZxlzPBjkRSkJ9E_SkihqUgmZjJNtilkmOz90KqqMYcknqNBpxwNip1Odb65_lAuQ3iidoGsyj4kL4MSLxWhDXK4BlmYLg-3YTuIjG5C_4Z7ioJI6kw1HoivIxNEJYSuURiz9tdcslQsjVaj805ZUhPUH">newsletter (your address won't be shared, and at most 1 mail / week)</a></li>
+		<li>
+			<a
+				href="https://fda0e546.sibforms.com/serve/MUIEAIaDIXiSA03h2vF2UQtizUGfPx1B5E56umwpW-VweXoZ36E8q9HpZxlzPBjkRSkJ9E_SkihqUgmZjJNtilkmOz90KqqMYcknqNBpxwNip1Odb65_lAuQ3iidoGsyj4kL4MSLxWhDXK4BlmYLg-3YTuIjG5C_4Z7ioJI6kw1HoivIxNEJYSuURiz9tdcslQsjVaj805ZUhPUH"
+				>newsletter (address not shared, max 1/month)</a>
+		</li>
 	</ul>
-	<slot></slot>
+	<slot />
 </footer>
 <style>
 	footer {
-		font-size: .765rem;
+		font-size: 0.765rem;
 		margin-top: 2em;
+		padding-top: 1.5em;
+		border-top: 1px dotted black;
 	}
-	ul, li {
+
+	ul {
+		display: block;
+		margin: 0;
+		padding: 0;
+		margin-top: 1em;
+	}
+
+	li {
 		display: inline;
 		margin: 0;
 		padding: 0;
 	}
 	li::after {
-		content: " / "
+		content: " / ";
 	}
 	li.noslash::after {
 		content: "";
