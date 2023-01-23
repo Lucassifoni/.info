@@ -14,8 +14,8 @@ import { SITE_TITLE, SITE_DESCRIPTION } from '../config';
 	</head>
 	<body>
 		<div id="app">
-		<Header title={SITE_TITLE} />
-		<Cv client:visible></Cv>
+		<Header title={SITE_TITLE} have_langs={true} />
+			<Cv lang="en"></Cv>
 		<Footer />
 		</div>
 	</body>

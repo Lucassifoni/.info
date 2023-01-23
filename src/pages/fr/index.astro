@@ -1,0 +1,44 @@
+---
+import BaseHead from "../../components/BaseHead.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import { SITE_TITLE, SITE_DESCRIPTION } from "../../config";
+---
+
+<!DOCTYPE html>
+<html lang="fr">
+	<head>
+		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+	</head>
+	<body>
+		<Header title={SITE_TITLE} have_langs={true}/>
+		<div id="app">
+			<main>
+				<h3>Travaux</h3>
+				<p>
+                    Développeur full-stack et curieux, je fournis depuis 2015 des services de conception,
+                    planification et développement d'outils numériques sur-mesure dans des domaines variés.
+					<a href="mailto:contact@lucassifoni.info">Contactez-moi</a> si vous souhaitez
+                    discuter de comment automatiser ou rendre plus fluides des processus métier laborieux.
+				</p>
+				<p>
+					Ces temps-ci, je travaille sur des systèmes d'automatisation du design avec une stack
+					Elixir & Typescript.<br />
+				</p>
+				
+				<h3>Optique & Astronomie</h3>
+				<p>
+					Un peu de mes travaux d'optique sont visibles sur Github (voir <a
+						href="https://github.com/Lucassifoni/hyperbolic-200mm-f3.5-"
+						>hyperbolic-200mm-f3.5-</a
+					>) ou sur instagram (<a
+						href="https://instagram.com/chantepierre_"
+						>@chantepierre_</a
+					>). En ce moment, je conçois et construis un téléscope automatisé avec 
+					Elixir, Vue, & Rust. Voir le <a href="/blog">blog</a> pour les détails !
+				</p>
+			</main>
+			<Footer />
+		</div>
+	</body>
+</html>

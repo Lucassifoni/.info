@@ -1,0 +1,22 @@
+---
+import BaseHead from '../../components/BaseHead.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import Cv from '../../components/CV/App.vue';
+
+import { SITE_TITLE, SITE_DESCRIPTION } from '../../config';
+---
+
+<!DOCTYPE html>
+<html lang="fr">
+	<head>
+		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+	</head>
+	<body>
+		<div id="app">
+		<Header title={SITE_TITLE} have_langs={true} />
+            <Cv lang="fr"></Cv>
+		<Footer />
+		</div>
+	</body>
+</html>

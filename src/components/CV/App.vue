@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, Ref } from "vue";
 import { data } from "./data";
-
-const currentLang: Ref<"fr" | "en"> = ref("en");
+const props = defineProps<{
+  lang: 'fr' | 'en',
+}>();
+const currentLang: Ref<"fr" | "en"> = ref(props.lang);
 
 const switchLang = () => {
   const v = currentLang.value;
@@ -12,6 +14,8 @@ const switchLang = () => {
 const t = computed(() => {
   return data[currentLang.value];
 });
+
+
 </script>
 
 <template>
@@ -22,7 +26,6 @@ const t = computed(() => {
           <p v-html="t.intro"></p>
         </div>
         <div class="header-right">
-          <button class="lang-button" @click="switchLang">{{ t.other_lang }}</button>
           <p>
             <a v-if="1" :href="`mailto:contact@lucassifoni.info`">contact<span>@lucassifoni.info</span></a>
             <br>
