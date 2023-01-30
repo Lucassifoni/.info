@@ -1,12 +1,11 @@
 ---
 layout: "../../../layouts/BlogPost.astro"
-title: "The Elixir Telescope -- Part 6 : Three.js + websockets = a 3D moving telescope"
-description: "Sixth entry of my build log"
-draft: true
+title: "Un téléscope avec Elixir ? -- Partie 6 : Three.js + websockets = un téléscope en 3D répondant aux commandes"
+description: "Sixième étape de mon journal de bord"
 pubDate: "Jan 8 2023"
 ---
 
-Entries up to this point : 
+En attente de traduction : 
 
 - [Part 5 : Porting the depth of field simulation to Elixir + Rust](/blog/Scope-sim-5)
 - [Part 4 : Simulating image capture and focusing](/blog/Scope-sim-4)
@@ -14,29 +13,26 @@ Entries up to this point :
 - [Part 2 : Primary mirror design & calculation](/blog/Scope-sim-2)
 - [Part 1 : Simulating movement & state with Elixir](/blog/Scope-sim)
 
-This entry will be quite short. I managed to play with Three.js a bit over the weekend, and hooked the `Scope.TelescopeApi` module to handle events on a websocket.
+Ce post sera assez court. J’ai pu jouer un peu avec Three.js pendant le week-end, et j’ai accolé le module `Scope.TelescopeApi` à un websocket pour qu'il fournisse son état et réponde à des commandes.
 
-First, you don't know how the scope was shut down last time it was used. You need to home it, like a 3D printer homes itself when you start a print.  
+Tout d’abord, on ne sait pas comment le téléscope a été arrêté la dernière fois qu’il a été utilisé. Vous devez le faire revenir à une position de départ, comme une imprimante 3D revient en position en début d'impression.
 
 ![](/pics/photoscope_6/01.png)
 
-Then, a viable scope state appears. We can see that the lower endstop is engaged, so you can't go down.
+Ensuite, un état viable apparaît. Nous pouvons voir que le capteur de butée inférieure est enclenché, on ne peut donc pas bouger vers le bas.
 
 ![](/pics/photoscope_6/02.png)
 
-You can press directional buttons to move, the focuser in/out buttons to focus in or out, and the 3D scope updates live. The DOF simulation updates after you release the focus buttons.
+On peut appuyer sur les boutons directionnels pour se déplacer, sur les boutons de mise au point avant/arrière, et le téléscope en 3D se met à jour. La simulation de profondeur de champ se met à jour après avoir relâché les boutons de mise au point.
 
 ![](/pics/photoscope_6/03.png)
 
-This is a rough POC, but I've been really pleased with the beginner THREE.js experience, especially the ease with which you can load foreign 3D models from, for example, blender.
+C’est un prototype rugueux, mais j’ai été très content avec l’expérience accueillante que fournit THREE.js pour débuter, en particulier la facilité avec laquelle on peut charger des modèles 3D faits par exemple avec blender.
 
-Thanks to Phoenix, as usual, you get the ability to broadcast state to multiple clients for free. It would be trivial to discriminate authenticated users, so that only one user can move the scope, while other receive updates.
+Grâce à Phoenix, comme d’habitude, on obtient la possibilité de diffuser l’état à plusieurs clients sans effort. Il serait trivial de discriminer les utilisateurs authentifiés, de sorte qu’un seul utilisateur puisse agir sur le téléscope, tandis que d’autres reçoivent uniquement des mises à jour.
 
-Now is really time to finish the mirror and begin construction. What will happen to the code written up to this point ?
+Il est temps de finir le miroir et de commencer la construction. Qu’arrivera-t-il au code écrit jusqu’ici ?
 
-- The source and receivers of events will be differentiated,  
-to have the ability to have physical/virtual publishers/listeners.
-- The project will be moved to Nerves to run on the MangoPI.
-- The MangoPI will talk over serial to an Arduino nano that will proxy the physical hardware.
-
-See you soon for further developments !
+- les sources et destinataires d'événements seront différenciés, avec la possibilité d’avoir des éditeurs/écouteurs physiques ou virtuels.
+- Le projet sera transféré vers Nerves pour tourner sur le MangoPI.
+- Le MangoPI parlera à un Arduino Nano qui interfacera avec les boutons et moteurs.
