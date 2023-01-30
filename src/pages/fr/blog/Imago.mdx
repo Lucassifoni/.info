@@ -1,18 +1,18 @@
 ---
-layout: "../../layouts/BlogPost.astro"
-title: "Imago, Elixir + Rust image manipulation"
-description: "Fingerprinting images with perceptual hashes, with rust, from elixir"
+layout: "../../../layouts/BlogPost.astro"
+title: "Imago, manipulation d'images en Elixir + Rust"
+description: "Empreintes d'images avec hachages perceptuel, avec Rust et Elixir"
 pubDate: "May 16, 2019"
 ---
 
-Imago is a set of bindings (for my usage) to image-rs/image. Mainly because I didn't find any Elixir/Erlang library to iterate over pixels of compressed formats like Jpeg. I'll need to at least open/process a bit/save images from rust.
+Imago est un ensemble de bindings (pour mon usage) vers image-rs/image. Principalement créé parce que je n’ai pas trouvé de librairie Elixir/Erlang pour itérer sur des pixels d'images enregistrées dans des formats compressés comme Jpg.
 
-Its features are :
+Ses fonctionnalités sont :
 
-    - getting a `(w: u8, h: u8, pixels: Vec&lt;u8>)` of r/g/b/a, rgb, or rgba pixels
-    - getting a `Vec&lt;u8>` that represents a luminance fingerprint.
-    - filters: `threshold(path, threshold)`, `dither_bayer(path, threshold)`
-    - saving something as a PGM image (mainly to check validity.)
+    - obtention d'un `(w: u8, h: u8, pixels: Vec&lt;u8>)` de pixels
+    - obtention d'un `Vec&lt;u8>` qui représente une empreinte de luminance
+    - quelques filtres: `threshold(path, threshold)`, `dither_bayer(path, threshold)`
+    - enregistrement en PGM
 
 ```iex
 iex> Imago.read_pixels("/path/to/image.jpg|png|gif|ico|bmp|tiff") # Image formats are those of image-rs/image
@@ -41,15 +41,14 @@ iex> Imago.read_pixels("/this/one/is_a_text_file.txt")
 :error
 ```
 
-The luminance fingerprint is explain in the schematic below :
+L’empreinte de luminance est expliquée dans le schéma ci-dessous :
 
 ![](/pics/imago/Avg_lum.jpg)
 
-Imago was my first Elixir + Rust project as there weren't many examples of uses of Rustler at the time. Today, information is more accessible. Its source is still available for reference here :
+Imago était mon premier projet Elixir + Rust car il n’y avait pas beaucoup d’exemples d’utilisation de Rustler à l’époque. Aujourd’hui, l’information à ce sujet est plus accessible. Sa source est toujours disponible pour référence ici :
 
 https://github.com/Lucassifoni/imago
 
-Here are samples of pictures of skies (collected every minute for a few years with <a href="https://aplusbdesigners.com">A+B designers</a>), overlaid with their luminance maps :
+Voici des exemples de photos du ciel (recueillies toutes les minutes pendant quelques années avec A+B designers), superposées avec leurs cartes de luminance :
 
 ![](/pics/imago/skies.jpg)
-

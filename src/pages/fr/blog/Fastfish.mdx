@@ -1,49 +1,49 @@
 ---
-layout: "../../layouts/BlogPost.astro"
-title: "Fastfish, Elixir + Rust 2D poisson disc sampling"
-description: "Fast poisson disk sampling in 2D in Elixir (& Elixir + Rust), also multi-radius disk placement based on the same method"
+layout: "../../../layouts/BlogPost.astro"
+title: "Fastfish, échantillonnage de disques en 2D en Elixir + Rust"
+description: "Fastfish, échantillonnage de disques en 2D en Elixir + Rust"
 pubDate: "Dec 1, 2022"
 ---
 
-Source at https://github.com/Lucassifoni/fastfish
+Source : https://github.com/Lucassifoni/fastfish
 
-### Random but natural disk placement
+### Placement aléatoire mais naturel des disques
 
-I recently had the occasion to implement two algorithms aiming to place disks on a surface. My constraints were perceptual, as the placement should look homogeneous to the eye while not too deterministic. An hexagonal grid is the opposite feel of what I was looking for.
+J’ai eu récemment l’occasion d’implémenter deux algorithmes visant à placer des disques sur une surface. Mes contraintes étaient perceptuelles, car le placement devait paraître homogène à l’œil nu sans être trop déterministe. Une grille hexagonale, par exemple, serait l'opposé de ce que je cherchais.
 
-I stumbled on this elegant visualisation by Jason Davies (https://www.jasondavies.com/poisson-disc/), based on the paper "Fast Poisson Disk Sampling in Arbitrary Dimensions" by Robert Bridson, University of British Columbia.
+Je suis tombé sur cette élégante visualisation de Jason Davies (https://www.jasondavies.com/poisson-disc/), basée sur le papier "Fast Poisson Disk Sampling in Arbitrary Dimensions" de Robert Bridson, University of British Columbia.
 
-A first implementation in Elixir & Rust, based on the paper, quickly gave me a similar result to Jason's visualisation.
+Une première implémentation en Elixir & Rust, basée sur le papier, m’a rapidement donné un résultat similaire à la visualisation de Jason.
 
 ![](/pics/fastfish/screenshot.jpg)
 
-### The algorithm
+### L'algorithme
 
-Letting aside the performance optimizations in Roberd Bridson's paper, here are the general steps :
+En laissant de côté les optimisations de performance du papier de Robert Bridson, voici les étapes :
 
-- Given a minimum distance between samples `D`, a domain width, a domain height, a number of attempts `K`,
-- Place a disk of radius `r < D` at the center of the domain
-- This disk is put in the `active disks list`
-- While the `active disks list` is not empty
-    - The current disk is chosen randomly in the active disks list
-    - While the current attempts to place a disk is lower than `K` and a disk wasn't placed
-        - Generate a disk at a radius > 2D around the current disk
-        - If there's a collision with either another disk or the domain bounds, `increment K`
-        - Else save this disk as the next and `break`
-    - If you have a next disk (so attempts are &lt; K), add it to the active disks list
-    - Else, remove the current disk from the active list
+- Avec une distance minimale entre les échantillons `D`, une largeur de domaine, une hauteur de domaine, un certain nombre de tentatives `K`,
+- Placer un disque de rayon `r < D` au centre du domaine
+- Ce disque est mis dans la liste des disques actifs
+- Tant que la liste des disques actifs n’est pas vide
+    - Le disque courant est choisi au hasard dans la liste des disques actifs
+    - Tant que les tentatives de placer un disque sont inférieures à `K` et qu’un disque n’a pas été placé
+        - Générer un disque à un rayon `> 2D` autour du disque courant
+        - En cas de collision avec un autre disque ou avec les limites du domaine, incrémenter `K`
+        - Sinon, enregistrer ce disque comme étant placé, et `break`
+    - Si vous avez obtenu un disque (les tentatives sont donc inférieures à `K`), ajoutez-le à la liste des disques actifs.
+    - Sinon, retirer le disque courant de la liste des disques actifs
 
-This works but lifts the need to check for collisions at every step. Bridson's paper solves this with a data structure that represents a background grid, sampling the domain to ensure there's at most one disk in every cell. As every disk has the same radius, you just have to check nearby cells for collisions.
+Cela fonctionne, mais soulève la nécessité de vérifier les collisions à chaque étape. Le papier de Bridson résout cela avec une structure de données qui représente une grille de fond, échantillonnant le domaine pour s’assurer qu’il y a au plus un disque dans chaque cellule. Comme chaque disque a le même rayon, vous n’avez qu’à vérifier les cellules à proximité du disque actif pour éviter les collisions.
 
-### Multi-radius sampling
+### Échantillonnage à rayons multiples
 
-My task needed to have a compact cluster of disks, unbounded, with a defined number of disks having defined radii. The picture below is a visualisation of the expected result&thinsp;:
+Mon cas d'usage avait besoin d’un groupe compact de disques, sans limite, avec un nombre défini de disques qui ont des rayons définis. L’image ci-dessous est une visualisation des résultats attendus&thinsp; :
 
 ![](/pics/fastfish/multiradius.png)
 
-I replaced the background grid by a subsetting of the total disk list, based on existing radii and next-disk radius. We check the circles in a circular shell for collisions. It is less efficient than the background grid but works well with a diverse disk list.
+J’ai remplacé la grille d’arrière-plan par une vérification d'un sous-ensemble de la liste de disques totale, basée sur les rayons des disques déjà placés et le rayon du disque suivant. Nous vérifions donc tout disque dans une coquille circulaire autour du disque actif.
 
-What is interesting is the variety of clusters you get by varying the value of K, the number of allowed attempts :
+La variété des grappes que l'on obtient en faisant varier la valeur de K, le nombre de tentatives de placement autorisées, est intéressante :
 
 #### K = 2
 
@@ -63,11 +63,11 @@ What is interesting is the variety of clusters you get by varying the value of K
 
 ### Performance
 
-My use-case has those parameters :
-    - Runs one-time per person who visits the website (as long as their session holds)
-    - Runs server-side
-    - Number of disks : 100 &lt; N &lt; 1000 (more 100 than 1000 though)
-    - Different radii : 2, (90% of disks have a radius of R, 10% of disks have a radius of 3R)
+Mon cas d’utilisation a ces paramètres :
+    - Tournera une fois par personne qui visite le site Web (pour la durée de la session)
+    - Tournera côté serveur
+    - Nombre de disques : 100 &lt; N &lt; 1000 (plus proche de 100 que 1000)
+    - Rayons différents : 2 (90% des disques ont un rayon de R, 10% des disques ont un rayon de 3R)
 
 ```
 Benchmarking Elixir, 100 samples, k=30 ...
@@ -85,5 +85,5 @@ Rust  , 500 samples, k=30        1.16 K        0.86 ms    ±93.65%        1.01 m
 Elixir, 500 samples, k=30      0.0477 K       20.96 ms     ±2.88%       20.92 ms       22.45 ms
 ```
 
-So, for my use-case, fair enough. I'll have to start investigating how did I get this variability on the Rust side though. My Rust isn't yet *that* idiomatic, and rewriting it in a few months should shed light on that matter.
+Donc, dans mon cas, c'est très correct. Je vais devoir investiguer sur cette variabilité côté Rust.
 

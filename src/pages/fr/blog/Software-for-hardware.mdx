@@ -1,37 +1,38 @@
 ---
-layout: "../../layouts/BlogPost.astro"
-title: "Planning an hardware interface when you're from the software side"
-description: "How I approach writing software that will work with, or use a hardware interface"
+layout: "../../../layouts/BlogPost.astro"
+title: "Concevoir une interface matérielle lorsque l'on pense logiciel"
+description: "Comment j’aborde l'écriture de code qui fonctionnera avec une interface matérielle"
 pubDate: "Dec 26 2022"
 ---
 
-## An art piece that disappeared :| 
+Il y a quelques années, j’ai construit avec les membres de [Documents](https://documents.design) une interface matérielle pour une pièce d’une exposition hébergée à IPN, Toulouse. Nous avions construit un langage de 26 "polices" picturales composées chacune de 64 "caractères" et de différentes façons d’interagir avec eux :
 
-A few years ago, I built with the members of [Documents](https://documents.design) a hardware interface for a piece of an exhibition hosted at IPN, Toulouse. We had built a design language of 26 pictural "fonts" composed each of 64 "characters" and various ways of interacting with them, either totally analog with rugged tools, or by controlling digital visualizations with an hardware control panel.
+- soit totalement analogique avec des outils robustes
+- soit en contrôlant des visualisations numériques avec un panneau de contrôle matériel
 
-Sadly, everything from this time is lost and I do not have images anymore. The lessons on hardware design still stand though.
+Malheureusement, tous mes documents de cette époque sont perdus et je n'en ai plus d’images.
 
-![The control panel for the digital visualization, and its software simulation](/pics/harddesign/panneau.jpg)
+![Le panneau de contrôle pour la visualisation numérique, et sa simulation logicielle](/pics/harddesign/panneau.jpg)
 
-Before we could manufacture the control panel, we had a lot of other stuff to do, and it was becoming clearer and clearer that the physical panel wouldn't be available until the very end. So I made a simulated software panel that modeled the future physical one. The simulated panel emitted events to a websocket connexion that the future physical panel (interfaced to a raspberry PI) would also connect to. When the physical panel was ready, we just had to plug it in and everything *just worked*.
+Avant que nous puissions fabriquer le panneau de contrôle, nous avions beaucoup d’autres choses à faire, et il devenait de plus en plus clair que le panneau physique ne serait pas disponible avant la dernière minute. J’ai donc fait un panneau logiciel simulé qui a modélisé le futur panneau physique. Le panneau simulé émettait des événements sur un websocket auquel le futur panneau physique (interfacé à un raspberry PI) se connecterait également. Lorsque le panneau physique était prêt, il suffirait de le brancher, et tout fonctionnerait encore.
 
-## Simulating an hardware interface
+## Simuler une interface matérielle
 
-I started by enumerating what controls are available on the physical panel, and assigned each of them types :
+J’ai commencé par énumérer les contrôles disponibles sur le panneau physique, et j’ai attribué un type à chacun d’eux :
 
-### Available controls
+### Contrôles disponibles
 
-- There are eight (normally open) pushbuttons.<br/>When pressed, they close and current can flow through them.<br/>They have a LED indicator next to them telling if a cooldown is active.
-- There is a selector with two modes and an idle state.
-- There are two on/off switches that stay in their position.
-- There is a joystick with an idle state and two directions.
-- There is a last (normally open) pushbutton.<br/>Next to it, there are two status LEDs that should indicate if you can press it, or if you are still in a cooldown period. This is only a variation on the standard pushbutton.
+- Il y a huit boutons-poussoirs (normalement ouverts). <br/>Lorsqu’ils sont enfoncés, ils se ferment et le courant peut y circuler. <br/>Il y a un indicateur LED à côté de chacun indiquant si un refroidissement est actif.
+- Il y a un sélecteur avec deux modes et un état inactif.
+- Deux interrupteurs marche/arrêt qui restent en position.
+- Il y a une manette à l’état inactif et avec deux directions.
+- Il y a un dernier bouton-poussoir (normalement ouvert). <br/>À côté, il y a deux LED d’état qui indiquent si vous pouvez appuyer dessus, ou si vous êtes toujours en période de refroidissement. Ce n’est qu’une variante du bouton-poussoir standard.
 
-### Implementations
+### Mises en œuvre
 
-Here is pseudo-code for each physical trigger type.
+Voici du pseudo-code pour chaque type de déclencheur physique.
 
-**The pushbutton** : easy, we just have to model a cooldown. Let's assume we have `emit(event, control, payload?)` and `delay(number)` available. Even if the server also debounced presses and events, the simulated panel was responsible for keeping track of its own state. A good reason for that is that the network connection could be interrupted. The server thus just accepted the last event because a valid local state transition could become invalid if an intermediate event failed to be sent. A missing event didn't affect the art piece.
+**Le bouton-poussoir** : facile, il suffit de modéliser un cooldown. Supposons que nous ayons `emit(event, control, payload?)` et `delay(number)` disponibles. Même si le serveur a également débouncé les appuis et les événements, le panneau simulé était responsable de garder une trace de son propre état. Une raison à cela est que la connexion réseau pouvait être interrompue. Le serveur devait donc accepter tout événement reçu, car une transition d’état locale valide aurait pu devenir invalide de son côté si un événement intermédiaire ne pouvait pas être envoyé ou reçu. Ainsi, un événement manquant n'affecte pas l'état de l'oeuvre interactive.
 
 ```ts
 type Pushbutton = {
@@ -47,7 +48,7 @@ const pressPushbutton = async (btn: Pushbutton) => {
 }
 ```
 
-**The mode selector** can only switch to a nearby state. You can't jump from `high` to `low` without going through the `idle` state first. Here, high and low are represented with -1 and 1, idle is 0. There is no notion of a delay or a cooldown here.
+**Le sélecteur de mode** ne peut passer qu’à un état proche de son état. Vous ne pouvez pas passer de `haut` à `bas` sans passer d’abord par l’état `neutre`. Ici, high et low sont représentés avec -1 et 1, idle vaut 0. Il n’y a pas de notion de délai ou de cooldown ici.
 
 ```ts
 type Modeselector {
@@ -69,7 +70,7 @@ const changeMode = async (ms: Modeselector, mode: -1 | 0 | 1) => {
 }
 ```
 
-**The on/off switch** is the simplest switch : its state can only be toggled.
+**L’interrupteur marche/arrêt** est l’interrupteur le plus simple : son état ne peut qu'être inversé.
 
 ```ts
 type Switch {
@@ -82,7 +83,7 @@ const toggle = async (s: Switch) => {
 }
 ```
 
-**The joystick** is similar to the mode selector, but does not stay in a non-idle state : as soon as you stop pushing it, it just springs back to the idle state. On the simulated control panel, you could tie `push` to `mousedown` and `stopPushing` to `mouseup`, as an example.
+**La manette** est semblable au sélecteur de mode, mais elle ne reste pas à l’état neutre : dès que vous arrêtez de la pousser, elle revient à l’état neutre. Sur le panneau de commande simulé, vous pourriez lier `push` à `mousedown` et `stopPushing` à `mouseup`, par exemple.
 
 ```ts
 type Joystick {
@@ -101,6 +102,6 @@ const stopPushing = async (j: Joystick) {
 };
 ```
 
-### Using those components
+### Utilisation de ces composants
 
-We had a little Vue app looking like the picture at the top of this post running on an iPad, that allowed us to try and tune our visualizer without the real control panel. By abstracting how actions were sent to a websocket client/server model where the physical panel would only be a specific client, I've been able to prototype the final panel at no cost.
+Nous avions une petite application Vue ressemblant à l’image en haut de ce post et fonctionnant sur un iPad, qui nous a permis de régler notre visualiseur sans le vrai panneau de contrôle. Avec cette démarche, j’ai pu prototyper le panneau final sans frais.

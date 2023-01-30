@@ -1,15 +1,15 @@
 ---
-layout: "../../layouts/BlogPost.astro"
-title: "Josef, an attempt at a video game"
-description: "Writing an engine sounds fun, doesn't it ?"
+layout: "../../../layouts/BlogPost.astro"
+title: "Josef, une tentative de jeu vidéo"
+description: "C’est amusant d’écrire un moteur, non ?"
 pubDate: "Sep 9, 2017"
 ---
 
-Josef was an attempt made in 2017 to do a small game from scratch. It worked, in the sense that it allowed a player to move/jump and collide with CPU-controlled josefs. (A josef being a small white ball with two elliptical eyes.)
+Josef était une tentative datant de 2017 de faire un petit jeu à de zéro. Il a fonctionné, dans le sens où il permettait à un joueur de se déplacer / sauter et entrer en collision avec d'autres josefs contrôlés par l'ordinateur. (Un josef étant une petite boule blanche avec deux yeux elliptiques.)
 
 ![](/pics/josef/josef.png)
 
-Levels were created by filling a tile map, with render instructions in a small DSL :
+Les niveaux étaient créés en remplissant une carte de tiles, avec des instructions de rendu définies dans un petit DSL :
 
 ```js
 level01.levelData = [
@@ -58,10 +58,10 @@ level01.renderData = [
 ]
 ```
 
-After implementing gravity, jumps, and a kind of "debug mode" to help me with collisions, I quickly faced the fact that what makes a game isn't its graphics, code, or technical features, but its playability. Almost nothing, and almost anything can be playable.
+Après avoir implémenté la gravité, les sauts, et une sorte de "mode debug" pour m’aider avec les collisions, j’ai rapidement fait face au fait que ce qui fait un jeu n’est pas ses graphismes, son code, ou ses caractéristiques techniques, mais sa jouabilité. Presque rien, et presque tout peut être jouable.
 
-Here's a screenshot of a video showing Flipcase, a game released in 2013 taking advantage of iPhone 5c plastic cases, sold with holes. The game cleverly exploited that feature to mask the iPhone screen by flipping the case, akin to a game board.
+Voici une capture d’écran d’une vidéo montrant Flipcase, un jeu sorti en 2013 qui tirait parti des étuis en plastique pour iPhone 5c, qui étaient vendus avec des trous. Le jeu exploitait cela habilement pour masquer l’écran de l’iPhone, le transformant en un plateau de jeu.
 
 ![](/pics/josef/flipcase.png)
 
-In my case, programming itself was the game. Josef was thus a playable-once game for my personal use.
+Dans mon cas, la programmation était le jeu. Josef était donc un jeu jouable une fois pour mon usage personnel.

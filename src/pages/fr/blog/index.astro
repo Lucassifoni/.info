@@ -1,11 +1,11 @@
 ---
-import BaseHead from "../components/BaseHead.astro";
-import Header from "../components/Header.astro";
-import Footer from "../components/Footer.astro";
-import { SITE_TITLE, SITE_DESCRIPTION } from "../config";
+import BaseHead from "../../../components/BaseHead.astro";
+import Header from "../../../components/Header.astro";
+import Footer from "../../../components/Footer.astro";
+import { SITE_TITLE, SITE_DESCRIPTION } from "../../../config";
 
 // Use Astro.glob() to fetch all posts, and then sort them by date.
-const posts = (await Astro.glob("./blog/*.{md,mdx}")).sort(
+const posts = (await Astro.glob("./*.{md,mdx}")).sort(
 	(a, b) =>
 		new Date(b.frontmatter.pubDate).valueOf() -
 		new Date(a.frontmatter.pubDate).valueOf()
@@ -53,12 +53,10 @@ const posts = (await Astro.glob("./blog/*.{md,mdx}")).sort(
 	<body>
 		<Header have_langs={true} />
 		<main>
-			<h3>Hi 👋</h3>
+			<h3>Bonjour 👋</h3>
 			<p>
-				This listing features content on various personal
-				research (optics, astronomy, programming) and work-related research (programming).
-				<br>I'm a french person but write mostly in english. It allows me to be more straightforward. Video material
-				is mostly in French.
+				Cette liste présente du contenu sur diverses recherches personnelles (optique, astronomie, programmation) ou liées à mon travail (programmation).
+				<br>J'écris principalement en anglais car cela me permet d'être plus concis : les articles sont donc en cours de traduction depuis l'anglais et certains sont pour le moment manquants.
 			</p>
 			<section>
 				<ul>
@@ -68,7 +66,7 @@ const posts = (await Astro.glob("./blog/*.{md,mdx}")).sort(
 								<time datetime={post.frontmatter.pubDate}>
 									{new Date(
 										post.frontmatter.pubDate
-									).toLocaleDateString("en-us", {
+									).toLocaleDateString("fr-fr", {
 										year: "numeric",
 										month: "2-digit",
 										day: "2-digit",

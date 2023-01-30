@@ -1,13 +1,13 @@
 ---
-layout: "../../layouts/BlogPost.astro"
-title: "Charabyx, Elixir bindings to the Rust lib. Charabia"
-description: "Elixir NIFs for Meilisearch's Charabia crate."
+layout: "../../../layouts/BlogPost.astro"
+title: "Charabyx, bindings Elixir vers la librairie Rust Charabia"
+description: "Charabyx, bindings Elixir vers la librairie Rust Charabia"
 pubDate: "Dec 12, 2022"
 ---
 
-I needed to bind to a good tokenization library, and used Charabia by the Meilisearch team. 
-The code is quite simple, only wrapping the `tokenize` function from the crate (but chances are that I'll need more functionnality and wrap the rest).
-This gradually exposes me to Rustler's ability to return native Elixir types (atoms, structs) at the cost of a bit of ceremony, but it's overall a really pleasant experience.
+J'avais besoin de bindings à à une bonne bibliothèque de tokenization, et ai utilisé Charabia écrite par l’équipe de Meilisearch. 
+Le code est assez simple : il ne ré-exporte que la fonction `tokenize` de la crate Rust (mais il y a de fortes chances que j’aie besoin de plus de fonctionnalités petit à petit et que je ré-exporte le reste).
+Cela m’expose progressivement à la capacité de Rustler à retourner des types Elixir natifs (atoms, structs) au prix d’un peu de cérémonie. Dans l'ensemble l'expérience reste très agréable.
 
 ```rs
 #[rustler::nif]
@@ -28,7 +28,7 @@ fn tokenize<'a>(env: Env<'a>, input: String) -> Vec<NifToken> {
 }
 ```
 
-Feel free to use the code available here : https://github.com/Lucassifoni/charabyx
+Code disponible ici : https://github.com/Lucassifoni/charabyx
 
 
 ```

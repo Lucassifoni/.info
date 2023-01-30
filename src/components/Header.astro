@@ -13,7 +13,7 @@ const url_en = '/' + no_lang.join('/');
 	<h2>Lucas Sifoni</h2>
 	<nav>
 		<HeaderLink href={fren('/fr', '/')}>{fren('Accueil', 'Home')}</HeaderLink>
-		<HeaderLink href="/blog">Blog (en)</HeaderLink>
+		<HeaderLink href={fren('/fr/blog', '/blog')}>Blog</HeaderLink>
 		<HeaderLink href={fren('/fr/cv', '/cv')}>{fren('À propos ~ Contact', 'About ~ Contact')}</HeaderLink>
 		{
 			have_langs ? (

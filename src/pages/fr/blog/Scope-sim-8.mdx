@@ -1,11 +1,11 @@
 ---
-layout: "../../layouts/BlogPost.astro"
-title: "The Elixir Telescope -- Part 8 : Controlling motors from Elixir"
-description: "Seventh entry of my build log"
+layout: "../../../layouts/BlogPost.astro"
+title: "Un téléscope avec Elixir ? -- Partie 8 : Contrôle de moteurs depuis Elixir"
+description: "Huitième étape du projet"
 pubDate: "Jan 30 2023"
 ---
 
-Entries up to this point : 
+Étapes jusqu'ici (en atttente de traduction) : 
 
 - [Part 7 : Elixir architecture questions](/blog/Scope-sim-7)
 - [Part 6 : Three.js + websockets = a 3D moving telescope](/blog/Scope-sim-6)
@@ -15,13 +15,13 @@ Entries up to this point :
 - [Part 2 : Primary mirror design & calculation](/blog/Scope-sim-2)
 - [Part 1 : Simulating movement & state with Elixir](/blog/Scope-sim)
 
-## Controlling motors from Elixir
+## Contrôler des moteurs pas à pas depuis Elixir
 
-![Picture of the MangoPI connected to a 5V stepper motor](/pics/photoscope_8/a.jpeg)
+![Photo du MangoPI connecté à un moteur pas à pas 5V](/pics/photoscope_8/a.jpeg)
 
-I wished to control the three motors of the final build from Elixir. That would allow me to avoid having an additional microcontroller, but I knew it wouldn't be really suited to drive steppers at a consistent rate. Since I'm working on a terrestrial telescope that just has to move in response to user input, that shouldn't be a problem. An astronomical telescope that needs precise tracking wouldn't allow to even try to drive the motors from this soft-realtime environment.
+Je voulais contrôler les trois moteurs de la construction finale depuis Elixir. Cela me permettrait d’éviter d’avoir un microcontrôleur supplémentaire, mais je savais que ce serait un peu limité pour contrôler les moteurs à une vitesse bien constante. Étant donné que je travaille sur un télescope terrestre qui n’a qu’à se déplacer en réponse à des entrées, cela ne devrait pas être un problème. Un télescope astronomique qui nécessite un suivi précis ne permettrait même pas d’essayer de conduire les moteurs de cette manière.
 
-So, how unsuitable is that ? I started by designing a module allowing me to get a process for each motor, and writing to the relevant GPIO pins in order to make it turn. To make a single step, the motor must have its phases activated and deactivated like the below bit pattern : you can graphically see the cyclic nature of the pattern, with activated phases shifting to the right.
+À quel point n'est-ce pas convenable ? J’ai commencé par concevoir un module me permettant d’obtenir un processus pour chaque moteur, et d’écrire sur les broches GPIO pertinentes afin de le faire tourner. Pour faire un seul pas, le moteur doit avoir ses phases activées et désactivées comme le modèle de bits ci-dessous : vous pouvez voir graphiquement la nature cyclique des instructions, avec les phases activées se déplaçant vers la droite.
 
 ```elixir
 defmodule Scope.Motor do
@@ -52,7 +52,7 @@ defmodule Scope.Motor do
 end
 ```
 
-I then needed to calculate the delay for each 8th of a step from a given speed, and given that those motors need (approximately) 4096 steps/turn.
+J’ai alors eu besoin de calculer le temps pour chaque 8<sup>ème</sup> de pas à partir d’une vitesse donnée, en prenant en compte que  que ces moteurs ont besoin de (environ) 4096 pas/tour.
 
 ```elixir
   @doc """
@@ -67,7 +67,7 @@ I then needed to calculate the delay for each 8th of a step from a given speed, 
   end
 ```
 
-Stepping is then cycling through the bit patterns above and writing them to the relevant GPIO file representation in `/sysfs`.
+Faire un pas consiste alors à traverser les modèles de bits ci-dessus et à les écrire sur le descripteur de fichier GPIO correspondant dans `/sysfs”.
 
 ```elixir
   @doc """
@@ -92,7 +92,7 @@ Stepping is then cycling through the bit patterns above and writing them to the 
   def ustep([], _, _, _, _, _), do: nil
 ```
 
-We recurse through the 8-step pattern for each step. Every 4096 steps, we made a turn. Every 8 8th-of-step, we made a step. As long as the direction doesn't become `:ccw` or `:stop`, we continue.
+On récurse en 8 parts de pas pour chaque pas. Tous les 4096 pas, on a fait un tour complet. Toutes les 8 parts de pas, on fait un pas. Tant que la direction ne devient pas `:ccw` ou `:stop`, on continue.
 
 ```elixir 
   def handle_cast(:turn_cw, {f1, f2, f3, f4, {_dir, speed, stepμs}, s}) do
@@ -116,7 +116,7 @@ We recurse through the 8-step pattern for each step. Every 4096 steps, we made a
   end
 ```
 
-To be able to run this while developing, I have this small utility allowing to open RAM IO devices instead of GPIOs :
+Pour pouvoir le tester en développant, j’ai cette petite fonction qui permet d’ouvrir des descripteurs IO RAM au lieu des GPIO :
 
 ```elixir
   @doc """
@@ -131,20 +131,20 @@ To be able to run this while developing, I have this small utility allowing to o
   end
 ```
 
-On my main computer, all of this code (of which some utilities were not shown there, but the whole code [can be seen there on github](https://github.com/Lucassifoni/oiseaux/commit/ad8d0f96a30d1d3a3d55f7cd7b7c3ff2d135a395) ) runs perfectly smoothly. I can create motors in IEX, drive them, change their speed, accelerate or deccelerate them, smoothly.
+Sur mon ordinateur principal, tout ce code (dont certains morceaux ne sont pas montrés ici, mais tout le code [peut être vu sur github](https://github.com/Lucassifoni/oiseaux/commit/ad8d0f96a30d1d3a3d55f7cd7b7c3ff2d135a395) fonctionne parfaitement. Je peux créer des moteurs dans iex, les faire tourner, changer leur vitesse, accélérer ou déccelérer, en douceur.
 
-![screenshot of a virtual motor being driven in IEX](/pics/photoscope_8/c.png)
+![capture d’écran d’un moteur virtuel piloté dans IEX](/pics/photoscope_8/c.png)
 
-On the MangoPI, well.. it's another story. The speed seems to hit a ceiling at around `6rpm`, after which the code doesn't run fast enough to increase the speed as asked by the user. This was quite previsible, but I'm happy to have driven this specific stepper from pure Elixir. That said, I knew it in advance thanks to previous experiments, and the docs of [Circuits.GPIO](https://github.com/elixir-circuits/circuits_gpio) and [GPIO Twiddler : benchmark of GPIO switching methods from Elixir](https://github.com/fhunleth/gpio_twiddler), both by `fhunleth`, so there's no disappointment.
+Sur le MangoPI, eh bien... c’est une autre histoire. La vitesse semble atteindre un plafond aux alentours de 6 tours par minute, après quoi le code ne tourne pas assez vite pour atteindre la vitesse demandée par l’utilisateur. C’était assez prévisible, mais je suis satisfait d’avoir conduit ce moteur spécifique en pur Elixir. De plus, je le savais d'avance grâce à des expériences passées et à la documentation de [Circuits.GPIO](https://github.com/elixir-circuits/circuits_gpio) et [GPIO Twiddler : benchmark of GPIO switching methods from Elixir] (https://github.com/fhunleth/gpio_twiddler). Pas de déception !
 
 <figure style="margin:0">
 <video controls playsinline autoplay loop muted>
   <source src="/pics/photoscope_8/b.mp4"></source>
 </video>
-<figcaption>*The motor running at around 6rpm, driven by Elixir on the MangoPI*</figcaption>
+<figcaption>*Le moteur tourne à environ 6rpm, piloté par Elixir sur le MangoPI*</figcaption>
 </figure>
 
-I will then add an arduino nano, and talk to it over serial, to drive the three motors. Maybe switching the motor drivers to 1-wire stepping drivers would allow reaching high enough speeds to be useful, but I'd like to run the motor at at least `60rpm` and mechanically reduce it with a custom gearbox to reach my desired speed of `4rpm` for the real physical movements.
+Je vais donc ajouter un arduino nano, et lui parler via RS232, pour conduire les trois moteurs. Peut-être que le fait de remplacer les contrôleurs de moteur par des drivers à 1 fil permettrait d’atteindre des vitesses suffisamment élevées pour fonctionner dans le cadre de ce projet, mais j’aimerais faire tourner le moteur à `60rpm` et le réduire mécaniquement avec une petite boîte de vitesses en 3D pour atteindre la vitesse souhaitée de `4rpm` pour les mouvements finaux.
 
-This was a very satisfying kind of failure. The process of being able to, once again, simulate a physical component in my terminal, then run it on the hardware, in a single language, is really enjoyable.
+Le processus de pouvoir, encore une fois, simuler un composant physique dans mon terminal, puis le faire fonctionner sur le matériel, depuis un seul langage, est vraiment agréable.
 
