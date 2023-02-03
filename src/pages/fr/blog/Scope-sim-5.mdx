@@ -1,23 +1,23 @@
 ---
 layout: "../../../layouts/BlogPost.astro"
-title: "The Elixir Telescope -- Part 5 : Porting the depth of field simulation to Elixir + Rust"
-description: "Fifth entry of my build log"
-draft: true
+title: "Un téléscope avec Elixir ? -- Partie 5 : Portage de la simulation de profondeur de champ vers Elixir + Rust"
+description: "Cinquième étape de mon journal de bord"
 pubDate: "Jan 5 2023"
 ---
-
-Entries up to this point : 
+  
+En attente de traduction : 
 
 - [Part 4 : Simulating image capture and focusing](/blog/Scope-sim-4)
 - [Part 3 : Raytracing a parabolic mirror from scratch](/blog/Scope-sim-3)
 - [Part 2 : Primary mirror design & calculation](/blog/Scope-sim-2)
 - [Part 1 : Simulating movement & state with Elixir](/blog/Scope-sim)
 
-In [the last entry](/blog/Scope-sim-4), I finished with a plausible depth of field simulation. What counts for me isn't the physical reality of the values obtained, but the plausibility of the effect of depth of field with a quite-open objective (f/3.51) and short or long object distances.
+Dans [la dernière partie](/blog/Scope-sim-4), j’ai obtenu avec une simulation de profondeur de champ plausible. Ce qui compte ici  n’est pas la justesse physique des valeurs obtenues, mais la plausibilité de l’effet de profondeur de champ avec un objectif assez ouvert (f/3.51) et de courtes ou longues distances objet.
 
-Since this simulation must run server-side, I ported it to Elixir with Rust and Rustler to speed up the image processing.
+Comme cette simulation doit fonctionner côté serveur, je l’ai portée vers Elixir, avec Rust et Rustler pour accélérer le traitement  d’image.
 
-First, to avoid loading an image for each simulation request, I created an `Agent` whose task is to hold a reference to `Rust` memory.
+Premièrement, pour éviter de charger une image pour chaque demande de simulation, j’ai créé un `Agent` dont la seule tâche est de garder une référence à l'image en mémoire côté Rust.
+
 
 ```elixir
 defmodule Optics.SceneHolder do
@@ -42,14 +42,14 @@ defmodule Optics.SceneHolder do
 end
 ```
 
-Quite straightforward. The work happens in `Optics.RxopticsNif.load_image/1`, calling a NIF function.
+Assez basique. Le chargement de l'image se fait dans `Optics.RxopticsNif.load_image/1`.
 
 ```
 iex(8)> Optics.SceneHolder.get_scene
 #Reference<0.2612143773.3884056582.52554>
 ```
 
-From the Rust side, we return a reference-counted `ResourceArc` (see [rustler::resource::ResourceArc](https://docs.rs/rustler/0.15.1/rustler/resource/struct.ResourceArc.html) )
+Du côté Rust, on renvoie une référence comptée `ResourceArc` (see [rustler::resource::ResourceArc](https://docs.rs/rustler/0.15.1/rustler/resource/struct.ResourceArc.html) )
 
 ```rs
 #[rustler::nif]
@@ -63,7 +63,7 @@ pub fn load_image(path: String) -> Result<ResourceArc<DepthAndColorMap>, ImageHa
 }
 ```
 
-The `DepthAndColorMap` is a representation of an image where the alpha channel represents depth.
+La structure `DepthAndColorMap` est une représentation de l'image où le canal alpha représente la profondeur.
 
 ```rs
 #[derive(Clone, Copy)]
@@ -82,7 +82,8 @@ pub struct DepthAndColorMap {
 }
 ```
 
-An image is simply loaded, its rgb and alpha values taken separately, and the resulting vector is sorted from back (furthest from the observer) to front.
+L'image est chargée, ses valeurs rgb et alpha prises séparément, et le vecteur résultant est trié du fond (le plus loin de l’observateur) jusqu'à l’avant.
+
 
 ```rs
 fn to_depth_and_color_map(a: DynamicImage) -> DepthAndColorMap {
@@ -110,7 +111,7 @@ fn to_depth_and_color_map(a: DynamicImage) -> DepthAndColorMap {
 }
 ```
 
-Then, when requested, the blurred image is computed by passing this reference back to rust.
+Puis, sur demande, l’image floutée est calculée en renvoyant cette référence à Rust.
 
 ```rs
 pub fn blur(
@@ -123,21 +124,20 @@ pub fn blur(
 ) -> Result<Vec<u8>, ImageError> {}
 ```
 
-The implementation can be found [on GitHub](https://github.com/Lucassifoni/oiseaux/blob/15393d6bd539e067f2eccb707618aeffeed44438/native/rxopticsnif/src/dof.rs) but it's quite simple.
+L'implémentation peut être trouvée [sur GitHub](https://github.com/Lucassifoni/oiseaux/blob/15393d6bd539e067f2eccb707618aeffeed44438/native/rxopticsnif/src/dof.rs) mais est assez simple :
 
-- Iterate on pixels from the depth and color map
-- For each depth value, calculate the real-world distance it represents
-- Calculate the resulting blur radius, truncated to 2 decimal places
-- Did the blur value change from the previous one ?
-    - If so: 
-        - Paint the drawing canvas on the blurring canvas
-        - Blur the blurring canvas
-        - Paint the blurring canvas on the output canvas
-    - Else:
-        - Draw a pixel of the right color on the drawing canvas
-- After iteration, blur & paint the remaining drawing canvas on the output canvas
+- Itérer sur les pixels à partir de la profondeur et de la carte couleur
+- Pour chaque valeur de profondeur, calculer la distance physique réelle qu’elle représente
+- Calculer le rayon de flou résultant, tronqué à 2 décimales
+- La valeur du flou a-t-elle changé par rapport à la valeur précédente ?
+    - Si oui : 
+        - Peindre le canvas de dessin sur le canvas de floutage
+        - Flouter le canvas de floutage
+        - Peindre le canvas de floutage sur le canvas de sortie
+    - Sinon :
+        - Dessiner un pixel de la bonne couleur sur le canvas de dessin
+- Après l’itération, flouter et peindre le canvas de dessin sur le canvas de sortie
 
 ![](/pics/photoscope_5/cap.png)
 
-Nice ! All the pieces are coming together.
-    
+Toutes les pièces s’assemblent, et on tire parti de la modélisation du système optique découverte plus tôt.

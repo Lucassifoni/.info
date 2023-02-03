@@ -1,6 +1,6 @@
 <template>
   <div class="FoldablePre">
-    <button @click="open = !open">Expand/Fold code sample</button>
+    <button @click="open = !open">Ouvrir/Fermer le code</button>
     <div :style="{maxHeight: !open ? '10rem' : 'none'}" style="overflow-y: scroll">
       <slot></slot>
     </div>

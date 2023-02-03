@@ -1,15 +1,15 @@
 <template lang="pug">
 section
-  h2 Creating a lead type 3D model with its slope, from raw SVG path data.
-  h3 SVG path data structure
-  p Here's a box containing an outlined "h" in Vulf Mono Light Italic, a typeface by Oh No type company. We'll try to understand how this list of instructions work.
+  h2 Création d’un modèle 3D en plomb avec sa pente, à partir de données de chemin SVG brutes.
+  h3 Structure de données du chemin SVG
+  p Voici une boîte contenant un "h" en Vulf Mono Light, une police de caractères par Oh No type company. Nous allons essayer de comprendre comment fonctionne cette liste d’instructions.
   <FoldablePre>
     pre
       | &lt;path style="stroke:#130000;stroke-opacity:1;stroke-width:4.42498882;stroke-miterlimit:4;stroke-dasharray:none;paint-order:markers stroke fill;fill:#ff0000;fill-opacity:1"
       | d="m 205.47289,169.14572 c -1.08,0 -1.56,-0.6 -1.56,-1.64 0,-3.4 4.68,-7.48 4.68,-12.04 0,-3 -1.88,-4.52 -4.84,-4.52 -3.52,0 -6.96,1.48 -10.4,7.2 h -0.56 c 2.08,-4.8 3.48,-8.48 3.48,-11.48 0,-2.24 -1.28,-3.36 -3.52,-3.36 -1.52,0 -3.12,0.44 -4.8,1.12 0.36,0.68 0.64,1.44 0.84,2.08 1.48,-0.68 2.48,-1.04 3.64,-1.04 1.28,0 1.84,0.6 1.84,1.76 0,2.92 -3.32,10.88 -8,23.16 0.8,0.12 1.44,0.24 2,0.48 l 0.12,0.04 c 5.68,-15.48 11.24,-18 14.92,-18 1.88,0 3.04,0.8 3.04,2.72 0,3.52 -4.68,7.64 -4.68,11.96 0,2.44 1.64,3.52 3.48,3.52 2.48,0 4.04,-1.56 6.08,-4.2 -0.72,-0.48 -1.12,-0.8 -1.68,-1.28 -1.4,2.28 -2.52,3.52 -4.08,3.52 z"
       | id="path1702" /&gt;
   </FoldablePre>
-  p According to <a href="http://svgpocketguide.com/book/#section-2">the SVG Pocket Guide</a>, the "d" attribute contains instructions with mnemonics and values. We'll also keep the SVG Stroke spec in a tab, because an implementation of a stroke algorithm is outlined. <a href="https://www.w3.org/TR/svg-strokes/#SpecifyingStrokePaint">W3 SVG spec</a>
+  p Selon <a href="http://svgpocketguide.com/book/#section-2">le SVG Pocket Guide</a>, l’attribut "d" contient des instructions représentées par des mnémoniques. Nous garderons également la spécification SVG Stroke ouverte dans un onglet, car une implémentation d’un algorithme de contour y est décrite. <a href="https://www.w3.org/TR/svg-strokes/#SpecifyingStrokePaint">W3 SVG spec</a>
 
   table(class="table striped")
     thead
@@ -18,75 +18,75 @@ section
       th observations
     tbody
       tr
-        td m or M
-        td move to
-        td akin to a pen lift. a path must start with a M command.
+        td m ou M
+        td se déplacer
+        td similaire à un levé de stylo. un chemin doit commencer par une commande M.
       tr
-        td z or Z
-        td close path
-        td closes the current subpath. draws a straight line between that point and the initial point of the subpath. If a M instruction follows, the next subpath starts at the newly-defined coordinate. Else, the next subpath starts at the same point.
+        td z ou Z
+        td fermer le chemin
+        td ferme le sous-chemin courant. trace une ligne droite entre ce point et le point initial du sous-chemin. Si une instruction M suit, le sous-chemin suivant commence à la coordonnée nouvellement définie. Sinon, le sous-chemin suivant commence au même point.
       tr
-        td L or l
-        td draw
-        td draws a line from the current point to the next point. The new point becomes the current point. <strong>L</strong> means that following positions are absolute, <strong>l</strong> means relative.
+        td L ou l
+        td dessin
+        td trace une ligne entre le point courant et le point suivant. Le nouveau point devient le point courant. <strong>L</strong> signifie que les positions suivantes sont absolues, <strong>l</strong> signifie relatives.
       tr
-        td H or h
-        td draw an horizontal line
-        td Akin to L,l H and h denote absolute and relative positioning.
+        td H ou h
+        td dessin d'une ligne horizontale
+        td À l’instar de L et l,  H et h dénotent un positionnement absolu et relatif.
       tr
-        td V or v
-        td draw a vertical line
-        td Akin to L,l and H,h, V and v denote absolute and relative positioning.
+        td V ou v
+        td dessin d'une ligne verticale
+        td Comme L et l, et H et h, V et v indiquent un positionnement absolu et relatif.
       tr
-        td C or c
-        td Draw a cubic Bézier curve
-        td Draw a curve from the current point, using (x1,y1) as the first control point, and (x2, y2) as the second control point. The same uppercase/lowercase to absolute/relative mapping is effective.
+        td C ou c
+        td Tracer une courbe de Bézier
+        td Tracer une courbe à partir du point courant, en utilisant (x1,y1) comme premier point de contrôle, et (x2, y2) comme second point de contrôle. La même correspondance majuscule/minuscule à absolue/relatif s'applique.
       tr
-        td S or s
-        td Draw a cubic Bézier curve, with reflection
-        td Draw a curve following a C statement, with tensor points mirrored.
+        td S ou s
+        td Dessiner une courbe de Bézier, avec réflexion
+        td Tracer une courbe suivant une instruction C, mais avec des points de contrôle en miroir.
       tr
-        td Q or q
-        td Draw a quadratic Bézier curve
-        td Quadratic Bézier curves have a single (x1, y1) tensor.
+        td Q ou q
+        td Tracer une courbe de Bézier quadratique
+        td Les courbes quadratiques de Bézier ont un tenseur unique (x1, y1).
       tr
-        td T and t
-        td Draw a quadratic Bézier curve
-        td Akin to S and s following a cubic Bézier curve, T and t are mirroring statements for a quadratic Bézier curve.
+        td T ou t
+        td Tracer une courbe de Bézier quadratique
+        td Comme S et s pour une courbe de Bézier cubique, T et t sont les instructions de dessin en miroir pour une courbe de Bézier quadratique.
       tr
-        td A and a
-        td Draw a segment of an ellipse.
-        td A statements draw a segment of an ellipse, given a start point, end point, x radius, y radius, rotation of the ellipse, and direction. Two additional parameters, large-arc and sweep, are flags giving directions on which part of the ellipse should be drawn.
+        td A ou a
+        td Dessiner un segment d’ellipse.
+        td Une instruction A dessine un segment d’une ellipse, avec un point de départ, un point de fin, un rayon x, un rayon y, la rotation de l’ellipse et sa direction. Deux autres paramètres, large-arc et sweep, sont des drapeaux donnant des directives sur la partie de l’ellipse devant être dessinée.
 
   figure
     img(src="../../pictures/man_1.jpg")
     img(src="../../pictures/man_3.jpg")
     img(src="../../pictures/man_2.jpg")
-    span.author early sketches of the process as I imagined it
-  p With those elements in mind, we can decipher the above svg path, and annotate it :
+    span.author premières esquisses du processus tel que je l’imaginais
+  p Avec ces éléments en tête, nous pouvons déchiffrer le chemin svg vu plus haut, et l’annoter :
   <FoldablePre>
     pre
       | m 205.47289,169.14572 // Move to (205.47289, 169.14572)  
       | c -1.08,0 -1.56,-0.6 -1.56,-1.64 // Cubic Bézier (relative, from last point, first tensor at (-1.08, 0), second tensor at (-1.56, -0.9), end point at (-1.56, -1.64))
   </FoldablePre>
-  h3 Introducing a clearer notation for our research
-  p This notation is a bit hard to read, so we'll introduce "functions", that return the current point. Points will be a kind of tuples (x, y).
+  h3 Une notation plus claire pour ces recherches
+  p Cette notation est un peu difficile à lire, on introduit des "fonctions" qui renvoient le point courant. Les points seront une sorte de tuple (x, y).
   <FoldablePre>
     pre
       | m 205.47289,169.14572 // move((205.47289, 169.14572))
       | c -1.08,0 -1.56,-0.6 -1.56,-1.64 // cubicRel(lp, (-1.08,0), (-1.56,-0.6), (-1.56,-1.64))
   </FoldablePre>
-  p We can see a pattern emerging : a dependency on a global "current point" state. To write a parser/an interpreter, this isn't too uncommon. We could also think of this in a functional way, and use referential transparency at our advantage :
+  p Nous pouvons voir un modèle émerger : une dépendance à un état global de "point courant". On pourrait aussi penser cela de façon plus fonctionnelle :
   <FoldablePre>
     pre
       | m 205.47289,169.14572 // move((205.47289, 169.14572)) -> returns ((205.47289, 169.14572))
   </FoldablePre>
-  p The last sample with two instructions becomes :
+  p Le dernier échantillon avec deux instructions devient :
   <FoldablePre>
     pre
-      | cubicRel((-1.08,0), (-1.56,-0.6), (-1.56,-1.64))
+      | cubicRel(move((205.47289, 169.14572)), (-1.08,0), (-1.56,-0.6), (-1.56,-1.64))
   </FoldablePre>
-  p If we introduce the following instruction in the original path, another cubic Bézier curve, our path now looks like :
+  p Si on ajoute l’instruction suivante du chemin original, une autre courbe cubique de Bézier, notre chemin ressemble maintenant à :
   <FoldablePre>
     pre
       | cubicRel(
@@ -95,7 +95,7 @@ section
       |     (-1.08,0), (-1.56,-0.6), (-1.56,-1.64))
       |    , (0,-3.4), (4.68,-7.48), (4.68,-12.04))
   </FoldablePre>
-  p Well. As much as I like lisps, maybe a parser with a global state will be enough. I only aim to parse svg paths, so the table defined earlier on will be enough to guide us. Maybe, even, we could just avoid a global state and produce a list of instructions taking the last point as an argument, and reevaluating everything to absolute coordinates.
+  p On pourrait aussi produire une liste d’instructions séparées prenant le dernier point comme argument, et réévaluant tous les résultats vers des coordonnées absolues.
   <FoldablePre>
     pre
       |  move((205.47289, 169.14572)) // -&gt; (205.47289, 169.14572)
@@ -104,16 +104,16 @@ section
       |  (203,91289, 168,54572),
       |  (203,91289, 167,50572)) // -&gt; (203,91289, 167,50572)
   </FoldablePre>
-  p This seems quite easy to generate ! Let's write the minimal amount of code to parse those two declarations to an AST, and produce this kind of pseudo-instruction list. I'm writing all of this in a html document, so I'll write in JS to get live examples quick and running.
-  h3 Parsing SVG path data to an AST with a reduced grammar
-  p Let's start by drafting a grammar allowing those two instructions to exist. This syntax and prose is vague compared to a real grammar description language, and the SVG spec contains a backus-naur form of the SVG grammar.<br/>But it should read :
+  p Cela semble assez facile à générer ! Écrivons le minimum de code pour parser ces deux déclarations vers un AST, et produisons ce genre de liste de pseudo-instructions. Je vais écrire cela en JS pour obtenir des exemples tournant dans le navigateur.
+  h3 Parsing des données de chemin SVG vers un AST avec une grammaire réduite
+  p Commençons par rédiger une grammaire qui permet à ces deux instructions d'exister.
   ul
-    li a <em>path</em> is made of <em>instructions</em>.
-    li <em>instructions</em> can be <em>move</em> or <em>cubic</em>.
-    li <em>instructions</em> take a various number of <em>points</em>.
-    li a <em>point</em> is made of two <em>numbers</em> separated by a comma, between parentheses.
-    li a <em>number</em> is an optional hyphen, followed by multiple <em>digits</em>, an optional dot, and maybe multiple <em>digits</em> again
-    li finally, a <em>digit</em> is any character in [0 1 2 3 4 5 6 7 8 9]
+    li un <em>chemin</em> est constitué d'<em>instructions</em>.
+    li <em>instruction</em> peut être <em>déplacement</em> ou <em>cubique</em>.
+    li <em>instruction</em> prend un certain nombre de <em>points</em>.
+    li un <em>point</em> est composé de deux <em>nombres</em> séparés par une virgule entre parenthèses.
+    li un <em>nombre</em> est un trait d’union facultatif, suivi de plusieurs <em>chiffres</em>, d’un point facultatif et peut-être de plusieurs <em>chiffres</em> à nouveau
+    li enfin, un <em>chiffre</em> est un caractère dans la liste [0 1 2 3 4 5 6 7 8 9]
   <FoldablePre>
     pre
       | path = instructions*
@@ -122,9 +122,9 @@ section
       | number = '-'?digit+'.'?digit+
       | digit = [0-9]
   </FoldablePre>
-  p This is enough to write a basic parser that understands standalone <em>move</em> and <em>cubic</em> instructions.
+  p Cela suffit pour écrire un parseur basique qui comprend les instructions <em>move</em> et <em>cubic</em> autonomes.
   <ParserFirstStep/>
-  p This example uses the following JS implementation : we have a regex to identify points, and define regexes for move and cubic instructions. We only tokenize the input by splitting at newlines, trimming the resulting lines, and filtering empty ones.
+  p Cet exemple utilise l’implémentation JS suivante : nous avons une regex pour identifier les points et définir les regexes pour les instructions de déplacement et de courbes de bézier cubiques. Nous ne tokenizons l’entrée qu’en coupant sur les retours à la ligne et en filtrant les lignes vides.
   <FoldablePre>
   pre
     | const Point = function(x, y) { this.x = x; this.y = y; };
