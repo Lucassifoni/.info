@@ -1,6 +1,6 @@
 ---
 layout: "../../../layouts/BlogPost.astro"
-title: "The Elixir Telescope -- Part 4 : Simulating image capture and focusing"
+title: "Un téléscope avec Elixir ? -- Partie 4 : Simuler la capture d'une image et la mise au point focusing"
 description: "Fourth entry of my build log"
 draft: true
 pubDate: "Jan 3 2023"
@@ -8,53 +8,52 @@ pubDate: "Jan 3 2023"
 import Widget from './ScopeSim4/Widget.vue';
 import Widget2 from './ScopeSim4/Widget2.vue';
   
-Entries up to this point : 
+En attente de traduction : 
 
 - [Part 3 : Raytracing a parabolic mirror from scratch](/blog/Scope-sim-3)
 - [Part 2 : Primary mirror design & calculation](/blog/Scope-sim-2)
 - [Part 1 : Simulating movement & state with Elixir](/blog/Scope-sim)
 
-In [the last entry](/blog/Scope-sim-3) of this series, we've seen how we could calculate the effective focal length and resultant longitudinal aberration of a parabolic mirror imaging non-infinity located objects. We could still have a few problems before we can use this model to actually image scenes.
+Dans [la dernière partie](/blog/Scope-sim-3) de cette série, nous avons vu comment nous pouvions calculer la distance focale effective et l’aberration longitudinale résultant d’un miroir parabolique travaillant avec des objets proches. 
 
-Only on-axis rays (that is, rays originating from a source at `y = 0`) are simulated. This means we're thinking in 1D, but the real world will be seen as 3D from the perspective of the mirror. We have depth (`x axis`), vertical distance from the parabola's axis, and horizontal distance from the parabola's axis. The main implication of that is that we're ignoring all off-axis aberrations.
+Seuls les rayons sur axe (c’est-à-dire les rayons provenant d’une source à `y = 0``) sont simulés. Cela signifie que nous pensons en 2D, mais le monde réel sera en 3D du point de vue du miroir. Nous avons la profondeur (axe des x), la distance verticale par rapport à l’axe de la parabole, et la distance horizontale par rapport à l’axe de la parabole. Nous ignorons donc toutes les aberrations hors axe.
 
-But, for my sensor (3.58 * 2.02mm), this problem will be quite contained with its very narrow field of view.
+Pour mon capteur (3,58 * 2,02 mm), ce problème sera assez contenu grâce à son champ de vision très étroit.
 
-In 2D, you can play with the below updated widget and see how off-axis rays image at different heights, and see how that introduces coma (if you zoom in) : the rays do not focus to a single point anymore. (Well, they already did not really for nearby objects because of spherical aberration).
+En 2D, vous pouvez jouer avec le widget ci-dessous mis à jour et voir comment les rayons hors axe imagent à différentes hauteurs, et voir comment cela introduit de la coma (si vous zoomez) : les rayons ne se concentrent plus en un seul point. Cela dit, ils s'étalaient également sur l'axe longitudinal pour les objets proches, à cause de l'aberration de sphéricité induite par la faible distance objet.
 
 <Widget client:visible></Widget>
 
-We can calculate a few valuable metrics :
-- dimension of the real-life field of view for a given object distance
-- middle-ground focal plane location for a given object distance
-- geometric blur of an object point for a given sensor distance
-- Dawes limit (resolution limit) for a given aperture
+Nous pouvons calculer quelques données précieuses :
+- dimension du champ de vision réel pour une distance objet donnée
+- emplacement du plan focal moyen pour une distance d’objet donnée
+- étalement géométrique d’un point objet pour une distance de capteur donnée
+- Limite de dawes (limite de résolution) pour une ouverture donnée
 
-We'll use this image coming with a depth map from [Dominic Alves](https://www.flickr.com/photos/dominicspics/) on Flickr. I cropped it to match the sensor aspect ratio.
+Nous utiliserons cette image avec une carte de profondeur de [Dominic Alves] (https://www.flickr.com/photos/dominicspics/) sur Flickr. Je l’ai recadrée pour qu’elle ait un rapport largeur-hauteur similaire à celui du capteur.
 
-The nice thing with this picture is that it has infinite depth of field, as if every part of the image was in focus. It also features a cubic structure, which will allow us to easily define dimensions, and map a realistic scale to the depth map. We'll forget about perspective for the next parts of this blog post.
+Cette image a l'avantage d'avoir une profondeur de champ infinie, comme si chaque partie de l’image était au point simultanément. Elle dispose également d’une structure cubique, qui nous permettra de facilement définir des dimensions plausibles à son contenu.
 
 <div style="display:flex; width: 100%; max-width: 67ch; gap: 10px;">
 <img style="display: block; max-width: 50%;height:auto;" id="img-depth" src="/pics/photoscope_4/depth.png" />
 <img style="display: block; max-width: 50%;height:auto;" id="img-image" src="/pics/photoscope_4/img.png" />
 </div>
 
-Let's say this scene that conveniently covers the whole sensor takes place 20 meters away from the mirror.
-From the FOV calculation, we get `(at 20000mm, that is 175.41mm x 98.97mm)`. So, at its nearest point, the scene fits in a frame of dimensions `175.41mm x 98.97mm`. We can eyeball the cube to be approximately `95mm wide`.
-Eyeballing again, the angle of both the cube and the lines on the floor seems to be `30 degrees`.
-Two floor tiles are roughly the dimension of a side of the cube, so a `tile will be 47.5mm wide`.
-`6 tiles` reach from the front to the back, forming the hypothenuse of a `30-60-90 triangle`.
+Disons que cette scène qui couvre l’ensemble du capteur a lieu à 20 mètres du miroir.
+À partir du calcul du FOV, on obtient `(à 20000mm, 175,41mm x 98,97mm)`. Ainsi, à son point le plus proche de l'observateur, la scène tient dans un cadre de dimensions `175,41mm x 98,97mm`. On peut déduire que le cube ferait environ `95mm de largeur`.
+L’angle du cube et des lignes au sol semble être autour de 30 degrés. Deux carreaux du sol ont à peu près la dimension d’un côté du cube, de sorte qu’un carreau aura une largeur de 47,5 mm. `6 tuiles` s’étendent de l’avant vers l’arrière de l'image, formant l’hypothèse d’un triangle `30-60-90`.
 
-So, if a tile is 47.5mm wide, 6 fit in their diagonals, and they form the hypothenuse with length `2x` of this particular triangle, the long side of the right angle is `x*sqrt(3)`.
+Ainsi, si une tuile a une largeur de 47,5 mm, 6 s’insèrent dans leurs diagonales et forment l’hypothénuse avec la longueur « 2x » de ce triangle particulier, le côté long de l’angle droit est « x*sqrt(3) ».
 
-`((47.5 * Math.sqrt(2) * 6) / 2) * Math.sqrt(3)` = { (((47.5 * Math.sqrt(2) * 6) / 2) * Math.sqrt(3)).toFixed(2) }mm
+`((47,5 * Math.sqrt(2) * 6) / 2) * Math.sqrt(3)` = { (((47,5 * Math.sqrt(2) * 6) / 2) * Math.sqrt(3)). toFixed(2) }mm
 
-The back of the scene is roughly 300mm further than the front. Keep in mind that we're only going for realistic but not exact values here.
-Let's say that `white` is `20000mm` and `black` is `20350mm`.
+L’arrière de la scène est environ 300 mm plus loin que l’avant. Disons que `blanc` représente `20000mm` et `noir` représente `20350mm`.
 
-Let's also keep in mind that our telescope is bound by physics and has a `resolution`, that is, the angular size of objects it is able to discriminate. There are a lot of different equalities for resolution, each having a different meaning on the way two point sources are discernable from each other. We calculated earlier the Dawes Limit of the 114mm mirror to be 1.02“, meaning, `1.02 * 1/3600` in degrees. At twenty meters, this means we can discern details at least { (Math.tan(((1.02 * 1/3600) * Math.PI / 180)) * 20000).toFixed(2) }mm wide. On the moon, the smallest detail this telescope could see is { (Math.tan(((1.02 * 1/3600) * Math.PI / 180)) * 384400).toFixed(2) }km wide (with the moon at 384 400 km). [This article at Sky and Telescope](https://skyandtelescope.org/astronomy-news/the-moon-through-an-8-meter-eye/) shows how some professional setups using adaptive optics are able to achieve 0.07“ resolution, or 130m wide features on the moon.
+N’oublions pas non plus que notre télescope est lié à la physique et qu’il a une «résolution», c’est-à-dire la taille angulaire des objets qu’il est capable de distinguer. Il y a beaucoup d’égalités différentes pour la résolution, chacune ayant un sens différent sur la façon dont deux sources ponctuelles sont discernables l’une de l’autre. Nous avons calculé plus tôt que la limite Dawes du miroir de 114 mm était de 1,02 po, ce qui signifie « 1,02 * 1/3600 » en degrés. À vingt mètres, cela signifie que nous pouvons discerner des détails au moins { (Math.tan (((1.02 * 1/3600) * Math.PI / 180)) * 20000). toFixed(2) }mm de large. Sur la lune, le plus petit détail que ce télescope a pu voir est { (Math.tan(((1.02 * 1/3600) * Math.PI / 180)) * 384400). toFixed(2) }km de large (avec la lune à 384 400 km). [Cet article sur Sky and Telescope](https://skyandtelescope.org/astronomy-news/the-moon-through-an-8-meter-eye/) montre comment certaines configurations professionnelles utilisant l’optique adaptative sont capables d’atteindre une résolution de 0,07” ou des caractéristiques de 130 m de large sur la lune.
 
-Our scene when imaged at `20 meters` is ~`175.4mm wide` and `2015 pixels` wide. If we can discern `0.1mm wide features` at that distance, those features are {(2015/1754).toFixed(2)}px wide. This is very close to 1px resolution on the virtual scene. I will stay at that level of abstraction.
+Notre scène, lorsqu’elle est photographiée à 20 mètres, mesure environ 175,4 mm de largeur et 2015 pixels de largeur. Si nous pouvons discerner des caractéristiques de 0,1 mm de large à cette distance, ces caractéristiques sont {(2015/1754). toFixed(2)}px de large. C’est très proche de la résolution 1px sur la scène virtuelle. Je vais rester à ce niveau d’abstraction.
+
+**Utilisateurs de Safari/iOS** : la démo ci-dessous ne fonctionne pas en raison du manque de prise en charge des filtres CanvasRenderingContext2D. Les captures d’écran plus bas dans la page montrent l’effet.
 
 **Safari/iOS users** : the below demo does not work because of lack of support for CanvasRenderingContext2D filters. Screenshots lower down the page show the effect.
 
