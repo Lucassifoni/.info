@@ -1,0 +1,29 @@
+---
+layout: "../../../layouts/BlogPost.astro"
+title: "Une première tentative d'argenture donnant un résultat"
+description: "Après quelques essais infructueux, une première argenture de miroir réussie."
+pubDate: "Feb 20 2023"
+---
+
+Après quelques essais infructueux causés par le manque de pureté des différents produits impliqués dans le processus d'argenture, et une confusion entre les différents types de sucres (dextrose, glucose, saccharose...), je suis parvenu à une première argenture donnant lieu à un dépôt réfléchissant et homogène.
+
+Le revêtement est légèrement translucide :
+
+![](/pics/silvering/c.jpeg)
+
+On peut estimer sa réflectivité avec un bloc de téflon, photographié à 45°, posé sur le miroir :   
+
+![](/pics/silvering/a.jpeg)
+
+Le bloc de téflon a ses composantes RGB moyennes à (194, 191, 186). Son reflet sur le miroir est à (165, 158, 143).
+On peut donc calculer la réflectivité à {(1/(((194+191+186)/3) / ((165+158+143)/3))).toFixed(2) }, soit 82%. Pour une première, ce n'est pas trop insatisfaisant, bien qu'il devrait être possible d'atteindre plus de 96%.
+
+Le processus pourrait être amélioré de bien des manières :
+- le nettoyage du miroir a laissé à désirer, donnant lieu aux traces brunes
+- la pureté des différents produits reste à améliorer
+- la quantité de solution préparée était trop faible et cela m'a posé des difficultés
+
+Cela dit, cet essai pose les fondations pour une autonomie en fabrication d'optiques et leur traitement pour mon usage personnel.
+
+Le procédé suivi est décrit dans mon [post précédent](/fr/blog/SpraySilvering). Attention à bien veiller à la bonne dissolution du précipité marron lors de la préparation de la solution, qui nécessite un peu de temps.
+
