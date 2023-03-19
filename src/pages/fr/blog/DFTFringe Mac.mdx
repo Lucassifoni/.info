@@ -1,0 +1,56 @@
+---
+layout: "../../../layouts/BlogPost.astro"
+title: "DFTFringe sur Mac ARM via multipass"
+description: "Lancer DFTFringe sur Mac ARM via une VM"
+pubDate: "Mar 19 2023"
+---
+
+Cet article pourrait simplement être consacré à l'`usage d'une VM Ubuntu en mode graphique sur un Mac ARM`, mais j'avais spécifiquement besoin de pouvoir lancer [DFTFringe](https://github.com/githubdoe/DFTFringe) et n'y étais pas encore parvenu via `wine`, ni via `crossover`, et `VirtualBox 7` échouait à lancer l'installation d'une distro linux.
+
+J'ai donc au fil de mes recherches découvert [`Multipass`, un outil proposé par Canonical](https://multipass.run/) pour lancer des VMs Ubuntu (via Qemu + hyperkit sous le capot) très aisément, quel que soit l'OS de l'hôte.
+
+Un utilisateur de Github, Julien Staub a [récemment ajouté](https://github.com/githubdoe/DFTFringe/pull/10) une CI Linux basée sur un dockerfile de [gr5](https://gr5.org) pour compiler DFTFringe sur linux. Tout cela, réuni, permet d'utiliser convenablement DFTFringe sur mon portable, un Macbook Air M1 sous Monterey.
+
+Une fois `multipass` installé, créons une VM avec un espace disque suffisant pour y installer un environnement de bureau :
+
+```bash
+multipass launch --cpus 2 --disk 10G --memory 4G
+```
+
+Une fois la VM créée, nous pouvons nous y connecter avec son nom et `multipass shell` :
+
+```bash
+multipass shell artful-copperhead
+```
+
+Une fois dans la VM, j'ai installé `lubuntu-desktop` et `xrdp`, puis donné un mot de passe à l'utilisateur par défaut, `ubuntu` :
+
+```bash
+sudo apt update
+sudo apt install lubuntu-desktop xrdp
+sudo passwd ubuntu
+```
+
+Ensuite, sous Mac, j'installe `Microsoft Remote Desktop` depuis l'App Store.
+Via `multipass list`, j'obtiens l'IP de la VM lancée et m'y connecte depuis `Microsoft Remote Desktop`. J'atterris sur un environnement de bureau LXDE.
+
+Dans la VM, dans un terminal, il n'y a plus qu'à cloner DFTFringe, installer les dépendances nécessaires en se basant sur [le workflow de CI](https://github.com/githubdoe/DFTFringe/blob/master/.github/workflows/build-linux.yml) :
+
+```bash
+sudo apt update
+sudo apt install -y apt-utils build-essential wget qt5-qmake qt5-qmake-bin qt5-assistant qtbase5-dev qtmultimedia5-dev libqt5charts5 libqt5charts5-dev libqt5multimedia* libqt5datavisualization5-dev libqt5datavisualization5 libopencv-core-dev libopencv-core4.5d libopencv-dev libqwt-qt5-6 libqwt-qt5-dev libarmadillo-dev libarmadillo10
+git clone https://github.com/githubdoe/DFTFringe.git
+cd DFTFringe
+qmake
+make -j4
+```
+
+La compilation est assez rapide (quelques minutes).
+
+```bash
+./DFTFringe
+```
+
+![](/pics/dftfringe/dftfringe_mac.png)
+
+Fantastique :^) .
