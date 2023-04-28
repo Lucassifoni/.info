@@ -1,12 +1,11 @@
 const short_tags = {
     elixir: "Elixir",
     wip: ["En cours", "WIP"],
-    vue: "Vue.js",
+    vue: "Vue",
     typescript: 'Typescript',
     ovo2: 'ovo2',
     maintain: ["Maintenance / Extension", "Improvements & extension"],
-    w2p: ["Automatisation process", "Workflow automation"],
-    kirby: "Kirby CMS",
+    w2p: ["Automatisation", "Automation"],
     etl: "ETL",
     nuxt: "Vue / Nuxt",
     node: "Node",
@@ -28,10 +27,7 @@ export const tags = Object.entries(short_tags).reduce((out, [key, value]) => {
 
 export const data = {
     fr: {
-        intro: `Je développe et gère des projets d'outils numériques <span class="noprint">en indépendant</span> depuis 2015.<br><span class="noprint"><br>Je conçois avec mes
-          clients des sites et outils internes expressifs, efficaces et ergonomiques, visant toujours à fournir un gain de temps à leurs utilisateurs.<br><br>Vous pouvez me proposer un projet <a href="https://www.malt.fr/profile/lucassifoni1">directement via Malt</a>, par mail à l'adresse affichée <span class="hide-small">à droite</span><span class="hide-large">plus bas</span>, ou <a href="https://www.linkedin.com/in/lucas-sifoni/">via LinkedIn</a>. </span>`,
-        projects_intro: `La technique est pour beaucoup de structures un mal nécessaire.<br>Dans mes projets favoris, la
-        technique simplifie des processus métier laborieux.<br>J'ai dirigé et réalisé en majorité le développement de ces projets.`,
+        intro: `Je développe et gère des projets d'outils numériques et logiciels sur-mesure <span class="noprint">en indépendant</span> depuis 2015.`,
         other_lang: 'read this page in english',
         titles: {
             collab: `Collaborations & équipes`,
@@ -43,6 +39,12 @@ export const data = {
         },
         collabs: [
             {
+                start: 2023,
+                end: "présent",
+                main: `Turing-Express`,
+                details: `avec <a href="https://laurasavignac.com">Laura Savignac</a>, développement d'outils d'automatisation du design`,
+            },
+            {
                 start: 2020,
                 end: "présent",
                 main: `autour du SIGL libre <a href="https://abelujo.cc">Abelujo</a>`,
@@ -52,37 +54,23 @@ export const data = {
                 start: 2018,
                 end: 2022,
                 main: `avec l'<a href="https://documents.design">Atelier Documents</a>`,
-                details: `gestion, conception et développement de projets web & outils internes, en proche
-                collaboration avec A. Lemarchand, L. Savignac et N. Santos, designers.`,
-            },
-            {
-                noprint: true,
-                start: 2015,
-                end: 'présent',
-                main: `collaborations variées`,
-                details: `avec un réseau d'indépendants dans les domaines de la
-                typographie, du design graphique, de la programmation, du réseau`
+                details: `gestion, conception et développement de projets web & outils internes`,
             }
         ],
         projects: [
             {
-                year: 2022, content: [
+                year: 2023, content: [
                     {
-                        intro: `<strong>&lt;sans titre&gt;</strong>, un système no-code/low-code d'automatisation du design, permettant des documents automatisés via API générée à la volée, ou semi-automatisés avec intervention humaine. <br>Avec <strong>ovo2</strong>, un langage maison pour ce projet.`,
-                        tags: [tags.elixir, tags.typescript, tags.ovo2, tags.wip],
+                        intro: `pour l'agence d'architecture <strong>Séquences</strong>, une base de données métier assortie d'outils de recherche, manipulation et incarnation de données (texte, image, modèles 3D, fichiers BIM).`,
+                        tags: [tags.elixir, tags.typescript, tags.wip, tags.w2p],
                     },
                     {
-                        intro: `<strong>AbjProxy</strong>, monitoring, indexation, proxy API, gestion à distance de fonctions web de plusieurs instances du logiciel Abelujo. `,
-                        tags: [tags.elixir, tags.wip, tags.vue],
+                        intro: `pour <strong>Tikoam</strong>, élimination de l'usage d'inDesign par une application web de design, croisement, et recherche de documents.`,
+                        tags: [tags.elixir, tags.wip, tags.vue, tags.w2p],
                     },
                     {
-                        intro: `<strong>Xyver</strong>, API de normalisation de données bibliographiques multi-sources.`,
-                        tags: [tags.elixir],
-                    },
-                    {
-                        intro: `pour <strong>AMM</strong>, outil de mise en page & composition accélérée de documents d'appel d'offre pour
-                    l'agence d'architecture.`,
-                        tags: [tags.vue, tags.elixir, tags.maintain, tags.w2p]
+                        intro: `pour <strong>Duffau & Associés</strong>, outil de mise en page & composition accélérée de documents, génération de plans de découpe.`,
+                        tags: [tags.vue, tags.elixir,tags.w2p, tags.wip]
                     }, {
                         intro: `<strong>Audioskop</strong>, (<a href="https://audioskop.fr">https://audioskop.fr</a>), webapp libre &
                     open-source d'exploration de corpus audio avec A. Delinotte et L. Savignac.
@@ -92,11 +80,28 @@ export const data = {
                 ]
             },
             {
+                year: 2022, content: [
+                    {
+                        intro: `<strong>&lt;sans titre&gt;</strong>, un système no-code/low-code d'automatisation du design, permettant des documents automatisés via API générée à la volée, ou semi-automatisés avec intervention humaine. <br>Avec <strong>ovo2</strong>, un langage maison pour ce projet.`,
+                        tags: [tags.elixir, tags.typescript, tags.ovo2, tags.wip],
+                    },
+                    {
+                        intro: `<strong>AbjProxy & Xyver</strong>, monitoring, indexation, proxy API, gestion à distance de fonctions web de plusieurs instances du logiciel Abelujo. `,
+                        tags: [tags.elixir, tags.wip, tags.vue],
+                    },
+                    {
+                        intro: `pour <strong>AMM</strong>, outil de mise en page & composition accélérée de documents d'appel d'offre pour
+                    l'agence d'architecture.`,
+                        tags: [tags.vue, tags.elixir, tags.maintain, tags.w2p]
+                    },
+                ]
+            },
+            {
                 year: 2021, content: [
                     {
                         intro: `pour <strong>Execo</strong>, outil de génération semi-automatique de dossiers d'appel d'offre
                 pour cette agence d'économie de la construction.`,
-                        tags: [tags.vue, tags.kirby, tags.elixir, tags.w2p],
+                        tags: [tags.vue, tags.elixir, tags.w2p],
                     },
                     {
                         intro: `pour <strong>Scalène</strong>, site web stateless puisant ses données d'un ERP développé pour l'agence
@@ -142,14 +147,6 @@ export const data = {
                         tags: [
                             tags.laravel, tags.nuxt, tags.node, tags.w2p, tags.rust
                         ]
-                    },
-                    {
-                        intro: `pour <strong>PPA architectures</strong>, design & développement web & back-office. Outils de
-                classification de contenus.`,
-                        tags: [
-                            tags.laravel,
-                            tags.vue
-                        ]
                     }
                 ]
             },
@@ -183,23 +180,19 @@ export const data = {
             }
         ],
         tech: {
-            current_stack: `Ma stack dans un cadre pro est actuellement :`,
+            current_stack: `Stack actuelle :`,
             stack: [
                 `Backend, domaine métier : Elixir (+ Phoenix)`,
+                `Rust (interop. Elixir)`,
                 `Frontend & UIs : Typescript (+ Vue.js)`,
                 `Data : ETS, sqlite3, PostgreSQL selon besoins`,
                 `CI/CD : Github Actions ou Gitlab CI + Docker`,
                 `Infra : VPSs debian`,
-            ],
-            desired_stack: `En apprentissage :`,
-            desired_stack_items: [
-                `Haskell (ouvert à l'utiliser plus)`,
-                `Rust (interop. Elixir)`,
             ]
         },
         teaching: {
             title: 'Enseignement',
-            text: 'En 2017 puis 2018, j\'anime un workshop de 40 heures auprès d\'étudiantes en design. Le cours donne les bases de HTML et CSS de manière simple et sémantique.<br>Chaque étudiante pense et code son site personnel, et le déploie via Github Pages.<br>Merci à ces deux promotions de DSAA Design pour leur implication et intérêt.'
+            text: 'En 2017 puis 2018, j\'anime un workshop de 40 heures auprès d\'étudiantes en design. Le cours donne les bases de HTML, CSS et JS.<br>Chaque étudiante pense, code et déploie son site personnel sur Github Pages.'
         },
         formation: [
             {
@@ -237,16 +230,10 @@ export const data = {
                 `<a href="https://github.com/Lucassifoni/imago">imago</a>, fingerprinting d'image en Elixir + Rust`,
             ]
         },
-        stars: `Depuis 2019, je construis des téléscopes sur mon
-        temps libre et ai acquis des notions d'optique.<br>Interférométrie d'un miroir de téléscope du commerce, puis
-        amélioration par mes soins : <a
-          href="https://github.com/Lucassifoni/hyperbolic-200mm-f3.5-/">hyperbolic-200mm-f3.5- sur
-          github</a>.`,
+
     },
     en: {
-        intro: `I build and manage web & internal tooling projects as a freelancer since 2015.<br><br>I've been building expressive, efficient and easy-to-use tools in close collaboration with my clients, always aiming to provide an efficiency gain to their users.
-        <br>You can contact me about your project <a href="https://www.malt.fr/profile/lucassifoni1">directly on Malt</a>, by e-mail at the address <span class="hide-small">on your right</span><span class="hide-large">just below</span>, or <a href="https://www.linkedin.com/in/lucas-sifoni/">via LinkedIn</a>.`,
-        projects_intro: `For many structures, technology is a necessary evil.<br>In my favorite projects, tech relieves people of otherwise laborious processes.<br>I managed & developed most of each of those projects.`,
+        intro: `I build and manage web & internal tooling projects as a freelancer since 2015.`,
         other_lang: 'lire cette page en français',
         titles: {
             collab: `Teams & collaborations`,
@@ -258,6 +245,12 @@ export const data = {
         },
         collabs: [
             {
+                start: 2023,
+                end: "now",
+                main: `Turing-Express`,
+                details: `with <a href="https://laurasavignac.com">Laura Savignac</a>, design automation applications development`,
+            },
+            {
                 start: 2020,
                 end: "now",
                 main: `around the FLOSS library management software <a href="https://abelujo.cc">Abelujo</a>`,
@@ -267,35 +260,24 @@ export const data = {
                 start: 2018,
                 end: 2022,
                 main: `with the <a href="https://documents.design">Documents</a> design practice`,
-                details: `management, design and development of web & tooling projects, in close collaboration with A. Lemarchand, L. Savignac et N. Santos, designers.`,
+                details: `management, design and development of web & tooling projects`,
             },
-            {
-                start: 2015,
-                end: 'now',
-                main: `various collaborations`,
-                details: `with a network of freelancers in type design, graphic design, programming, network..`
-            }
         ],
         projects: [
             {
-                year: 2022, content: [
+                year: 2023, content: [
                     {
-                        intro: `<strong>&lt;to be named&gt;</strong>, a no-code/low-code design automation system providing automated documents via design APIs & semi-automated documents with human intervention.<br>With <strong>ovo2</strong>, a homebrew language for this project.`,
-                        tags: [tags.elixir, tags.typescript, tags.ovo2, tags.wip],
+                        intro: `for the architecture agency <strong>Séquences</strong>, a business database with search tools, manipulation and data incarnation (text, image, 3D models, BIM files).`,
+                        tags: [tags.elixir, tags.typescript, tags.wip, tags.w2p],
                     },
                     {
-                        intro: `<strong>AbjProxy</strong>, monitoring, indexation, API proxy, and remote-control of web tasks around Abelujo. `,
-                        tags: [tags.elixir, tags.wip, tags.vue],
+                        intro: `for <strong>Tikoam</strong>, elimination of the use of inDesign by a web application of design, cross-referencing, and document search.`,
+                        tags: [tags.elixir, tags.wip, tags.vue, tags.w2p],
                     },
                     {
-                        intro: `<strong>Xyver</strong>, multi-source library/books data normalisation API`,
-                        tags: [tags.elixir],
-                    },
-                    {
-                        intro: `for <strong>AMM</strong>, quick and semi-automated layout engine for administrative / call for offers documents for the architecture agency.
-                        `,
-                        tags: [tags.vue, tags.elixir, tags.maintain, tags.w2p]
-                    }, {
+                        intro: `for <strong>Duffau & Associés</strong>, layout tool & accelerated document composition, generation of cutting plans.`,
+                        tags: [tags.vue, tags.elixir,tags.w2p, tags.wip]
+                    },{
                         intro: `<strong>Audioskop</strong>, (<a href="https://audioskop.fr">https://audioskop.fr</a>), FLOSS web app to explore podcast/audio corpuses, with A. Delinotte et L. Savignac.
                     `,
                         tags: [tags.elixir, tags.wip, tags.vue]
@@ -303,10 +285,27 @@ export const data = {
                 ]
             },
             {
+                year: 2022, content: [
+                    {
+                        intro: `<strong>&lt;to be named&gt;</strong>, a no-code/low-code design automation system providing automated documents via design APIs & semi-automated documents with human intervention.<br>With <strong>ovo2</strong>, a homebrew language for this project.`,
+                        tags: [tags.elixir, tags.typescript, tags.ovo2, tags.wip],
+                    },
+                    {
+                        intro: `<strong>AbjProxy & Xyver</strong>, monitoring, indexation, API proxy, and remote-control of web tasks around Abelujo. `,
+                        tags: [tags.elixir, tags.wip, tags.vue],
+                    },
+                    {
+                        intro: `for <strong>AMM</strong>, quick and semi-automated layout engine for administrative / call for offers documents for the architecture agency.
+                        `,
+                        tags: [tags.vue, tags.elixir, tags.maintain, tags.w2p]
+                    }
+                ]
+            },
+            {
                 year: 2021, content: [
                     {
                         intro: `for <strong>Execo</strong>, semi-automated layout and public offers documents generation engine, for this architecture economists agency`,
-                        tags: [tags.vue, tags.kirby, tags.elixir, tags.w2p],
+                        tags: [tags.vue, tags.elixir, tags.w2p],
                     },
                     {
                         intro: `for <strong>Scalène</strong>, stateless website consuming the API of their ERP developed in 2019.`,
@@ -344,13 +343,6 @@ export const data = {
                         intro: `for <strong>lab212</strong>, multi-tenant website, single back-office generating 1 to N custom websites.`,
                         tags: [
                             tags.laravel, tags.nuxt, tags.node, tags.w2p, tags.rust
-                        ]
-                    },
-                    {
-                        intro: `for <strong>PPA architectures</strong>, content classification tooling, design & development of a custom back-office & website`,
-                        tags: [
-                            tags.laravel,
-                            tags.vue
                         ]
                     }
                 ]
@@ -399,7 +391,7 @@ export const data = {
         },
         teaching: {
             title: 'Teaching',
-            text: 'In 2017 and then 2018, I gave a 40h workshop to design students, teaching HTML & CSS basics with a focus on simplicity & semantics.<br>Each student learnt to think and code their personal website, how the web generally works at a high level, and how to use Github Pages to deploy it.<br>Thanks to those two student groups for their interest and energy.'
+            text: 'In 2017 and 2018, I gave a 40h workshop to design students, teaching HTML, CSS & JS basics.<br>Each student has thought, coded, and deployed and code their personal website.'
         },
         formation: [
             {

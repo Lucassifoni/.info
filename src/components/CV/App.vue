@@ -48,7 +48,6 @@ const t = computed(() => {
           </p>
 
           <h3 id="projects" v-html="t.titles.projects"></h3>
-          <p class="small" v-html="t.projects_intro"></p>
           <div v-for="list in t.projects">
             <h4 class="year">{{ list.year }}</h4>
             <ul class="project-list">
@@ -69,10 +68,6 @@ const t = computed(() => {
           <ul>
             <li v-for="item in t.tech.stack" v-html="item"></li>
           </ul>
-          <p v-html="t.tech.desired_stack"></p>
-          <ul>
-            <li v-for="item in t.tech.desired_stack_items" v-html="item"></li>
-          </ul>
           <h3 id="teaching" v-html="t.teaching.title"></h3>
           <p v-html="t.teaching.text"></p>
           <h3 id="formation" v-html="t.titles.form"></h3>
@@ -87,8 +82,6 @@ const t = computed(() => {
           <ul>
             <li v-for="item in t.oss.list" v-html="item"></li>
           </ul>
-          <h3 id="stars" v-html="t.titles.stars"></h3>
-          <p v-html="t.stars"></p>
         </aside>
       </div>
     </div>
@@ -201,7 +194,7 @@ const t = computed(() => {
       margin: 3px;
       border-radius: 10px;
       font-family: Arial, Helvetica, sans-serif;
-      font-size: .75em;
+      font-size: .55em;
       padding: 2px 6px;
       opacity: .5;
       color: black;
