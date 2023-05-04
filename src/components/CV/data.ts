@@ -41,7 +41,7 @@ export const data = {
             {
                 start: 2023,
                 end: "présent",
-                main: `Turing-Express`,
+                main: `<a href="https://turing-express.fr">Turing-Express</a>`,
                 details: `avec <a href="https://laurasavignac.com">Laura Savignac</a>, développement d'outils d'automatisation du design`,
             },
             {
@@ -247,7 +247,7 @@ export const data = {
             {
                 start: 2023,
                 end: "now",
-                main: `Turing-Express`,
+                main: `<a href="https://turing-express.fr">Turing-Express</a>`,
                 details: `with <a href="https://laurasavignac.com">Laura Savignac</a>, design automation applications development`,
             },
             {
