@@ -15,18 +15,21 @@ const posts = (await Astro.glob("./*.{md,mdx}")).sort(
 <!DOCTYPE html>
 <html lang="fr">
 	<head>
-		<BaseHead title={SITE_TITLE + ' - Blog'} description={SITE_DESCRIPTION} />
-		<style>
-	ul {
+		<BaseHead
+			title={SITE_TITLE + " - Blog"}
+			description={SITE_DESCRIPTION}
+		/>
+		<style scoped>
+			ul {
 				list-style-type: none;
 				padding: unset;
 			}
-			
+
 			ul li {
 				display: flex;
 				align-items: baseline;
-				margin-bottom: .75em;
-				padding-top: .75em;
+				margin-bottom: 0.75em;
+				padding-top: 0.75em;
 				flex-wrap: wrap;
 				border-top: 1px dotted lightgray;
 			}
@@ -36,22 +39,25 @@ const posts = (await Astro.glob("./*.{md,mdx}")).sort(
 				padding-left: 9.5ch;
 			}
 
+			ul.posts-list {
+				padding-left: 0;
+			}
+
 			ul li time {
 				flex: 0 0 11ch;
 				font-style: italic;
 				color: #000000;
-				font-size: .85em;
+				font-size: 0.85em;
 			}
-			
+
 			ul li a {
 				color: black;
 				text-decoration: none;
-				
 			}
 			ul li a:hover {
-					text-decoration: underline;
-				}
-			
+				text-decoration: underline;
+			}
+
 			ul li a:visited {
 				color: black;
 			}
@@ -60,7 +66,11 @@ const posts = (await Astro.glob("./*.{md,mdx}")).sort(
 				ul li time {
 					flex: 0 0 100%;
 				}
-				
+
+				.tags-container {
+					padding-left: 0;
+					margin-left: -0.25em;
+				}
 				ul li {
 					flex-wrap: wrap;
 					margin-bottom: 1em;
@@ -73,32 +83,48 @@ const posts = (await Astro.glob("./*.{md,mdx}")).sort(
 		<main>
 			<h3>Bonjour 👋</h3>
 			<p>
-				Cette liste présente du contenu sur diverses recherches personnelles (optique, astronomie, programmation) ou liées à mon travail (programmation).
-				<br>J'écris principalement en anglais car cela me permet d'être plus concis : les articles sont donc en cours de traduction depuis l'anglais et certains sont pour le moment manquants.
+				Cette liste présente du contenu sur diverses recherches
+				personnelles (optique, astronomie, programmation) ou liées à mon
+				travail (programmation).
+				<br />J'écris principalement en anglais car cela me permet
+				d'être plus concis : les articles sont donc en cours de
+				traduction depuis l'anglais et certains sont pour le moment
+				manquants.
 			</p>
 			<section>
-				<ul>
+				<ul class="posts-list">
 					{
-						posts.filter((post) => !post.frontmatter.draft).map((post) => (
-							<li>
-								<time datetime={post.frontmatter.pubDate}>
-									{new Date(
-										post.frontmatter.pubDate
-									).toLocaleDateString("fr-fr", {
-										year: "numeric",
-										month: "2-digit",
-										day: "2-digit",
-									})}
-								</time>
-								{ (post.tags || []).join(',') }
-								<a href={post.url} set:html="post.frontmatter.title.replace('--', '<br/>')"></a>
-								<div class="tags-container">
-									<div class="tags">
-										{ (post.frontmatter.tags || []).map(t => <span class={"tag " + t}>{ t }</span>) }
+						posts
+							.filter((post) => !post.frontmatter.draft)
+							.map((post) => (
+								<li>
+									<time datetime={post.frontmatter.pubDate}>
+										{new Date(
+											post.frontmatter.pubDate
+										).toLocaleDateString("fr-fr", {
+											year: "numeric",
+											month: "2-digit",
+											day: "2-digit",
+										})}
+									</time>
+									{(post.tags || []).join(",")}
+									<a
+										href={post.url}
+										set:html="post.frontmatter.title.replace('--', '<br/>')"
+									/>
+									<div class="tags-container">
+										<div class="tags">
+											{(post.frontmatter.tags || []).map(
+												(t) => (
+													<span class={"tag " + t}>
+														{t}
+													</span>
+												)
+											)}
+										</div>
 									</div>
-								</div>
-							</li>
-						))
+								</li>
+							))
 					}
 				</ul>
 			</section>

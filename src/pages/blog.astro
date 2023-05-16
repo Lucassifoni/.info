@@ -16,7 +16,7 @@ const posts = (await Astro.glob("./blog/*.{md,mdx}")).sort(
 <html lang="en">
 	<head>
 		<BaseHead title={SITE_TITLE + ' - Blog'} description={SITE_DESCRIPTION} />
-		<style>
+		<style scoped>
 			ul {
 				list-style-type: none;
 				padding: unset;
@@ -29,6 +29,10 @@ const posts = (await Astro.glob("./blog/*.{md,mdx}")).sort(
 				padding-top: .75em;
 				flex-wrap: wrap;
 				border-top: 1px dotted lightgray;
+			}
+
+			ul.posts-list {
+				padding-left: 0;
 			}
 
 			.tags-container {
@@ -61,6 +65,10 @@ const posts = (await Astro.glob("./blog/*.{md,mdx}")).sort(
 					flex: 0 0 100%;
 				}
 				
+				.tags-container {
+					padding-left: 0;
+					margin-left: -0.25em;
+				}
 				ul li {
 					flex-wrap: wrap;
 					margin-bottom: 1em;
@@ -77,7 +85,7 @@ const posts = (await Astro.glob("./blog/*.{md,mdx}")).sort(
 				research (optics, astronomy, programming) and work-related research (programming).
 			</p>
 			<section>
-				<ul>
+				<ul class="posts-list">
 					{
 						posts.filter((post) => !post.frontmatter.draft).map((post) => (
 							<li>
