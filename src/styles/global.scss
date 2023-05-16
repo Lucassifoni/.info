@@ -118,7 +118,6 @@ ul ul {
 		font-family: Arial, Helvetica, sans-serif;
 		font-size: .55em;
 		padding: 2px 6px;
-		opacity: .5;
 		color: black;
 		background: rgb(223, 223, 223);
 
@@ -206,4 +205,106 @@ ul ul {
 			background: lightpink;
 		}
 	}
+}
+
+@media screen {
+	.printonly {
+		display: none;
+	}
+}
+
+@media print {
+	.noprint {
+		display: none;
+	}
+
+	html,
+	body {
+		width: 209.95mm;
+		height: 296.95mm;
+		font-size: 14.5px;
+		background: none;
+	}
+
+	html {
+		padding: 0;
+		margin: 0;
+	}
+
+	body {
+		margin: 0;
+		padding: 10mm;
+		overflow-x: hidden;
+	}
+
+	.page-cv {
+		position: relative;
+
+		.cv main {
+			flex: 0 0 58%;
+		}
+
+		.cv aside,
+		.cv .header-right {
+			flex: 0 0 36%;
+			padding-left: 3ch;
+			font-size: .8em;
+		}
+
+		#app>header {
+			margin-bottom: -.5em;
+		}
+
+		h3 {
+			font-size: 1rem;
+			margin-bottom: .5em;
+			margin-top: 1em;
+		}
+
+		ul {
+			margin: 0;
+
+			p.small {
+				margin-bottom: .5em;
+			}
+		}
+
+		.cv h4.year {
+			margin-top: 1em;
+			display: block;
+			margin-bottom: 0;
+		}
+
+		.project-list {
+			&:first-of-type {
+				h4.year {
+					margin-top: 0;
+				}
+			}
+		}
+
+		ul.dates {}
+
+		h3+p {
+			margin-top: 0;
+		}
+
+		footer {
+			position: absolute;
+			display: none;
+			bottom: 5mm;
+			left: 10mm;
+			right: 10mm;
+		}
+
+		li {
+			list-style: none;
+
+			&::before {
+				display: none;
+			}
+		}
+	}
+
+
 }

@@ -27,12 +27,13 @@ export const tags = Object.entries(short_tags).reduce((out, [key, value]) => {
 
 export const data = {
     fr: {
-        intro: `Je développe et gère des projets d'outils numériques et logiciels sur-mesure <span class="noprint">en indépendant</span> depuis 2015.`,
+        intro: `Développe et gère des projets d'outils numériques et logiciels sur-mesure <span class="noprint">en indépendant</span> depuis 2015.`,
         other_lang: 'read this page in english',
+        cv_link: '/Lucas_Sifoni_CV_french.pdf',
         titles: {
             collab: `Collaborations & équipes`,
-            projects: `Projets choisis`,
-            tech: "Technologies",
+            projects: `Projets récents`,
+            tech: "Stack actuelle",
             form: "Formation",
             oss: "Open-Source",
             stars: "Vers les étoiles",
@@ -65,7 +66,7 @@ export const data = {
                         tags: [tags.elixir, tags.typescript, tags.wip, tags.w2p],
                     },
                     {
-                        intro: `pour <strong>Tikoam</strong>, élimination de l'usage d'inDesign par une application web de design, croisement, et recherche de documents.`,
+                        intro: `pour <strong>Tikoam</strong>, élimination de l'usage de la suite Adobe par une application web de design, croisement, et recherche de documents.`,
                         tags: [tags.elixir, tags.wip, tags.vue, tags.w2p],
                     },
                     {
@@ -149,45 +150,16 @@ export const data = {
                         ]
                     }
                 ]
-            },
-            {
-                year: 2016, content: [
-                    {
-                        intro: `pour <strong>A+B, designers</strong>, site web incluant une caméra allSky, outil d'automatisation de
-            dossiers allant de 3 à 300 pages et aux compositions et contenus variés`,
-                        tags: [
-                            tags.php, tags.iot, tags.w2p
-                        ]
-                    },
-                    {
-                        intro: `pour <strong>l'Heure du Brunch</strong>, site web + flux de commandes, design back-office mobile et
-                gestion du site en déplacement via un chatbot SMS liant API twilio et API du site.`,
-                        tags: [
-                            tags.laravel, tags.node, tags.vue,
-                        ]
-                    }
-                ]
-            },
-            {
-                year: 2015, content: [
-                    {
-                        intro: `pour <strong>AMM</strong>, site web générant des documents administratifs à la volée.`,
-                        tags: [
-                            tags.php, tags.w2p,
-                        ],
-                    }
-                ]
             }
         ],
         tech: {
             current_stack: `Stack actuelle :`,
             stack: [
-                `Backend, domaine métier : Elixir (+ Phoenix)`,
+                `Backend, métier : Elixir (+ Phoenix)`,
                 `Rust (interop. Elixir)`,
-                `Frontend & UIs : Typescript (+ Vue.js)`,
-                `Data : ETS, sqlite3, PostgreSQL selon besoins`,
-                `CI/CD : Github Actions ou Gitlab CI + Docker`,
-                `Infra : VPSs debian`,
+                `Frontend : Typescript / Vue`,
+                `Data : ETS, sqlite3, PostgreSQL`,
+                `CI/CD : Github Actions / Gitlab CI + Docker`,
             ]
         },
         teaching: {
@@ -222,23 +194,22 @@ export const data = {
             }
         ],
         oss: {
-            title: `Mise à disposition open-source de librairies (licence MIT) développées pour certains projets`,
+            title: `Mise à disposition (licence MIT) de librairies développées pour certains projets`,
             list: [
                 `<a href="https://github.com/documents-org/morris">morris</a>, normalisation de texte sur le web.`,
-                `<a href="https://github.com/documents-org/to_pdf">to_pdf</a>, serveur d'impression multi-moteur`,
                 `<a href="https://github.com/documents-org/buche">buche</a>, éditeur de blocs récursif pour Vue.js`,
                 `<a href="https://github.com/Lucassifoni/imago">imago</a>, fingerprinting d'image en Elixir + Rust`,
             ]
         },
-
     },
     en: {
         intro: `I build and manage web & internal tooling projects as a freelancer since 2015.`,
         other_lang: 'lire cette page en français',
+        cv_link: '/Lucas_Sifoni_CV_english.pdf',
         titles: {
             collab: `Teams & collaborations`,
-            projects: `A few chosen projects`,
-            tech: "Technologies",
+            projects: `Recent projects`,
+            tech: "Current stack",
             form: "Formation",
             oss: "Open-Source",
             stars: "To the stars",
@@ -271,7 +242,7 @@ export const data = {
                         tags: [tags.elixir, tags.typescript, tags.wip, tags.w2p],
                     },
                     {
-                        intro: `for <strong>Tikoam</strong>, elimination of the use of inDesign by a web application of design, cross-referencing, and document search.`,
+                        intro: `for <strong>Tikoam</strong>, elimination of the use of the Adobe suite by a web application of design, cross-referencing, and document search.`,
                         tags: [tags.elixir, tags.wip, tags.vue, tags.w2p],
                     },
                     {
@@ -346,42 +317,15 @@ export const data = {
                         ]
                     }
                 ]
-            },
-            {
-                year: 2016, content: [
-                    {
-                        intro: `for <strong>A+B, designers</strong>, website featuring an all-sky camera, book publishing & layout automation engine for documents ranging from 3 to 300 pages.`,
-                        tags: [
-                            tags.php, tags.iot, tags.w2p
-                        ]
-                    },
-                    {
-                        intro: `for <strong>l'Heure du Brunch</strong>, website + order flow, design & development of a remote-controllable backend via a custom SMS chatbot, allowing the owner to voice manage her website on the run.`,
-                        tags: [
-                            tags.laravel, tags.node, tags.vue,
-                        ]
-                    }
-                ]
-            },
-            {
-                year: 2015, content: [
-                    {
-                        intro: `for <strong>AMM</strong>, website with on-the-fly administrative documents generation`,
-                        tags: [
-                            tags.php, tags.w2p,
-                        ],
-                    }
-                ]
             }
         ],
         tech: {
-            current_stack: `Current stack in a professionnal context :`,
+            current_stack: `Current stack :`,
             stack: [
-                `Backend, business domain : Elixir (+ Phoenix)`,
-                `Frontend & UIs : Typescript (+ Vue.js)`,
-                `Data : ETS, sqlite3, PostgreSQL acc. to needs`,
-                `CI/CD : Github Actions / Gitlab CI + Docker`,
-                `Infra : VPSs debian`,
+                `Backend : Elixir (+ Phoenix)`,
+                `Frontend : Typescript / Vue`,
+                `Data : ETS, sqlite3, PostgreSQL`,
+                `CI/CD : Github Actions / Gitlab CI`,
             ],
             desired_stack: `Currently learning :`,
             desired_stack_items: [
@@ -413,22 +357,19 @@ export const data = {
                 details: `Design & manufacturing of a GPS-based solar panel positioning system.`
             },
             {
-                start: 2007,
+                start: 0,
                 end: "∞",
                 title: "Computer science self-teaching",
                 details: `Theorical CS, programming languages, since I met Linux in 2007.`,
             }
         ],
         oss: {
-            title: `Librairies (licence MIT) made for some projects`,
+            title: `Librairies (MIT) made for some projects`,
             list: [
                 `<a href="https://github.com/documents-org/morris">morris</a>, text cleaning & normalisation`,
-                `<a href="https://github.com/documents-org/to_pdf">to_pdf</a>, multi-engine PDF print server`,
-                `<a href="https://github.com/documents-org/buche">buche</a>, recursive block editor for Vue.js`,
-                `<a href="https://github.com/Lucassifoni/imago">imago</a>, Elixir + Rust image fingerprinting`,
+                `<a href="https://github.com/documents-org/buche">buche</a>, recursive block editor`,
+                `<a href="https://github.com/Lucassifoni/imago">imago</a>, Elixir + Rust fingerprinting`,
             ]
         },
-        stars: `Since 2019, I design & build telescopes and acquired knowledge in optics.<br>
-        Interferometry of a commercial telescope mirror, then my refigure of it, telescope CAD and build : <a href="https://github.com/Lucassifoni/hyperbolic-200mm-f3.5-/">hyperbolic-200mm-f3.5- sur github</a>.`,
     },
 };

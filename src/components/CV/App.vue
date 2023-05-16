@@ -14,8 +14,6 @@ const switchLang = () => {
 const t = computed(() => {
   return data[currentLang.value];
 });
-
-
 </script>
 
 <template>
@@ -27,31 +25,30 @@ const t = computed(() => {
         </div>
         <div class="header-right">
           <p>
-            <a v-if="1" :href="`mailto:contact@lucassifoni.info`">contact<span>@lucassifoni.info</span></a>
+            <a :href="`mailto:contact@lucassifoni.info`">contact<span>@lucassifoni.info</span></a>
             <br>
-            <a v-if="1" :href="`tel:33767025572`">+337.67.02.55.72</a>
+            <a :href="`tel:33767025572`">+337.67.02.55.72</a>
             <br>
-            <a v-if="1" href="/Lucas_Sifoni_CV_english.pdf">CV (pdf)</a>
+            <a class="noprint" :href="t.cv_link">CV (pdf)</a>
           </p>
         </div>
       </header>
       <div class="columns">
         <main>
           <h3 id="collabs" v-html="t.titles.collab"></h3>
-          <p>
+
           <ul class="dates">
             <li v-for="item in t.collabs">
               {{ item.start }} &mdash; {{ item.end }} : <span v-html="item.main"></span>
               <p class="small" v-html="item.details"></p>
             </li>
           </ul>
-          </p>
 
           <h3 id="projects" v-html="t.titles.projects"></h3>
-          <div v-for="list in t.projects">
-            <h4 class="year">{{ list.year }}</h4>
+          <div class="project-list" v-for="list in t.projects" :class="[list.year < '2021' ? 'noprint' : '']">
+            <h4 class="year"><strong>{{ list.year }}</strong></h4>
             <ul class="project-list">
-              <li v-for="project in list.content">
+              <li v-for="project, index in list.content">
                 <span v-html="project.intro"></span>
                 <span class="tags">
                   <div class="tag" :class="tag.key" v-for="tag in project.tags">
@@ -64,7 +61,6 @@ const t = computed(() => {
         </main>
         <aside>
           <h3 id="tech" v-html="t.titles.tech"></h3>
-          <p v-html="t.tech.current_stack"></p>
           <ul>
             <li v-for="item in t.tech.stack" v-html="item"></li>
           </ul>
@@ -73,7 +69,7 @@ const t = computed(() => {
           <h3 id="formation" v-html="t.titles.form"></h3>
           <ul class="dates">
             <li v-for="item in t.formation">
-              {{ item.start }} &mdash; {{ item.end }} : {{ item.title }}
+              <span v-if="item.start">{{ item.start }} &rarr;</span> {{ item.end }} : {{ item.title }}
               <p class="small" v-html="item.details"></p>
             </li>
           </ul>

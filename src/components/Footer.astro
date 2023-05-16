@@ -7,9 +7,9 @@ const fren = (a: string, b: string) => active_lang === 'fr' ? a : b;
 
 <footer>
 	<p>
-		2022 - {today.getFullYear()} Lucas&nbsp;Sifoni - L'Isle-Jourdain&nbsp;(32),&nbsp;France
+		<span class="noprint">2022 - </span> {today.getFullYear()} Lucas&nbsp;Sifoni - L'Isle-Jourdain&nbsp;(32),&nbsp;France
 	</p>
-	<ul>
+	<ul class="noprint">
 		<li class="noslash">{fren('liens', 'links')} :</li>
 		<li><a href="https://github.com/lucassifoni">github</a></li>
 		<li><a href="https://instagram.com/chantepierre_">instagram</a></li>
@@ -18,7 +18,7 @@ const fren = (a: string, b: string) => active_lang === 'fr' ? a : b;
 		<li><a href="mailto:contact@lucassifoni.info">email</a></li>
 	</ul>
 
-	<ul>
+	<ul class="noprint">
 		<li class="noslash">{fren('nouveaux posts :', 'get new posts :')}</li>
 		<li><a href="/rss.xml">RSS Feed</a></li>
 		<li>
