@@ -10,11 +10,12 @@ export interface Props {
 		pubDate?: string;
 		updatedDate?: string;
 		heroImage?: string;
+		tags?: string[];
 	};
 }
 
 const {
-	content: { title, description, pubDate, updatedDate, heroImage },
+	content: { title, description, pubDate, updatedDate, heroImage, tags },
 } = Astro.props;
 ---
 
@@ -62,6 +63,7 @@ const {
 						/>
 					)
 				}
+				{ (tags || []).map(t => <span class={"tag tag-" + t}>{ t }</span>) }
 				<h1 class="title" set:html="title.replace('--', '<br/>')" />
 				{pubDate && <time>{pubDate}</time>}
 				{

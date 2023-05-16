@@ -21,28 +21,46 @@ const posts = (await Astro.glob("./blog/*.{md,mdx}")).sort(
 				list-style-type: none;
 				padding: unset;
 			}
+			
 			ul li {
 				display: flex;
 				align-items: baseline;
-				margin-bottom: .35em;
+				margin-bottom: .75em;
+				padding-top: .75em;
+				flex-wrap: wrap;
+				border-top: 1px dotted lightgray;
 			}
+
+			.tags-container {
+				flex: 0 0 100%;
+				padding-left: 9.5ch;
+			}
+
 			ul li time {
 				flex: 0 0 11ch;
 				font-style: italic;
 				color: #000000;
 				font-size: .85em;
 			}
+			
 			ul li a {
 				color: black;
+				text-decoration: none;
+				
 			}
+			ul li a:hover {
+					text-decoration: underline;
+				}
+			
 			ul li a:visited {
-				color: #860a10;
+				color: black;
 			}
 
 			@media screen and (max-width: 767px) {
 				ul li time {
 					flex: 0 0 100%;
 				}
+				
 				ul li {
 					flex-wrap: wrap;
 					margin-bottom: 1em;
@@ -57,8 +75,6 @@ const posts = (await Astro.glob("./blog/*.{md,mdx}")).sort(
 			<p>
 				This listing features content on various personal
 				research (optics, astronomy, programming) and work-related research (programming).
-				<br>I'm a french person but write mostly in english. It allows me to be more straightforward. Video material
-				is mostly in French.
 			</p>
 			<section>
 				<ul>
@@ -74,7 +90,13 @@ const posts = (await Astro.glob("./blog/*.{md,mdx}")).sort(
 										day: "2-digit",
 									})}
 								</time>
+								
 								<a href={post.url} set:html="post.frontmatter.title.replace('--', '<br/>')"></a>
+								<div class="tags-container">
+									<div class="tags">
+										{ (post.frontmatter.tags || []).map(t => <span class={"tag " + t}>{ t }</span>) }
+									</div>
+								</div>
 							</li>
 						))
 					}
