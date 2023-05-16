@@ -1,0 +1,151 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "Raphaël's 300mm f/3.9 mirror"
+description: "Reflections in hindsight of this mirror."
+pubDate: "May 10 2023"
+tags: ["optics", "mirror-making"]
+---
+
+Raphaël's mirror is now done after around 200 hours of work on it mostly spread on the last six months, and should provide excellent views provided the night is good. Here is a summary of the different steps. As with last mirrors, the time repartition was `80% of work for 20% of measurements` and checks at the start of the process, and the last polishing sessions were `10% of work for 90% of measurements`, with a linear repartition in between. This April has been quite exceptionnally hot and most of the working time has been between 06am and 08am on mornings, or between 9pm and 12pm in evenings.
+
+Thankfully, the first days of May were quite cold and without large temperature swings and allowed to conduct the (long) final tests between 7pm and 11pm.
+
+### Rough grinding
+
+Raphaël's 300mm mirror gave me trouble at the rough grinding stage, with a plaster tool with drowned tiles that did not provide adequate action, and did not seem to allow me to drop the focal length below f/4.6. My friend desired a faster f/4 mirror, and I first had to replace the faulty tool.
+
+<figure>  
+![](/pics/raph300/000.jpg)
+<figcaption>The faulty plaster lap. </figcaption>
+</figure>
+
+I artificially raised the edges of the mirror with masking tape, and stuck new (and harder) tiles on it with polyvinyl alcohol glue.
+
+<figure>  
+![](/pics/raph300/001.jpg)
+<figcaption>Tiles stuck on the artificially-curved mirror</figcaption>
+</figure>
+
+The polyvinyl alcohol then acted as insulation between the glass and quick-setting polyester slurry poured on the tool. By resting the mirror with the glued tiles on the tool, the tiles embedded in the polyester slurry, and in hot water, detached from the mirror.
+
+<figure>  
+![](/pics/raph300/002.jpg)
+<figcaption>New tiles at the new stronger curvature on the tile tool. </figcaption>
+</figure>
+
+### Fine grinding
+
+A friend helped me to manually break in the new tool in an afternoon, then fine grinding proceeded on my turntable, tool on top, until the mirror was correctly fine ground. I spent an hour at each grit : 220, 320, 400, 600, 25µ alox, 15µ alox, 9µ alox, 5µ alox, working the mating of the surfaces by feeling the smoothness of the moves and doing regular marker and pencil tests. The homogeneous erasing of the marker on the whole surface while grinding indicates a correct relative sphericity for the current grit size.
+
+<figure>
+![](/pics/raph300/003.jpg)
+</figure>
+
+<figure>
+![](/pics/raph300/004.jpg)
+</figure>
+
+### Polishing
+
+Initial Polishing was then done in approximatly 4 hours with a 20cm pitch tool on which little facets of LP66 cerium-loaded polishing polyurethane film was stuck with acetone.
+
+<figure>
+![](/pics/raph300/005.jpg)
+</figure>
+
+This helped me go through the initial polish really quickly, but left me with a bad turned edge because of my unfamiliarity with the 66% lap technique.
+
+<figure>
+![](/pics/raph300/006.jpg)
+</figure>
+
+### Curing a turned edge
+
+I then followed Stathis Firstlight's technique of digging a very strong trench just inside the edge with the thumb and did 6 rounds of 7 minutes of thumb-polishing with thick cerium slurry just inside the edge. I then proceeded to spread this trench to the middle zone with a small (30%) lap.
+
+<figure>
+![](/pics/raph300/007.jpg)
+</figure>
+<figure>
+![](/pics/raph300/008.jpg)
+</figure>
+
+A few cycles of this treatment allowed me to get rid of the turned edge but left a rough surface. The next picture is in the middle of this turned-edge treatment, when smoothing the trench wasn't quite finished.
+
+<figure>
+![](/pics/raph300/009.jpg)
+</figure>
+
+### Smoothing
+
+I then poured a full-size tool with thick pitch to finish smoothing the surface while pushing the remaining strong slope towards the mirror's edge before making it totally disappear.
+
+<figure>
+![](/pics/raph300/010.jpg)
+</figure>
+
+This left me with a correct edge with a hint of correction on the whole surface, around a -0.13 conic constant.
+
+<figure>
+![](/pics/raph300/012.jpg)
+</figure>
+<figure>
+![](/pics/raph300/013.jpg)
+</figure>
+
+### Correction
+
+All the remaining correction was done with a small pointy lap, with two quick smoothing passes on the full size lap when thermal conditions (working room a bit too hot) made me introduce small-scale roughness. At first, this lap had large facets and few channels, which I increased to go towards small facets with a lot of channels as parabolization progressed.
+
+<figure>
+![](/pics/raph300/lap.jpg)
+<figcaption>The small lap at the start of the figuring process.</figcaption>
+</figure>
+<figure>
+![](/pics/raph300/lap2.jpg)
+<figcaption>The small lap at the end of the figuring process.</figcaption>
+</figure>
+
+All figuring work was done with a blend of straight center-over-center strokes and oval strokes, as for my last mirror. All measurements were made with my Bath interferometer.
+
+<figure>
+![](/pics/raph300/014.jpg)
+<figcaption>The Bath interferometer.</figcaption>
+</figure>
+
+I've been warned of induced spherical aberration by the use of the prism as a folding flat in the Bath interferometer, and indeed, a prism induces SA in a converging beam by this relation : 
+
+```elixir
+def spherical(thickness, refractive_index, fnumber) do
+    term1 = thickness * (:math.pow(refractive_index, 2) - 1)
+    term2 = :math.pow(fnumber, 4) * 128 * :math.pow(refractive_index, 3)
+    -1 * (term1 / term2)
+end
+```
+
+By inputting the parameters `thickness = 7mm`, `refractive_index = 1.51`, `fnumber = 7.8`, we get those results :
+
+```
+iex(8)> term1 = thickness * (:math.pow(refractive_index, 2) - 1)
+8.9607
+iex(9)> term2 = :math.pow(fnumber, 4) * 128 * :math.pow(refractive_index, 3)
+1631245.1080992764
+iex(10)> -1 * (term1 / term2)
+-5.493165898557691e-6
+```
+
+Or `5.49nm`, so an error around 1/100 wave. Thanks to Cloudy Night members for warning me, then confirming with me that this error was absolutely insignificant.
+
+### Final result
+
+After 25 figuring sessions, the final result was reached and showed a mirror that should more than meet my friend's expectations.
+
+<figure>
+![](/pics/raph300/018.jpg)
+<figcaption>The final DFTFringe measurement report.</figcaption>
+</figure>
+
+Here are a few ronchigrams of the surface.
+
+![](/pics/raph300/016.jpg)
+![](/pics/raph300/015.jpg)

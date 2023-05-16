@@ -63,9 +63,24 @@ const {
 						/>
 					)
 				}
-				{ (tags || []).map(t => <span class={"tag tag-" + t}>{ t }</span>) }
 				<h1 class="title" set:html="title.replace('--', '<br/>')" />
+				{
+					(tags||[]).length && (
+				<div class="tags-container" style="margin-bottom: .75em;">
+					<div class="tags">
+						{(tags || []).map(
+							(t) => (
+								<span class={"tag " + t}>
+									{t}
+								</span>
+							)
+						)}
+					</div>
+				</div>
+					)
+				}
 				{pubDate && <time>{pubDate}</time>}
+				
 				{
 					updatedDate && (
 						<div>
