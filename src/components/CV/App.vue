@@ -78,6 +78,8 @@ const t = computed(() => {
           <ul>
             <li v-for="item in t.oss.list" v-html="item"></li>
           </ul>
+          <h3 id="hobbies" v-html="t.titles.hobbies"></h3>
+          <p v-html="t.hobbies"></p>
         </aside>
       </div>
     </div>

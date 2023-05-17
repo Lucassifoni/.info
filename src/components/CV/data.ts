@@ -27,7 +27,7 @@ export const tags = Object.entries(short_tags).reduce((out, [key, value]) => {
 
 export const data = {
     fr: {
-        intro: `Développe et gère des projets d'outils numériques et logiciels sur-mesure <span class="noprint">en indépendant</span> depuis 2015.`,
+        intro: `Développe et gère des projets d'outils numériques et logiciels sur-mesure en indépendant depuis 2015.`,
         other_lang: 'read this page in english',
         cv_link: '/Lucas_Sifoni_CV_french.pdf',
         titles: {
@@ -37,6 +37,7 @@ export const data = {
             form: "Formation",
             oss: "Open-Source",
             stars: "Vers les étoiles",
+            hobbies: "Centres d'intérêt"
         },
         collabs: [
             {
@@ -152,6 +153,7 @@ export const data = {
                 ]
             }
         ],
+        hobbies: "Mon loisir principal est la conception et réalisation d'instruments astronomiques, où le polissage manuel et contrôle interférométrique de surfaces de verre jusqu'à une précision de quelques nanomètres est atteignable moyennant assez de patience.",
         tech: {
             current_stack: `Stack actuelle :`,
             stack: [
@@ -203,7 +205,7 @@ export const data = {
         },
     },
     en: {
-        intro: `I build and manage web & internal tooling projects as a freelancer since 2015.`,
+        intro: `Builds and manages web & internal tooling projects as a freelancer since 2015.`,
         other_lang: 'lire cette page en français',
         cv_link: '/Lucas_Sifoni_CV_english.pdf',
         titles: {
@@ -213,7 +215,9 @@ export const data = {
             form: "Formation",
             oss: "Open-Source",
             stars: "To the stars",
+            hobbies: "Other interests"
         },
+        hobbies: "My main hobby is optics manufacturing and measurement for astronomical instruments, where hand polishing and optical interference control of glass surfaces to an accuracy of a few nanometers is within reach of patience.",
         collabs: [
             {
                 start: 2023,
@@ -224,7 +228,7 @@ export const data = {
             {
                 start: 2020,
                 end: "now",
-                main: `around the FLOSS library management software <a href="https://abelujo.cc">Abelujo</a>`,
+                main: `around the library management software <a href="https://abelujo.cc">Abelujo</a>`,
                 details: `with P. Singer et V. Dardel, expansion of web capabilities of the software`,
             },
             {
