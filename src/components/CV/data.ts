@@ -2,7 +2,7 @@ const short_tags = {
     elixir: "Elixir",
     wip: ["En cours", "WIP"],
     vue: "Vue",
-    typescript: 'Typescript',
+    typescript: 'TS',
     ovo2: 'ovo2',
     maintain: ["Maintenance / Extension", "Improvements & extension"],
     w2p: ["Automatisation", "Automation"],
@@ -67,16 +67,16 @@ export const data = {
                     },
                     {
                         intro: `pour <strong>Tikoam</strong>, élimination de l'usage de la suite Adobe par une application web de design, croisement, et recherche de documents.`,
-                        tags: [tags.elixir, tags.wip, tags.vue, tags.w2p],
+                        tags: [tags.elixir,tags.typescript, tags.wip, tags.vue, tags.w2p],
                     },
                     {
                         intro: `pour <strong>Duffau & Associés</strong>, outil de mise en page & composition accélérée de documents, génération de plans de découpe.`,
-                        tags: [tags.vue, tags.elixir,tags.w2p, tags.wip]
+                        tags: [tags.vue, tags.typescript,tags.elixir,tags.w2p, tags.wip]
                     }, {
                         intro: `<strong>Audioskop</strong>, (<a href="https://audioskop.fr">https://audioskop.fr</a>), webapp libre &
                     open-source d'exploration de corpus audio avec A. Delinotte et L. Savignac.
                     `,
-                        tags: [tags.elixir, tags.vue]
+                        tags: [tags.elixir, tags.typescript,tags.vue]
                     },
                 ]
             },
@@ -88,12 +88,12 @@ export const data = {
                     },
                     {
                         intro: `<strong>AbjProxy & Xyver</strong>, monitoring, indexation, proxy API, gestion à distance de fonctions web de plusieurs instances du logiciel Abelujo. `,
-                        tags: [tags.elixir, tags.wip, tags.vue],
+                        tags: [tags.elixir, tags.wip,tags.typescript, tags.vue],
                     },
                     {
                         intro: `pour <strong>AMM</strong>, outil de mise en page & composition accélérée de documents d'appel d'offre pour
                     l'agence d'architecture.`,
-                        tags: [tags.vue, tags.elixir, tags.maintain, tags.w2p]
+                        tags: [tags.vue, tags.elixir, tags.typescript,tags.maintain, tags.w2p]
                     },
                 ]
             },
@@ -125,7 +125,7 @@ export const data = {
                 year: 2019, content: [
                     {
                         intro: `pour l'<strong>Orchestre National d'Île-de-France</strong>, développement d'une API privée & publique, design & développement back-office et outils de gestion internes, par dessus la base de donnée historique de l'institution (15 ans).`,
-                        tags: [tags.nuxt, tags.node, tags.laravel],
+                        tags: [tags.nuxt, tags.node, tags.typescript, tags.laravel],
                     },
                     {
                         intro: `pour le <strong>Musée des Tissus de Lyon</strong>, développement du site web, gateway API unifiant des
@@ -243,15 +243,15 @@ export const data = {
                     },
                     {
                         intro: `for <strong>Tikoam</strong>, elimination of the use of the Adobe suite by a web application of design, cross-referencing, and document search.`,
-                        tags: [tags.elixir, tags.wip, tags.vue, tags.w2p],
+                        tags: [tags.elixir, tags.wip, tags.typescript,tags.vue, tags.w2p],
                     },
                     {
                         intro: `for <strong>Duffau & Associés</strong>, layout tool & accelerated document composition, generation of cutting plans.`,
-                        tags: [tags.vue, tags.elixir,tags.w2p, tags.wip]
+                        tags: [tags.vue, tags.elixir,tags.typescript,tags.w2p, tags.wip]
                     },{
                         intro: `<strong>Audioskop</strong>, (<a href="https://audioskop.fr">https://audioskop.fr</a>), FLOSS web app to explore podcast/audio corpuses, with A. Delinotte et L. Savignac.
                     `,
-                        tags: [tags.elixir, tags.wip, tags.vue]
+                        tags: [tags.elixir, tags.wip, tags.typescript,tags.vue]
                     },
                 ]
             },
@@ -263,12 +263,12 @@ export const data = {
                     },
                     {
                         intro: `<strong>AbjProxy & Xyver</strong>, monitoring, indexation, API proxy, and remote-control of web tasks around Abelujo. `,
-                        tags: [tags.elixir, tags.wip, tags.vue],
+                        tags: [tags.elixir, tags.wip, tags.typescript,tags.vue],
                     },
                     {
                         intro: `for <strong>AMM</strong>, quick and semi-automated layout engine for administrative / call for offers documents for the architecture agency.
                         `,
-                        tags: [tags.vue, tags.elixir, tags.maintain, tags.w2p]
+                        tags: [tags.vue, tags.elixir,tags.typescript, tags.maintain, tags.w2p]
                     }
                 ]
             },
