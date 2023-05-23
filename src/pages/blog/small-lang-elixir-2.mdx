@@ -6,6 +6,7 @@ pubDate: "May 23 2023"
 tags: ["elixir", "parsing", "explorations"]
 ---
 
+
 To parse our language, we will first define a rough map of the syntax.
 
 ```
@@ -150,7 +151,7 @@ end
 
 We get a list of tokens, without whitespace, in two categories : strings, and non-strings. String delimiter escaping and whitespace in strings is handled. But a few shortcomings are present :
 
-```
+```elixir
 {:nonstring, "foo"},
 {:nonstring, "="},
 {:nonstring, "5"},
@@ -162,14 +163,12 @@ We get a list of tokens, without whitespace, in two categories : strings, and no
 
 At this point, if we change `baz(a,b,c,d)` to be `baz(a, b, c, d)`, we will get this output :
 
-```
+```elixir
 {:nonstring, "baz(a,"}
 {:nonstring, "b,"},
 {:nonstring, "c,"},
 {:nonstring, "d)"}
 ```
-
-So next time, I will update the tokenizer to discriminate more syntax.
 
 Before that, I wanted to explore the use of macros to write list matching operations.
 
@@ -208,14 +207,63 @@ We can then use `defpat("abcd")` to generate `["a" | ["b", | ["c" | ["d", | tail
 
 The pattern matching on a backtick inside a string can then be rewritten from: 
 
-```
+```elixir
 def walk(["\\" | ["`" | rest]], :string, out, buf), do: walk(rest, :string, out, buf <> "`")
 ```
 
 to:
 
-```
+```elixir
 def walk(defpat("\\`"), :string, out, buf), do: walk(tail, :string, out, buf <> "`")
 ```
 
-I'm not sure that I like `tail` leaking from no visible spot though.
+I'm not sure that I like `tail` leaking from no visible spot though. That said, at this stage, it allows me to extend the syntax quite easily :
+
+Updating `accumulate` to handle a "next buffer" as tokens are flushed at the next token change : 
+
+```elixir
+def accumulate(rest, state, out, buf, next_state, next_buf \\ "") do
+  if buf != "" do
+    walk(rest, next_state, [{state, buf} | out], next_buf)
+  else
+    walk(rest, next_state, out, next_buf)
+  end
+end
+```
+
+We then allow `buf` to be `nil` since we were already testing for `<empty string>`.
+
+```elixir
+def walk(defpat("->"), state, out, buf), do: accumulate(tail, state, out, buf, :arrow, nil)
+def walk(defpat("if"), state, out, buf), do: accumulate(tail, state, out, buf, :if, nil)
+def walk(defpat("else"), state, out, buf), do: accumulate(tail, state, out, buf, :else, nil)
+def walk(defpat("then"), state, out, buf), do: accumulate(tail, state, out, buf, :then, nil)
+def walk(defpat("end"), state, out, buf), do: accumulate(tail, state, out, buf, :end, nil)
+```
+
+And update the tests to reflect those new tokens :
+
+```elixir
+test "Tokenizes arrows and if/then/else/end" do
+  program = """
+  bar -> baz
+  if bar do 5 else end
+  """
+
+  tokens = [
+    {:nonstring, "bar"},
+    {:arrow, nil},
+    {:nonstring, "baz"},
+    {:if, nil},
+    {:nonstring, "bar"},
+    {:then, nil},
+    {:nonstring, "5"},
+    {:else, nil},
+    {:end, nil}
+  ]
+
+  assert Ovo.tokenize(program) == tokens
+end
+```
+
+I switched my preference to `then` instead of `do` for `if expressions`, simply as a matter of taste.
