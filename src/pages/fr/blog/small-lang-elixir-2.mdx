@@ -171,4 +171,51 @@ At this point, if we change `baz(a,b,c,d)` to be `baz(a, b, c, d)`, we will get 
 {:nonstring, "d)"}
 ```
 
-So in my next working time, I will update my tokenizer to discriminate more syntax.
+Before that, I wanted to explore the use of macros to write list matching operations.
+
+```
+iex(1)> quote do
+...(1)> ["a" | rest]
+...(1)> end
+[{:|, [], ["a", {:rest, [], Elixir}]}]
+```
+
+We can see that `[a|b]` is represented as the operator `:|` applied to `a` and `b` in the resulting AST.
+
+```elixir
+def binary_to_pattern(bin) do
+  [first | rest] = String.graphemes(bin) |> Enum.reverse()
+
+  base = [{:|, [], [first, {:tail, [], nil}]}]
+
+  Enum.reduce(rest, base, fn element, out ->
+    [
+      {:|, [],
+        [
+          element,
+          out
+        ]}
+    ]
+  end)
+end
+
+defmacro defpat(pattern) do
+  binary_to_pattern(pattern)
+end
+```
+
+We can then use `defpat("abcd")` to generate `["a" | ["b", | ["c" | ["d", | tail]]]]`, or in shorter form, `["a", "b", "c", "d" | tail]`.
+
+The pattern matching on a backtick inside a string can then be rewritten from: 
+
+```
+def walk(["\\" | ["`" | rest]], :string, out, buf), do: walk(rest, :string, out, buf <> "`")
+```
+
+to:
+
+```
+def walk(defpat("\\`"), :string, out, buf), do: walk(tail, :string, out, buf <> "`")
+```
+
+I'm not sure that I like `tail` leaking from no visible spot though.
