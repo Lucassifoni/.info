@@ -1,154 +1,270 @@
 ---
 layout: "../../../layouts/BlogPost.astro"
-title: "Un petit langage (Ovo2) de zéro dans Elixir, pt 1 <br/> collecte des besoins d'une implémentation précédente."
+title: "Hosting a small language (Ovo2) from scratch in Elixir, pt 2 <br/>"
 description: ""
-pubDate: "May 18 2023"
+pubDate: "May 23 2023"
 tags: ["elixir", "parsing", "explorations"]
 ---
 
 (En attente de traduction)
 
-I wanted to try for a while to have a (another, really) mini-language with a very small footprint, not allowing anything else than small transformations of data, in a visual programming environment. My language had to fill these needs :
-
-- Given input data from the host language, write arbitrary transforms on it using pure functions.
-- Return output data in a format the host language can read.
-- Data is whatever can be encoded in plain JSON, without extensions.
-
-And my language should not have : 
-- Sources of impurity (I/O, randomness, networking, timers, anything really).
-
-These goals would allow me to create a simple visual editor operating on a simplified graphical representation of the language's AST. Ovo2 worked enough for a proof of concept, but was hosted in Typescript. I want to steer this project towards an end-to-end Elixir environment and its side-exploration project status makes this possible.
-
-<figure>
-![](/pics/smalllang/env0.png)
-<figcaption>
-A data labelling UI, from which you define data accessors in Ovo2
-</figcaption>
-</figure>
-
-The language also had a few quirks in its parsing strategy, as I wanted to "re-discover" parser combinators without documentation as an exercise, so expression nesting wasn't totally supported. Having read in-between about many parsing and lexing strategies, I should now be able to complete that task without resorting to top-level assignments.
-
-<figure>
-![](/pics/smalllang/env1.png)
-<figcaption>
-An Ovo2 data accessor being defined.
-</figcaption>
-</figure>
-
-### Syntax samples
-
-Here would be a sample of the syntax of my language :
+To parse our language, we will first define a rough map of the syntax.
 
 ```
-add1 = \w -> w + 1 end
+A program is made of a list of expressions
 
-add3 = \w ->
-    z = w + 1
-    z + 2
+An expression is either :
+  - an assignment (returns the assigned value)
+  - a function call
+  - a lambda / function declaration (since we don't have a real distinction between the two in ovo)
+  - a primitive value  (number, string, list)
+  - a symbol
+```
+
+We can note that there's no syntax for maps in this list. One of my goals is to encourage myself to use ovo2 to reduce complex data to strings, and avoid using it to produce other data shapes. The final goal stays sandboxed data reduction for printable templates.
+
+I did not mention infix operators either in this list. In my last Typescript prototype, I had infix operators, but that seemed clunky when I build the prototypal visual editor, and I now prefer having arithmetic as functions. String concatenation as an infix operator will also be removed, to have functions operating on strings instead. The access operator will also be removed.
+
+Maps are normalized to be stringly typed.
+
+So a sample of the complete (updated) syntax could be :
+
+```
+# Ovo2 program, having as input %{"name" => "Martin", "age" => 44}
+foo = 5
+bar = 6
+age = add(access(data, `age`), bar)
+
+say_hi = \name, age ->
+  join([name, `has the age`, to_string(age)], ``)
 end
 
-map([1,2], add3)
+say_hi(access(data, `name`), age)
 
+fibs = \a -> 
+    if greater_or_equals(a, 2) do
+        add(fibs(subtract(a, 1)), fibs(subtract(a, 2)))
+    else do
+        1
+    end
+end
+
+fibs(10)
+```
+
+To me, there's something fishy, (or.. lispy maybe), slowly creeping into scope.
+
+In the previous typescript iteration of ovo2, we were closer to Elixir's syntax (see below), but as I'm writing, it seems interesting to reduce the syntax footprint and go towards a better-fitting visual and text editing experience... slowly deprecating text out of ovo2.
+
+```
 fn = data°first_name
 ln = data°last_name
 
 join2 = \strs, spacer ->
- reduce(strs, \out, s ->
-    out <> spacer <> s
+ list~reduce(strs, \out, s ->
+    spaced = out <> spacer
+    spaced <> s
  end)
 end
 
-join2([fn, ln], ` `)
+join2([fn, ln], \` \`)
 ```
 
-This should look quite familiar, and really is the current state of a small language I called `ovo2` and implemented in typescript for my no-code design automation environment side-project [presented here in french](/blog/fxdesign).
+That's the beauty of the exercise of those posts : writing the post is the creation of what the post is about.
 
-What can we learn about ovo2 from these excerpts ?
+For the sake of simplicity, I'll start by tokenizing the input, and only discriminate strings and non-strings. Non-strings will be parsed and determined in-context afterwards. We can see that I'm going for <code>\`</code> as a string delimiter, and `\` as an escape character. We swallow whitespace outside strings.
 
-`add1 = \w -> w + 1 end`
+```elixir
+test "Tokenizes input, discriminating strings and non-strings" do
+  for {program, tokens} <- [
+        {
+          """
+          foo = 5
+          bar = `stringy\\` value`
+          baz(a, b, c, d)
 
-We have `statements`, in the form of `assignment` of the result of an `expression` (here a `lambda`) to a `symbol`.
-
-```
-add3 = \w ->
-    z = w + 1
-    z + 2
-end
-```
-
-Lambdas seem to return the result of the last evaluated `expression`. In fact, the result of an ovo2 program is the last evaluated expression.
-
-`map([1,2], add3)`
-
-We have `function calls`, made with a `symbol` followed by expressions, separated with commas, between parentheses.
-
-`fn = data°first_name`
-
-An oddity : `°` is the `access` operator. It works on `maps`, so ovo2 has a kind of `dictionary` or `map`. The symbol `data` is pre-filled with the program input data and has a special status.
-
-Not shown in the above snippets is the ability to have shadowing.
-
-```
-foo = 5
-addFoo = \n -> n + foo end
-foo = 6
-addFoo(2)
-```
-
-Will return 7, and not 8, since the lambda properly captured the value of `foo` in its environment.
-
-```
-join2 = \strs, spacer ->
- reduce(strs, \out, s ->
-    out <> spacer <> s
- end)
-end
-
-join2([fn, ln], ` `)
-```
-
-We can see here that we also have syntax for `lists`, that can include primitive values or symbols, and strings, delimited by \`. String concatenation is the operator `<>`. I wanted to make clear that ovo2 is strongly typed, and there are no implicit conversions between numbers and strings.
-
-Ovo2 also has booleans, in the form of `T` and `F`, and conditions, which are expressions. Since an expression must produce a value, you cannot have single-branch `ifs` and will always have to provide an alternative result.
-
-```
-if (w == 1) do
-    w + 1
-else do
-    w + 2
-end
-```
-
-This means we have `infix operators`, most of which are for `arithmetic` or `comparison`. All comparisons are done by value, and in the case of complex data, are done by comparing the full data.
-
-That's already quite a lot of requirements actually, but it worked well in practice. Another (funky) feature is the ability to switch the language that should be used to write the program, with a second special symbol called `lang`, on which you can assign one of three supported values.
-
-As such, the builtin environment for ovo2 in the typescript implementation had translations in french, english, and "lengthy french" for various built-in functions : 
-
-```ts
-    join: {
-        fr: 'coller',
-        en: 'join',
-        long_fr: 'rassembler',
-        _fn: (env: Ovo2Env, list: Ovo2Node, glue: Ovo2Node) : [Ovo2Env, Ovo2Node] => {
-            let checked_list = argToList(list, env); // evaluation to a list, throws type errors if needed.
-            let checked_glue = argToString(glue, env); // evaluation to a string, throws type errors if needed.
-            const reduced_string = checked_glue.children
-                .map(node => do_evalOvo2([node], env).value)
-                .join(checked_glue.value);
-
-            return [
-                env,
-                {
-                    kind: 'string',
-                    value: reduced_string,
-                }
-            ];
+          """,
+          [
+            {:nonstring, "foo"},
+            {:nonstring, "="},
+            {:nonstring, "5"},
+            {:nonstring, "bar"},
+            {:nonstring, "="},
+            {:string, "stringy` value"},
+            {:nonstring, "baz(a,b,c,d)"}
+          ]
         }
-    }
+      ] do
+    assert Ovo.tokenize(program) == tokens
+  end
+end
 ```
 
-So, if you had called `lang = long_fr`, you could write ```rassembler([`foo`, `bar`], `glue`)``` instead of ```join([`foo`, `bar`], `glue`)```. Why not ? :^) .
+We'll start by splitting the string to graphemes, and walk them :
 
-We'll leave this behind though ! In the next part, we'll see how we can formalize this syntax and draft a parsing strategy.
+```elixir
+defmodule Ovo do
+  def tokenize(input) do
+    input
+    |> String.graphemes()
+    |> walk()
+  end
 
+```
+
+Then, walking characters, we change the state of our tokenizer, from `undefined` to `string` and `nonstring` :
+
+```elixir
+defmodule Ovo do
+  def tokenize(input) do
+    input
+    |> String.graphemes()
+    |> walk()
+  end
+
+  defp is_whitespace?(a), do: Regex.match?(~r/\s/, a)
+
+  def accumulate(rest, state, out, buf, next_state) do
+    if buf != "" do
+      walk(rest, next_state, [{state, buf} | out], "")
+    else
+      walk(rest, next_state, out, "")
+    end
+  end
+
+  def walk(graphemes), do: walk(graphemes, :undefined, [], "")
+  def walk(["\\" | ["`" | rest]], :string, out, buf), do: walk(rest, :string, out, buf <> "`")
+  def walk(["`" | rest], :string, out, buf), do: accumulate(rest, :string, out, buf, :undefined)
+  def walk([a | rest], :string, out, buf), do: walk(rest, :string, out, buf <> a)
+  def walk(["`" | rest], state, out, buf), do: accumulate(rest, state, out, buf, :string)
+
+  def walk([a | rest], state, out, buf) do
+    if is_whitespace?(a) do
+      accumulate(rest, state, out, buf, :undefined)
+    else
+      walk(rest, :nonstring, out, buf <> a)
+    end
+  end
+
+  def walk([], state, out, buf), do: (if buf != "", do: [{state, buf} | out], else: out) |> Enum.reverse()
+end
+```
+
+We get a list of tokens, without whitespace, in two categories : strings, and non-strings. String delimiter escaping and whitespace in strings is handled. But a few shortcomings are present :
+
+```elixir
+{:nonstring, "foo"},
+{:nonstring, "="},
+{:nonstring, "5"},
+{:nonstring, "bar"},
+{:nonstring, "="},
+{:string, "stringy` value"},
+{:nonstring, "baz(a,b,c,d)"}
+```
+
+At this point, if we change `baz(a,b,c,d)` to be `baz(a, b, c, d)`, we will get this output :
+
+```elixir
+{:nonstring, "baz(a,"}
+{:nonstring, "b,"},
+{:nonstring, "c,"},
+{:nonstring, "d)"}
+```
+
+Before that, I wanted to explore the use of macros to write list matching operations.
+
+```
+iex(1)> quote do
+...(1)> ["a" | rest]
+...(1)> end
+[{:|, [], ["a", {:rest, [], Elixir}]}]
+```
+
+We can see that `[a|b]` is represented as the operator `:|` applied to `a` and `b` in the resulting AST.
+
+```elixir
+def binary_to_pattern(bin) do
+  [first | rest] = String.graphemes(bin) |> Enum.reverse()
+
+  base = [{:|, [], [first, {:tail, [], nil}]}]
+
+  Enum.reduce(rest, base, fn element, out ->
+    [
+      {:|, [],
+        [
+          element,
+          out
+        ]}
+    ]
+  end)
+end
+
+defmacro defpat(pattern) do
+  binary_to_pattern(pattern)
+end
+```
+
+We can then use `defpat("abcd")` to generate `["a" | ["b", | ["c" | ["d", | tail]]]]`, or in shorter form, `["a", "b", "c", "d" | tail]`.
+
+The pattern matching on a backtick inside a string can then be rewritten from: 
+
+```elixir
+def walk(["\\" | ["`" | rest]], :string, out, buf), do: walk(rest, :string, out, buf <> "`")
+```
+
+to:
+
+```elixir
+def walk(defpat("\\`"), :string, out, buf), do: walk(tail, :string, out, buf <> "`")
+```
+
+I'm not sure that I like `tail` leaking from no visible spot though. That said, at this stage, it allows me to extend the syntax quite easily :
+
+Updating `accumulate` to handle a "next buffer" as tokens are flushed at the next token change : 
+
+```elixir
+def accumulate(rest, state, out, buf, next_state, next_buf \\ "") do
+  if buf != "" do
+    walk(rest, next_state, [{state, buf} | out], next_buf)
+  else
+    walk(rest, next_state, out, next_buf)
+  end
+end
+```
+
+We then allow `buf` to be `nil` since we were already testing for `<empty string>`.
+
+```elixir
+def walk(defpat("->"), state, out, buf), do: accumulate(tail, state, out, buf, :arrow, nil)
+def walk(defpat("if"), state, out, buf), do: accumulate(tail, state, out, buf, :if, nil)
+def walk(defpat("else"), state, out, buf), do: accumulate(tail, state, out, buf, :else, nil)
+def walk(defpat("then"), state, out, buf), do: accumulate(tail, state, out, buf, :then, nil)
+def walk(defpat("end"), state, out, buf), do: accumulate(tail, state, out, buf, :end, nil)
+```
+
+And update the tests to reflect those new tokens :
+
+```elixir
+test "Tokenizes arrows and if/then/else/end" do
+  program = """
+  bar -> baz
+  if bar do 5 else end
+  """
+
+  tokens = [
+    {:nonstring, "bar"},
+    {:arrow, nil},
+    {:nonstring, "baz"},
+    {:if, nil},
+    {:nonstring, "bar"},
+    {:then, nil},
+    {:nonstring, "5"},
+    {:else, nil},
+    {:end, nil}
+  ]
+
+  assert Ovo.tokenize(program) == tokens
+end
+```
+
+I switched my preference to `then` instead of `do` for `if expressions`, simply as a matter of taste.
