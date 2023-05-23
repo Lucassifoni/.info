@@ -1,0 +1,174 @@
+---
+layout: "../../../layouts/BlogPost.astro"
+title: "Hosting a small language (Ovo2) from scratch in Elixir, pt 2 <br/>"
+description: ""
+pubDate: "May 23 2023"
+tags: ["elixir", "parsing", "explorations"]
+---
+
+(En attente de traduction)
+
+To parse our language, we will first define a rough map of the syntax.
+
+```
+A program is made of a list of expressions
+
+An expression is either :
+  - an assignment (returns the assigned value)
+  - a function call
+  - a lambda / function declaration (since we don't have a real distinction between the two in ovo)
+  - a primitive value  (number, string, list)
+  - a symbol
+```
+
+We can note that there's no syntax for maps in this list. One of my goals is to encourage myself to use ovo2 to reduce complex data to strings, and avoid using it to produce other data shapes. The final goal stays sandboxed data reduction for printable templates.
+
+I did not mention infix operators either in this list. In my last Typescript prototype, I had infix operators, but that seemed clunky when I build the prototypal visual editor, and I now prefer having arithmetic as functions. String concatenation as an infix operator will also be removed, to have functions operating on strings instead. The access operator will also be removed.
+
+Maps are normalized to be stringly typed.
+
+So a sample of the complete (updated) syntax could be :
+
+```
+# Ovo2 program, having as input %{"name" => "Martin", "age" => 44}
+foo = 5
+bar = 6
+age = add(access(data, `age`), bar)
+
+say_hi = \name, age ->
+  join([name, `has the age`, to_string(age)], ``)
+end
+
+say_hi(access(data, `name`), age)
+
+fibs = \a -> 
+    if greater_or_equals(a, 2) do
+        add(fibs(subtract(a, 1)), fibs(subtract(a, 2)))
+    else do
+        1
+    end
+end
+
+fibs(10)
+```
+
+To me, there's something fishy, (or.. lispy maybe), slowly creeping into scope.
+
+In the previous typescript iteration of ovo2, we were closer to Elixir's syntax (see below), but as I'm writing, it seems interesting to reduce the syntax footprint and go towards a better-fitting visual and text editing experience... slowly deprecating text out of ovo2.
+
+```
+fn = data°first_name
+ln = data°last_name
+
+join2 = \strs, spacer ->
+ list~reduce(strs, \out, s ->
+    spaced = out <> spacer
+    spaced <> s
+ end)
+end
+
+join2([fn, ln], \` \`)
+```
+
+That's the beauty of the exercise of those posts : writing the post is the creation of what the post is about.
+
+For the sake of simplicity, I'll start by tokenizing the input, and only discriminate strings and non-strings. Non-strings will be parsed and determined in-context afterwards. We can see that I'm going for <code>\`</code> as a string delimiter, and `\` as an escape character. We swallow whitespace outside strings.
+
+```elixir
+test "Tokenizes input, discriminating strings and non-strings" do
+  for {program, tokens} <- [
+        {
+          """
+          foo = 5
+          bar = `stringy\\` value`
+          baz(a, b, c, d)
+
+          """,
+          [
+            {:nonstring, "foo"},
+            {:nonstring, "="},
+            {:nonstring, "5"},
+            {:nonstring, "bar"},
+            {:nonstring, "="},
+            {:string, "stringy` value"},
+            {:nonstring, "baz(a,b,c,d)"}
+          ]
+        }
+      ] do
+    assert Ovo.tokenize(program) == tokens
+  end
+end
+```
+
+We'll start by splitting the string to graphemes, and walk them :
+
+```elixir
+defmodule Ovo do
+  def tokenize(input) do
+    input
+    |> String.graphemes()
+    |> walk()
+  end
+
+```
+
+Then, walking characters, we change the state of our tokenizer, from `undefined` to `string` and `nonstring` :
+
+```elixir
+defmodule Ovo do
+  def tokenize(input) do
+    input
+    |> String.graphemes()
+    |> walk()
+  end
+
+  defp is_whitespace?(a), do: Regex.match?(~r/\s/, a)
+
+  def accumulate(rest, state, out, buf, next_state) do
+    if buf != "" do
+      walk(rest, next_state, [{state, buf} | out], "")
+    else
+      walk(rest, next_state, out, "")
+    end
+  end
+
+  def walk(graphemes), do: walk(graphemes, :undefined, [], "")
+  def walk(["\\" | ["`" | rest]], :string, out, buf), do: walk(rest, :string, out, buf <> "`")
+  def walk(["`" | rest], :string, out, buf), do: accumulate(rest, :string, out, buf, :undefined)
+  def walk([a | rest], :string, out, buf), do: walk(rest, :string, out, buf <> a)
+  def walk(["`" | rest], state, out, buf), do: accumulate(rest, state, out, buf, :string)
+
+  def walk([a | rest], state, out, buf) do
+    if is_whitespace?(a) do
+      accumulate(rest, state, out, buf, :undefined)
+    else
+      walk(rest, :nonstring, out, buf <> a)
+    end
+  end
+
+  def walk([], state, out, buf), do: (if buf != "", do: [{state, buf} | out], else: out) |> Enum.reverse()
+end
+```
+
+We get a list of tokens, without whitespace, in two categories : strings, and non-strings. String delimiter escaping and whitespace in strings is handled. But a few shortcomings are present :
+
+```
+{:nonstring, "foo"},
+{:nonstring, "="},
+{:nonstring, "5"},
+{:nonstring, "bar"},
+{:nonstring, "="},
+{:string, "stringy` value"},
+{:nonstring, "baz(a,b,c,d)"}
+```
+
+At this point, if we change `baz(a,b,c,d)` to be `baz(a, b, c, d)`, we will get this output :
+
+```
+{:nonstring, "baz(a,"}
+{:nonstring, "b,"},
+{:nonstring, "c,"},
+{:nonstring, "d)"}
+```
+
+So in my next working time, I will update my tokenizer to discriminate more syntax.
