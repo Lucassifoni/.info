@@ -29,7 +29,7 @@ a {
 
 html {
 	font-size: 16.5px;
-	font-family: 'Times New Roman', Times, serif;
+	font-family: 'Fanwood', Times, serif;
 	margin: 0;
 	padding: 0;
 }
@@ -37,7 +37,7 @@ html {
 h1,
 h2,
 h3 {
-	font-family: Arial, Helvetica, sans-serif;
+	font-family: 'Junction', Helvetica, sans-serif;
 	margin-top: 0;
 }
 
@@ -80,19 +80,23 @@ pre.astro-code {
 	line-height: 1.6;
 	border-radius: 2px;
 	padding: 8px;
-	font-family: monospace;
+	font-family: 'Vulf';
 	font-weight: 300;
-	font-size: 13px;
-
+	font-size: 12px;
+	
 	code {
+		box-shadow: none;
 		background: transparent;
 	}
 }
 
 code {
-	font-size: 13px;
-	background: rgb(242, 213, 213);
-	border-radius: 2px;
+	font-size: 12px;
+	font-family: 'Vulf';
+	background: rgb(180, 211, 251);
+	box-shadow: 1px 1px rgb(127, 156, 194);
+	border-radius: 4px;
+	padding: 0 4px;
 }
 
 ul {
@@ -115,8 +119,8 @@ ul ul {
 	.tag {
 		margin: 3px;
 		border-radius: 10px;
-		font-family: Arial, Helvetica, sans-serif;
-		font-size: .55em;
+		font-family: 'Vulf', Helvetica, sans-serif;
+		font-size: .45em;
 		padding: 2px 6px;
 		color: black;
 		background: rgb(223, 223, 223);
@@ -222,7 +226,7 @@ ul ul {
 	body {
 		width: 209.95mm;
 		height: 296.95mm;
-		font-size: 14.5px;
+		font-size: 14px;
 		background: none;
 	}
 
@@ -248,7 +252,7 @@ ul ul {
 		.cv .header-right {
 			flex: 0 0 36%;
 			padding-left: 3ch;
-			font-size: .8em;
+			//font-size: .8em;
 		}
 
 		#app>header {
@@ -258,7 +262,7 @@ ul ul {
 		h3 {
 			font-size: 1rem;
 			margin-bottom: .5em;
-			margin-top: 1em;
+			margin-top: 2em;
 		}
 
 		ul {
@@ -307,4 +311,35 @@ ul ul {
 	}
 
 
+}
+
+@font-face {
+	font-family: "Vulf";
+	src: url(/fonts/Vulf_Mono-Regular_web.woff), format('woff');
+	font-weight: 400;
+}
+
+@font-face {
+	font-family: "Vulf";
+	src: url(/fonts/Vulf_Mono-Light_web.woff), format('woff');
+	font-weight: 300;
+}
+
+@font-face {
+	font-family: "Junction";
+	src: url(/fonts/junction-regular.woff), format('woff');
+	font-weight: 400;
+}
+
+@font-face {
+	font-family: "Fanwood";
+	src: url(/fonts/fanwood_text-webfont.woff), format('woff');
+	font-weight: 400;
+}
+
+@font-face {
+	font-family: "Fanwood";
+	src: url(/fonts/fanwood_text_italic-webfont.woff), format('woff');
+	font-weight: 400;
+	font-style: italic;
 }

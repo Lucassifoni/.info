@@ -26,8 +26,8 @@
  }
 
  pre {
-  font-family: monospace;
-  font-size: 14px;
+  font-family: 'Vulf', monospace;
+  font-size: 12px;
   white-space: pre-wrap;
   padding: 0;
 }

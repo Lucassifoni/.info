@@ -37,7 +37,7 @@ An Ovo2 data accessor being defined.
 
 Here would be a sample of the syntax of my language :
 
-```
+```elixir
 add1 = \w -> w + 1 end
 
 add3 = \w ->
@@ -67,7 +67,7 @@ What can we learn about ovo2 from these excerpts ?
 
 We have `statements`, in the form of `assignment` of the result of an `expression` (here a `lambda`) to a `symbol`.
 
-```
+```elixir
 add3 = \w ->
     z = w + 1
     z + 2
@@ -86,7 +86,7 @@ An oddity : `°` is the `access` operator. It works on `maps`, so ovo2 has a kin
 
 Not shown in the above snippets is the ability to have shadowing.
 
-```
+```elixir
 foo = 5
 addFoo = \n -> n + foo end
 foo = 6
@@ -95,7 +95,7 @@ addFoo(2)
 
 Will return 7, and not 8, since the lambda properly captured the value of `foo` in its environment.
 
-```
+```elixir
 join2 = \strs, spacer ->
  reduce(strs, \out, s ->
     out <> spacer <> s
@@ -109,7 +109,7 @@ We can see here that we also have syntax for `lists`, that can include primitive
 
 Ovo2 also has booleans, in the form of `T` and `F`, and conditions, which are expressions. Since an expression must produce a value, you cannot have single-branch `ifs` and will always have to provide an alternative result.
 
-```
+```elixir
 if (w == 1) do
     w + 1
 else do
