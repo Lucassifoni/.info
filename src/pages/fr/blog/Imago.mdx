@@ -15,7 +15,7 @@ Ses fonctionnalités sont :
     - quelques filtres: `threshold(path, threshold)`, `dither_bayer(path, threshold)`
     - enregistrement en PGM
 
-```iex
+```elixir
 iex> Imago.read_pixels("/path/to/image.jpg|png|gif|ico|bmp|tiff") # Image formats are those of image-rs/image
 {:ok,
  {1200, 1500, [131, 140, 157, 255, 130, 139, 156, 255, 131, 138, 156, 255, 131, 138, 156,
