@@ -6,6 +6,7 @@ pubDate: "May 26 2023"
 tags: ["elixir", "parsing", "explorations"]
 ---
 
+*full code [hosted on github](https://github.com/lucassifoni/ovo)*
 
 After the last post, I took a bit of time to extend the tokenizer.
 The `defpat` macro has been quite useful. Numbers were tokenized with a strategy similar to the one I had for strings. A digit marks the start of a number, that can then contain either a digit or a dot, but no more than one dot. A regex could handle that just fine but I came to like the character-per-character recursion, avoiding peeking and backtracking. The clause matching on digits could be optimized by not looking into a list, but again, I liked the simplicity of using a single function clause here.
@@ -227,9 +228,6 @@ defmodule Ovo.Parser do
   def parse_value(tokens), do: C.either([&parse_number/1, &parse_string/1]).(tokens)
 end
 ```
-
-With this small implementation, we can convert from tokens to ast nodes, consuming the flow of tokens, and "walk back" if a parser fails. Not having to think about whitespace is pleasant. But what about line delimiters ? I totally discarded them earlier. But I could use them to simplify deciding of the end of expression parsers. I'll think about it for a while before going to the next step.
-
 
 With this small implementation, we can convert from tokens to ast nodes, consuming the flow of tokens, and "walk back" if a parser fails. Not having to think about whitespace is pleasant. But what about line delimiters ? I totally discarded them earlier. But I could use them to simplify deciding of the end of expression parsers. I'll think about it for a while before going to the next step.
 

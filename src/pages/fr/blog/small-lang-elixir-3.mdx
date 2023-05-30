@@ -1,12 +1,14 @@
 ---
 layout: "../../../layouts/BlogPost.astro"
-title: "Hosting a small language (Ovo2) from scratch in Elixir, pt 3 <br/>Parsing"
+title: "Un petit langage (Ovo2) dans Elixir, pt 3 <br/>Parsing"
 description: ""
 pubDate: "May 26 2023"
 tags: ["elixir", "parsing", "explorations"]
 ---
 
 (En attente de traduction)
+
+*full code [hosted on github](https://github.com/lucassifoni/ovo)*
 
 After the last post, I took a bit of time to extend the tokenizer.
 The `defpat` macro has been quite useful. Numbers were tokenized with a strategy similar to the one I had for strings. A digit marks the start of a number, that can then contain either a digit or a dot, but no more than one dot. A regex could handle that just fine but I came to like the character-per-character recursion, avoiding peeking and backtracking. The clause matching on digits could be optimized by not looking into a list, but again, I liked the simplicity of using a single function clause here.
