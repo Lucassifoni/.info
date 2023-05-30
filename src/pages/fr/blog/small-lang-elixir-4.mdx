@@ -8,6 +8,11 @@ tags: ["elixir", "parsing", "explorations"]
 
 (En attente de traduction)
 
+- Partie 1 : [collecte des besoins d'une implémentation précédente](/blog/fr/small-lang-elixir)
+- Partie 2 : [tokenization](/blog/fr/small-lang-elixir-2)
+- Partie 3 : [parsing](/blog/fr/small-lang-elixir-3)
+- Partie 4 : [émission d'AST et boucle parse-affiche-parse](/blog/fr/small-lang-elixir-4)
+
 *full code [hosted on github](https://github.com/lucassifoni/ovo)*
 
 From the last post, I advanced on the parser and AST node emission, fixing bugs in the tokenizer as I added complexity, and went to implement a simple printer. Last time I worked on this mini-language, I found that having a printer as early as possible was quite useful to check general soundness : if you can prove at any time that `parse(input)` equals `parse(print(parse(input)))`, this immensely helps for debugging.
