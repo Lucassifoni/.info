@@ -1,11 +1,20 @@
 ---
 layout: "../../../layouts/BlogPost.astro"
-title: "DFTFringe sur Mac ARM via multipass"
+title: "DFTFringe sur Mac ARM via multipass.. ou via une appli native !"
 description: "Lancer DFTFringe sur Mac ARM via une VM"
 pubDate: "Mar 19 2023"
 tags: ["optics", "mac"]
 ---
 
+### Mise à jour 6 juillet 2023
+Dan, un utilisateur de https://groups.io/g/Interferometry , m'a notifié de l'arrivée d'un build universel de DFTFringe pour Mac. Je suis ravi de déclarer ce post obsolète, car son build natif va en toute logique remplacer ces moyens détournés !
+
+https://groups.io/g/Interferometry/topic/99192778#33176
+
+Même si la communauté des opticiens amateurs est petite, et que la portion utilisant Mac OS doit être encore plus réduite, cette petite cohorte n'avait pas accès à une application native pour analyser des interférogrammes. Merci mille fois pour ce travail.
+
+<br/>
+### L'ancien post (utiliser une VM légère)
 Cet article pourrait simplement être consacré à l'`usage d'une VM Ubuntu en mode graphique sur un Mac ARM`, mais j'avais spécifiquement besoin de pouvoir lancer [DFTFringe](https://github.com/githubdoe/DFTFringe) et n'y étais pas encore parvenu via `wine`, ni via `crossover`, et `VirtualBox 7` échouait à lancer l'installation d'une distro linux.
 
 J'ai donc au fil de mes recherches découvert [`Multipass`, un outil proposé par Canonical](https://multipass.run/) pour lancer des VMs Ubuntu (via Qemu + hyperkit sous le capot) très aisément, quel que soit l'OS de l'hôte.
