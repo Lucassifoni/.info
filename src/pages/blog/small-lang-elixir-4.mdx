@@ -15,6 +15,7 @@ tags: ["elixir", "parsing", "explorations"]
 - Part 5 : [evaluation](/blog/small-lang-elixir-5)
 - Part 6 : [basic recursion : environment as processes](/blog/small-lang-elixir-6)
 - Part 7 : [weird features, towards a global stateful machine](/blog/small-lang-elixir-7)
+- Part 8 : [a graphical environment with liveview](/blog/small-lang-elixir-8)
 
 From the last post, I advanced on the parser and AST node emission, fixing bugs in the tokenizer as I added complexity, and went to implement a simple printer. Last time I worked on this mini-language, I found that having a printer as early as possible was quite useful to check general soundness : if you can prove at any time that `parse(input)` equals `parse(print(parse(input)))`, this immensely helps for debugging.
 
