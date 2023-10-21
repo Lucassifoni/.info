@@ -103,6 +103,19 @@ ul {
 	max-width: 90ch;
 	padding-left: 1em;
 }
+ul.news time {
+	font-weight: bold;
+	font-family: 'Junction';	
+	font-size: .8em;
+	margin-left: -16px;
+}
+ul.news li {
+	padding-left: 16px;
+	border-bottom: 1px dotted gray;
+	&:last-child {
+		border-bottom: none;
+	}
+}
 
 ul ul {
 	margin-bottom: 0;
