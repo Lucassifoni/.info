@@ -1,5 +1,13 @@
 <div class="WorkBand">
-    <div class="message">👋 <span class="mobile">looking</span><span class="desktop">I'm looking</span> for a <span class="desktop">full-time</span> remote <strong>Elixir</strong> position <span class="desktop">starting <strong>March 2024</strong></span><span class="mobile">starting <strong>2024-03</strong></span></div>
+    <div class="message">
+        👋 <span class="mobile">looking</span><span class="desktop"
+            >I'm looking</span
+        > for a <span class="desktop">full-time</span> remote <strong
+            >Elixir</strong
+        > position <span class="desktop"
+            >starting <strong>March 2024</strong>
+        </span><span class="mobile">starting <strong>2024-03</strong></span>
+    </div>
     <div><a href="mailto: contact@lucassifoni.info">✉️ get in touch</a></div>
 </div>
 
@@ -12,32 +20,38 @@
         padding: 6px;
         color: white;
         font-family: Arial, Helvetica, sans-serif;
-        background: linear-gradient(148deg, rgb(107, 31, 157) 30%, rgb(143, 57, 172) 100%);
+        background: linear-gradient(
+            148deg,
+            rgb(107, 31, 157) 30%,
+            rgb(143, 57, 172) 100%
+        );
         border-top: 1px solid rgb(121, 20, 168);
         box-shadow: 0 0 10px rgba(131, 58, 180, 0.3);
         display: flex;
         justify-content: space-between;
         flex-wrap: wrap;
-        a {
-            color: inherit;
-        }
-        div {
-            display: inline-block;
-        }
-        .mobile {
-            display: none;            
-        }
-        .desktop {
-            display: initial;
-        }
-        @media screen and (max-width: 435px) {
+    }
+    .WorkBand a {
+        color: white;
+    }
+    .WorkBand div {
+        display: inline-block;
+    }
+    .WorkBand .mobile {
+        display: none;
+    }
+    .WorkBand .desktop {
+        display: initial;
+    }
+    @media screen and (max-width: 435px) {
+        .WorkBand {
             font-size: 0.9em;
-            .desktop {
-                display: none;
-            }
-            .mobile {
-                display: initial;
-            }
+        }
+        .WorkBand .desktop {
+            display: none;
+        }
+        .WorkBand .mobile {
+            display: initial;
         }
     }
 </style>
