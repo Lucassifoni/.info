@@ -130,7 +130,7 @@ const t = computed(() => {
   h4.year {
     margin-top: 0;
     margin-bottom: 0;
-    font-family: 'Junction', Arial, sans-serif;
+    font-family: Arial, Helvetica, sans-serif;
     font-weight: 400;
     text-align: left;
     max-width: 70ch;
@@ -170,7 +170,7 @@ const t = computed(() => {
 
   ul.project-list {
     strong {
-      font-family: 'Junction', Helvetica, sans-serif;
+      font-family: Arial, Helvetica, sans-serif;
       font-size: .85em;
     }
 

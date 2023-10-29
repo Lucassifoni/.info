@@ -1,0 +1,43 @@
+<div class="WorkBand">
+    <div class="message">👋 <span class="mobile">looking</span><span class="desktop">I'm looking</span> for a <span class="desktop">full-time</span> remote <strong>Elixir</strong> position <span class="desktop">starting <strong>March 2024</strong></span><span class="mobile">starting <strong>2024-03</strong></span></div>
+    <div><a href="mailto: contact@lucassifoni.info">✉️ get in touch</a></div>
+</div>
+
+<style>
+    .WorkBand {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 6px;
+        color: white;
+        font-family: Arial, Helvetica, sans-serif;
+        background: linear-gradient(148deg, rgb(107, 31, 157) 30%, rgb(143, 57, 172) 100%);
+        border-top: 1px solid rgb(121, 20, 168);
+        box-shadow: 0 0 10px rgba(131, 58, 180, 0.3);
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        a {
+            color: inherit;
+        }
+        div {
+            display: inline-block;
+        }
+        .mobile {
+            display: none;            
+        }
+        .desktop {
+            display: initial;
+        }
+        @media screen and (max-width: 435px) {
+            font-size: 0.9em;
+            .desktop {
+                display: none;
+            }
+            .mobile {
+                display: initial;
+            }
+        }
+    }
+</style>
