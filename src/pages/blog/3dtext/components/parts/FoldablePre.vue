@@ -26,7 +26,7 @@
  }
 
  pre {
-  font-family: 'Vulf', monospace;
+  font-family: monospace;
   font-size: 12px;
   white-space: pre-wrap;
   padding: 0;

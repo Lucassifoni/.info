@@ -7,7 +7,7 @@ import WorkBand from "./WorkBand.astro";
 ---
 
 <footer>
-	<!--<WorkBand />-->
+	<WorkBand />
 	<p>
 		<span class="noprint">2022 - </span> {today.getFullYear()} Lucas&nbsp;Sifoni - Gers&nbsp;(32),&nbsp;France
 	</p>
@@ -20,11 +20,6 @@ import WorkBand from "./WorkBand.astro";
 	<ul class="noprint">
 		<li class="noslash">{fren('nouveaux posts :', 'get new posts :')}</li>
 		<li><a href="/rss.xml">RSS Feed</a></li>
-	</ul>
-	<ul class="noprint">
-		<li>
-			text font: <a href="https://www.theleagueofmoveabletype.com/fanwood">Fanwood</a> from The League of Movable Type, code font: <a href="https://ohnotype.co/fonts/vulf">Vulf Mono</a> from Oh No Type co.
-		</li>
 	</ul>
 	<slot />
 </footer>

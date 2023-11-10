@@ -8,5 +8,10 @@ import vue from "@astrojs/vue";
 // https://astro.build/config
 export default defineConfig({
   site: 'https://lucassifoni.info',
-  integrations: [mdx(), sitemap(), vue()]
+  integrations: [mdx(), sitemap(), vue()],
+  markdown: {
+    shikiConfig: {
+      theme: 'github-light'
+    }
+  }
 });

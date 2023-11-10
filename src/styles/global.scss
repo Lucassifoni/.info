@@ -36,7 +36,7 @@ a {
 
 html {
 	font-size: 16.5px;
-	font-family: 'Fanwood', Times, serif;
+	font-family: Times, serif;
 	margin: 0;
 	padding: 0;
 }
@@ -85,11 +85,12 @@ img {
 
 pre.astro-code {
 	line-height: 1.6;
-	border-radius: 2px;
+	border-radius: 4px;
 	padding: 8px;
-	font-family: 'Vulf';
+	font-family: monospace;
 	font-weight: 300;
 	font-size: 12px;
+	background-color: #eee!important;
 	
 	code {
 		box-shadow: none;
@@ -97,13 +98,21 @@ pre.astro-code {
 	}
 }
 
-code {
+code, .message {
 	font-size: 12px;
-	font-family: 'Vulf';
+	font-family: monospace;
 	background: rgb(180, 211, 251);
 	box-shadow: 1px 1px rgb(127, 156, 194);
 	border-radius: 4px;
 	padding: 0 4px;
+}
+
+.message {
+	background: rgb(226, 238, 254);
+	max-width: 65ch;
+	padding: 8px;
+	font-family: inherit;
+	font-size: inherit;
 }
 
 ul {
@@ -139,7 +148,7 @@ ul ul {
 	.tag {
 		margin: 3px;
 		border-radius: 10px;
-		font-family: 'Vulf', Helvetica, sans-serif;
+		font-family: monospace, Helvetica, sans-serif;
 		font-size: .45em;
 		padding: 2px 6px;
 		color: black;
@@ -176,6 +185,11 @@ ul ul {
 
 		&.elixir {
 			background: rgb(205, 136, 205);
+			color: white;
+		}
+
+		&.erlang {
+			background: rgb(238, 15, 63);
 			color: white;
 		}
 
@@ -342,16 +356,4 @@ img.slide {
 	}
 
 
-}
-
-@font-face {
-	font-family: "Vulf";
-	src: url(/fonts/Vulf_Mono-Regular_web.woff), format('woff');
-	font-weight: 400;
-}
-
-@font-face {
-	font-family: "Vulf";
-	src: url(/fonts/Vulf_Mono-Light_web.woff), format('woff');
-	font-weight: 300;
 }
