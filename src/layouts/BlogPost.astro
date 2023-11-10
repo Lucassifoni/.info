@@ -2,6 +2,7 @@
 import BaseHead from "../components/BaseHead.astro";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
+import Navigation from "../components/Navigation.astro";
 
 export interface Props {
 	content: {
@@ -15,7 +16,7 @@ export interface Props {
 }
 
 const {
-	content: { title, description, pubDate, updatedDate, heroImage, tags },
+	content: { url, title, description, pubDate, updatedDate, heroImage, tags },
 } = Astro.props;
 ---
 
@@ -88,9 +89,12 @@ const {
 						</div>
 					)
 				}
-				<hr style="height:1px;border:none;border-bottom: 1px dotted black;" />
+				<Navigation me={url}></Navigation>
+				<hr/>
 				<slot />
 			</article>
+
+			<Navigation me={url}></Navigation>
 		</main>
 		<Footer></Footer>
 	</body>
