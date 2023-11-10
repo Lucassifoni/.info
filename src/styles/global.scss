@@ -3,6 +3,9 @@ html {
 	background-repeat: repeat;
 	background-size: 100px 100px;
 	image-rendering: pixelated;
+	-moz-text-size-adjust: none;
+	-webkit-text-size-adjust: none;
+	text-size-adjust: none;
 }
 
 html img {
@@ -98,11 +101,12 @@ pre.astro-code {
 	}
 }
 
-code, .message {
+
+code, .message, p code {
 	font-size: 12px;
 	font-family: monospace;
-	background: rgb(180, 211, 251);
 	box-shadow: 1px 1px rgb(127, 156, 194);
+	background: rgb(180, 211, 251);
 	border-radius: 4px;
 	padding: 0 4px;
 }
@@ -149,7 +153,7 @@ ul ul {
 		margin: 3px;
 		border-radius: 10px;
 		font-family: monospace, Helvetica, sans-serif;
-		font-size: .45em;
+		font-size: .65em;
 		padding: 2px 6px;
 		color: black;
 		background: rgb(223, 223, 223);
@@ -360,7 +364,6 @@ img.slide {
 
 .posts-navigation {
 	margin: 1em 0;
-	padding-left: 1em;
 	a {
 		display: inline-block;
 		margin-bottom: .25em;

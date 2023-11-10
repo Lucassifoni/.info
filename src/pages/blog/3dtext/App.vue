@@ -22,7 +22,7 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
 figure {
   width: 100%;
   max-width: 600px;
