@@ -22,7 +22,9 @@ a {
 	color: black;
 	text-decoration: underline;
 }
-
+blockquote {
+	font-style: italic;
+}
 p {
 	max-width: 70ch;
 	line-height: 1.3;
@@ -187,7 +189,7 @@ ul ul {
 			background: linear-gradient(148deg, rgba(131, 58, 180, 1) 0%, rgba(252, 176, 69, 1) 100%);
 		}
 
-		&.elixir {
+		&.elixir, &.bumblebee {
 			background: rgb(205, 136, 205);
 			color: white;
 		}
@@ -223,6 +225,10 @@ ul ul {
 		&.iot,
 		&.typescript {
 			background: lightblue;
+		}
+
+		&.audioskop {
+			background: gold;
 		}
 
 		&.php,

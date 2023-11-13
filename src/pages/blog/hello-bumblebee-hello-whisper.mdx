@@ -1,0 +1,70 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "Hello Bumblebee. Hello, Whisper !"
+description: "A first serving of AI models inside an Elixir app"
+pubDate: "Nov 13 2023"
+tags: ["elixir", "audioskop", "bumblebee"]
+---
+
+I've had the pleasure of working with Bumblebee today.
+
+> Bumblebee provides pre-trained Neural Network models on top of Axon. It includes integration with 🤗 Models, allowing anyone to download and perform Machine Learning tasks with few lines of code.
+
+As amazing as it sounds to someone that did not try it yet (*so, yesterday-me*), that is actually the experience I got from it. I needed to transcribe audio, replacing a third party python solution that :
+
+- Loads two 1.5GB models each, one for french, one for english
+- Loads a third 300MB model for punctuation
+- Spins up a server for the main application
+  - And another for the transcriber
+  - And another for the punctuator
+  - And uses docker-compose for that
+  - Everything talks over websockets to finally get a transcription
+
+This is an Elixir module allowing me to transcribe audio using openai's SOTA whisper model. It runs alongside my main application, not in tests, and can be configured away if the application administrator does not need to transcribe audio anymore.
+
+```elixir
+defmodule Transcriber do
+  @moduledoc """
+  Nx serving for openai/whisper-small, allowing to transcribe audio.
+  API : Transcriber.transcribe(file_path)
+  """
+  use GenServer
+
+  def transcribe(file) do
+    GenServer.call(__MODULE__, {:transcribe, file}, :infinity)
+  end
+
+  @impl true
+  def init(_init_arg) do
+    {:ok, nil, {:continue, :load_models}}
+  end
+
+  def start_link(_) do
+    GenServer.start_link(__MODULE__, nil, name: __MODULE__)
+  end
+
+  @impl true
+  def handle_continue(:load_models, _state) do
+    {:ok, whisper} = Bumblebee.load_model({:hf, "openai/whisper-small"})
+    {:ok, featurizer} = Bumblebee.load_featurizer({:hf, "openai/whisper-small"})
+    {:ok, tokenizer} = Bumblebee.load_tokenizer({:hf, "openai/whisper-small"})
+    {:ok, generation_config} = Bumblebee.load_generation_config({:hf, "openai/whisper-small"})
+
+    serving =
+      Bumblebee.Audio.speech_to_text_whisper(whisper, featurizer, tokenizer, generation_config,
+        defn_options: [compiler: EXLA],
+        chunk_num_seconds: 30,
+        timestamps: :segments
+      )
+
+    {:noreply, serving}
+  end
+
+  @impl true
+  def handle_call({:transcribe, file}, _from, state) do
+    {:reply, Nx.Serving.run(state, {:file, file}), state}
+  end
+end
+```
+
+What a joy ! I'm immensely thankful of the work done by the teams behind Bumblebee, Nx and the general machine-learning Elixir ecosystem allowing us to tap into that kind of resource with elegance and coherence, properly integrating with the rest of our solutions.
