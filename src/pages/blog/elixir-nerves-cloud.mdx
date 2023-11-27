@@ -1,0 +1,31 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "An (Elixir+Nerves)-powered Cloud ☁️ (1/2)"
+description: "Controlling a cloud generator with Elixir and Nerves"
+pubDate: "Nov 23 2023"
+tags: ["elixir", "nerves", "hardware", "IoT"]
+---
+
+My friends from the digital art collective [lab212](https://lab212.org) asked me to work on the software part of their latest art installation, [ombres blanches](https://lab212.org/oeuvres/3:featured/58/Ombres-Blanches). It features an electromagnetic ambiant background sensor developed by [Exem](https://www.exem.fr/), a french environmental research lab.
+
+        <figure >
+                ![](/pics/cloud/cloud_0.jpg)
+            <figcaption>The cloud, during a local minimum relatively to time-boxed averages of the EM field.</figcaption>
+                    </figure>
+
+Based on the level of ambient EM waves, we control a high-pressure industrial pump via pulse-width modulation, re-routing the water flow either to a reservoir or to high-precision nozzles generating a high-quality, realistic cloud.
+
+        <figure >
+                ![](/pics/cloud/cloud_1.jpg)
+            <figcaption>The cloud, growing as EM field intensity rises.</figcaption>
+                    </figure>
+
+The cloud is controlled by a Nerves app, that gives us a private Liveview control panel to fine-tune the reactivity parameters and persist them.
+
+        <figure >
+                ![](/pics/cloud/cloud_3.jpg)
+            <figcaption>Sneak peek on the control panel of the reactivity parameters.</figcaption>
+                    </figure>
+
+We will then make it ready for production use (meaning, able to be shipped as a whole plug-ang-play crate to an exhibition venue) and reveal the technical details after the first show :-) .
+

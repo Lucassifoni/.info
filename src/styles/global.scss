@@ -289,6 +289,10 @@ img.slide {
 		display: none;
 	}
 
+	a[href*="github"] {
+		font-size: inherit;
+	}
+
 	html,
 	body {
 		width: 209.95mm;
@@ -311,14 +315,13 @@ img.slide {
 	.page-cv {
 		position: relative;
 
-		.cv main {
+		.cv main, .cv .header-left {
 			flex: 0 0 58%;
 		}
 
 		.cv aside,
 		.cv .header-right {
 			flex: 0 0 36%;
-			padding-left: 3ch;
 			//font-size: .8em;
 		}
 
@@ -328,7 +331,7 @@ img.slide {
 
 		h3 {
 			font-size: 1rem;
-			margin-bottom: .5em;
+			margin-bottom: 0.15em;
 			margin-top: 2em;
 		}
 
