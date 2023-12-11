@@ -185,6 +185,12 @@ ul ul {
 			color: white;
 		}
 
+		&.hot.sauce {
+			background: rgb(239, 4, 63);
+			background: linear-gradient(180deg, rgb(239, 4, 63) 0%,  rgb(239, 126, 63) 100%);
+			color: white;
+		}
+
 		&.explorations {
 			background: rgb(119, 100, 154);
 			color: white;
