@@ -391,9 +391,20 @@ img.slide {
 
 .posts-navigation {
 	margin: 1em 0;
-
+	font-size: .7rem;
 	a {
 		display: inline-block;
 		margin-bottom: .25em;
 	}
+}
+
+table.table {
+	width: 100%;
+	max-width: 70ch;
+	text-align: left;
+	td, th {
+		padding: .25em;
+		border: 1px solid #ddd;
+	}
+	border-collapse: collapse;
 }
