@@ -23,13 +23,13 @@ After my last post about recursion and (mostly abused) processes, I had a kind o
 
 This post is about adding curious features to such a toy language.
 <br/>
-### bonks : stateful functions
+### shakes : stateful functions
 
-I wondered what would happen if you `bonked` a lambda, meaning, what happens if you hit a function like a pinata after it has run ? The only meaningful thing I thought of would be to shed its previous result. So, I modified the tokenizer and parser to add a new syntax for that.
+I wondered what would happen if you `shakeed` a lambda, meaning, what happens if you hit a function like a pinata after it has run ? The only meaningful thing I thought of would be to shed its previous result. So, I modified the tokenizer and parser to add a new syntax for that.
 
-The `bonk` feature works with lambdas that have been declared with a `!` before their argument list.  
-A regular lambda is  `\a -> add(a, 1) end`, whereas a bonkable lambda is `!\a -> add(a, 1) end`.  
-A bonkable lambda pushes its results in a stack, like this :  
+The `shake` feature works with lambdas that have been declared with a `!` before their argument list.  
+A regular lambda is  `\a -> add(a, 1) end`, whereas a shakable lambda is `!\a -> add(a, 1) end`.  
+A shakable lambda pushes its results in a stack, like this :  
 
 ```elixir
 add_one = !\a -> add(a, 1) end # a stack [] is created
@@ -37,15 +37,15 @@ add_one(1) # produces the value 2, stack is [2]
 add_one(3) # produces the value 4, stack is [4, 2]
 ```
 
-Calling `bonk` on a bonkable lambda pops a value from its stack.  
+Calling `shake` on a shakable lambda pops a value from its stack.  
 
 ```elixir
 add_one = !\a -> add(a, 1) end # a stack [] is created
 add_one(1) # produces the value 2, stack is [2]
 add_one(3) # produces the value 4, stack is [4, 2]
-bonk(add_one) # produces the value 4, stack is [2]
-bonk(add_one) # produces the value 2, stack is []
-bonk(add_one) # to this day, returns :error which isn't an ovo-compatible value
+shake(add_one) # produces the value 4, stack is [2]
+shake(add_one) # produces the value 2, stack is []
+shake(add_one) # to this day, returns :error which isn't an ovo-compatible value
 ```
 
 You can imagine things like :  
@@ -55,9 +55,9 @@ add_one = !\\a -> add(a, 1) end
 add_one(1)
 add_one(3)
 add_one(4)
-a = bonk(add_one)
-bonk(add_one)
-add(a, bonk(add_one))
+a = shake(add_one)
+shake(add_one)
+add(a, shake(add_one))
 ```
 
 Now that the parser works well, adding "slices" of functionality like that becomes quite simple. I removed the ability to print the language to an elixir-equivalent representation, as it started to seriously derive from a tiny functional data manipulation language, and my end goal was shifting.
@@ -66,7 +66,7 @@ Now that the parser works well, adding "slices" of functionality like that becom
 
 Quite happy with my stateful functions which I don't really find an use for, I thought of having all declared programs in a global namespace. Like a registry of Ovo programs, that would not have to be re-parsed from code at every execution. Enter `Ovo.Registry` and `Ovo.Runner` :
 
-Instead of running Ovo programs by writing code and calling `Ovo.run/2` with code and some input, you can also run programs as independent `Runners` inside a stateful system. Registering a `Runner` gives back `{:ok, hash}` with an unique (collisions excepted :^)) hash, that you can keep around to call back that runner with some input. I introduced `arg/1` to the standard library, as I added `bonk/1` earlier. `arg/1` gives you the value in a positional argument.
+Instead of running Ovo programs by writing code and calling `Ovo.run/2` with code and some input, you can also run programs as independent `Runners` inside a stateful system. Registering a `Runner` gives back `{:ok, hash}` with an unique (collisions excepted :^)) hash, that you can keep around to call back that runner with some input. I introduced `arg/1` to the standard library, as I added `shake/1` earlier. `arg/1` gives you the value in a positional argument.
 
 ```elixir
 # Start an Ovo.Registry
@@ -111,13 +111,13 @@ invoke(`0ceaimhlh`, [2])
 Ovo.Runner.run(dependent_program, []) # %Ovo.Ast{value: 4}
 ```
 <br/>
-### global bonks
+### global shakes
 
-I then thought that it would only be sensible to be able to `bonk` runners too, to get their previous execution result, which is popped from a stack. The programmer is responsible for not bonking a runner with an empty stack. Bonking a runner from its hash from within another ovo program is in the works.
+I then thought that it would only be sensible to be able to `shake` runners too, to get their previous execution result, which is popped from a stack. The programmer is responsible for not shakeing a runner with an empty stack. shakeing a runner from its hash from within another ovo program is in the works.
 
 ```elixir
-Ovo.Runner.bonk(dependent_program) #  %Ovo.Ast{value: 4}
-Ovo.Runner.bonk(dependent_program)
+Ovo.Runner.shake(dependent_program) #  %Ovo.Ast{value: 4}
+Ovo.Runner.shake(dependent_program)
 17:14:13.814 [error] GenServer Ovo.Registry terminating
 ** (FunctionClauseError) no function clause matching in anonymous fn/1 in Ovo.Registry.pop_result/1
 ```
@@ -128,6 +128,6 @@ Ovo.Runner.bonk(dependent_program)
 
 Excellent question. I have started an implementation of this `ovo computing system` in `Phoenix` with `Liveview`. The goal is to have a demo of a graphical environment where each user has a `Registry`, and can graphically create little blocks of programs (or `Runners`), run them, and link them in chains, or cross-invoke them, to compose a larger program. I think this project will stop after this point, but I had great fun going against Elixir's rules. 
 
-I liked going over the top with processes where nested (or even, flattened) indexable data structures would have done the trick instead of recursive processes. I also liked making a kind of global stateful system with processes where they weren't needed, and adding dangerous features that leaves the fate of an ovo system on the programmer's hands : with bonks, you depend of every previous execution of a function or runner, or the lack of them, and must carefully think about execution order to avoid crashing everything. But I think this is a nice feature to have in the final graphical environment, that will feel more like a game than anything practical.
+I liked going over the top with processes where nested (or even, flattened) indexable data structures would have done the trick instead of recursive processes. I also liked making a kind of global stateful system with processes where they weren't needed, and adding dangerous features that leaves the fate of an ovo system on the programmer's hands : with shakes, you depend of every previous execution of a function or runner, or the lack of them, and must carefully think about execution order to avoid crashing everything. But I think this is a nice feature to have in the final graphical environment, that will feel more like a game than anything practical.
 
 With all those changes, the next post about the in-the-works graphical environment will be the last. I hope that this series of posts will show how you can work your way, without libraries, from text input to running programs, without limiting yourself at parsing and running simple statements, and how Elixir makes that kind of task enjoyable.

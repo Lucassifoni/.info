@@ -25,7 +25,7 @@ After the last post, I widened the standard library a bit, with a few additions 
 - `concat` : concatenates two strings
 - `to_string` : converts its argument to a string
 - `errored` : checks for errors, allowing to convert from `:error` to an ovo boolean. useful for control flow.
-- `rbonk` : bonks a value on a foreign runner
+- `rshake` : shakes a value on a foreign runner
 
 I also made a graphical way of using Ovo with Liveview. It was the first time I used liveview, so the code isn't really idiomatic, but it was fun to build. The graphical part will stay in this messy state as my experiment found its conclusion. This post features a "complex program" made with this clunky way of thinking about state.
 
@@ -55,7 +55,7 @@ You can easily select multiple runners to run them in chain. In a chain, their e
 *In the video just above, we can see how chaining two runners can allow to compose a bit more complex programs.*
 <br/>
 ### Popping values from other runners
-Since `rbonk` has been introduced, you can use values pushed to the stack of a runner, from within another runner (or program).
+Since `rshake` has been introduced, you can use values pushed to the stack of a runner, from within another runner (or program).
 <video src="/pics/ovo_8/ovo_playground_4_c.mp4" poster="/pics/ovo_8/ovo_playground_4_c.jpg" controls autoplay muted loop>
     <source src="/pics/ovo_8/ovo_playground_4_co.mp4"></source>
     <source src="/pics/ovo_8/ovo_playground_4_c.webm"></source>
@@ -131,7 +131,7 @@ invoke(`qjYwZaa3J`, [map(\a -> to_string(a) end, terms), ` `])
 The final program takes advantage of all this modularity, to build the song, verse by verse, remaining focused in its responsibilities : 
 
 ```elixir
-n_bottles = subtract(100, rbonk(`EWTiZxncF`))
+n_bottles = subtract(100, rshake(`EWTiZxncF`))
 
 run = \n, out ->
     verse = if greater_or_equals(n, 3) then
@@ -148,7 +148,7 @@ run = \n, out ->
         out
     else
         nout = invoke(`qjYwZaa3J`, [[out, verse], ``]) # join
-        run(subtract(100, rbonk(`EWTiZxncF`)), nout) # pop a value from the register
+        run(subtract(100, rshake(`EWTiZxncF`)), nout) # pop a value from the register
     end
 end
 
