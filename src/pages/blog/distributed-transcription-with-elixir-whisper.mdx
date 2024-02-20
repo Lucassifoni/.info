@@ -18,7 +18,7 @@ I had to implement a few things beyond my simple first encounter with Whisper in
 The module that actually runs transcriptions is still a simple GenServer, loading the model chosen by the instance manager.
 
 ```elixir
-  model = Options.get_whisper_model()
+  model = Options.get_whisper_model().value
   {:ok, whisper} = Bumblebee.load_model({:hf, model})
   {:ok, featurizer} = Bumblebee.load_featurizer({:hf, model})
   {:ok, tokenizer} = Bumblebee.load_tokenizer({:hf, model})
@@ -72,11 +72,11 @@ The job has a few things going on, but these steps are the most relevant, where 
 
 ```elixir
 def run(%Track{} = track) do
-  Track.change_status(u, :transcription_started)
-  path = Track.absolute_location(u.storage_path)
+  Track.change_status(track, :transcription_started)
+  path = Track.absolute_location(track.storage_path)
   %{chunks: c} = Transcriber.transcribe(path)
-  Track.change_status(u, :transcription_ended)
-  Audioskop.Topics.publish(:transcription_ended, u)
+  Track.change_status(track, :transcription_ended)
+  Audioskop.Topics.publish(:transcription_ended, track)
   c
 end
 ```
@@ -90,8 +90,8 @@ Before being able to run transcriptions of long tracks, I've found myself needin
 ```
 
 The job was updated to give a call to a `SplittingTranscriber` module. I chose this strategy to avoid stuffing the `Transcriber` GenServer with other tasks than getting a file path to pass to the `Nx` serving.
-
 The `SplittingTranscriber` module first splits the file with ffmpeg.
+Note that the SplittingTranscriber is not a GenServer, just a plain module to organize code.
 
 ```elixir
 def transcribe(file) do
@@ -202,7 +202,9 @@ At this point, the general process looks like this :
 
 ![](/pics/whisper/3.png)
 
-To this day, I still have doubts on the relevance of distributing the tasks between a few processes on a single node. I do not understand how my M1 Macbook would benefit from running two concurrent whisper instances instead of two sequential transcriptions with one instance, but it *felt* quicker in my experiments with longer tracks. This needs to be benchmarked. Maybe storing the transcription time with the tracks would be useful, allowing me to have a better idea of how this compares across hardware ?
+To this day, I still have doubts on the relevance of distributing the tasks between a few processes on a single node. I do not understand how my M1 Macbook would benefit from running two concurrent whisper instances instead of two sequential transcriptions with one instance, but it *felt* quicker in my experiments with longer tracks. This needs to be benchmarked, but what is interesting to me is the performance over 30 minute tracks. Maybe storing the transcription time with the tracks would be useful, allowing me to have a better idea of how this compares across hardware after a few months ?
+
+### Error unit
 
 At this point, I was quite happy with the process, but the error handling could be discussed. The error unit is the Job, that is, if a single sub-transcription task fails, the job fails. To me, this is relevant, as a partially transcribed track does not make sense in the context of Audioskop. We could argue that this is wasted compute if a single sub-transcription fails. But maybe caching the transcription result of an audio fragment, going from `audio file hash` to `transcript`, and deleting this cache upon job completion would fill that use case without supervising the smaller work units. When the job gets scheduled again, all the sub-transcriptions that succeeded would be fetched from the cache, and only those that failed would go through the model again.
 
@@ -210,7 +212,7 @@ At this point, I was quite happy with the process, but the error handling could 
 
 With all those changes quite easily allowed by Elixir, I started to wonder about distribution. Sometimes I develop the app on my MacBook, sometimes on a **lower-powered Lenovo x270 thinkpad running Lubuntu**.
 
-This is very important, because we want Audioskop to be able to be run by other nonprofits than ours, maybe using lower-end hardware. It's easy to get a bit lost in developer comfort and run the largest whisper model on the beefiest Mac laptop available, but allowing the app to be used at a lower initial cost is also nice. This is why we will also support plain-text imports of transcriptions, and delegation to cloud backends (Google being quite effective and cheap at transcribing French), making Whisper an optional backend.
+This is important to me, because we want Audioskop to be able to be run by other nonprofits than ours, maybe using lower-end hardware. It's easy to get a bit lost in developer comfort and run the largest whisper model on the beefiest Mac laptop available, but allowing the app to be used at a lower initial cost is also nice. This is why we will also support plain-text imports of transcriptions, and delegation to cloud backends (Google being quite effective and cheap at transcribing French), making Whisper an optional backend.
 
 So, while I'm at home, why not harness that additionnal power ?
 
@@ -235,7 +237,6 @@ Audioskop.Whisper.DistributedPool.transcribe(f)
 What I like is that every improvement has been a one-line change on the call sites, and transparent to the userland code after the first change that went from synchronously transcribing to using a Job.
 
 I introduced the `DistributedPool` module, a GenServer that asks for connected nodes how many available workers they have in their `TranscriberPool` :
-
 
 ```elixir
   def available_workers() do
@@ -272,7 +273,7 @@ I introduced the `DistributedPool` module, a GenServer that asks for connected n
   end
 ```
 
-We can see that I do not really use the "available workers" information yet, except as a list of online nodes. Because that does not really reflect transcription speed or power. I should find another metric to advertise to distribute the sub-tasks to the various nodes. For now, I just rely on a random distribution between connected nodes, which should be eventually fair in the amount of jobs dispatched, but not in regards to processing power.
+We can see that I do not really use the "available workers" information yet, except as a list of online nodes. Because that does not really reflect transcription speed or power. I should find another metric to advertise to distribute the sub-tasks to the various nodes. For now, I just rely on a random distribution between connected nodes, which should be eventually fair in the amount of jobs dispatched, but definitely not in regards to processing power.
 
 To use that distributed example, I introduced an environment variable, `IS_WORKER`, that when set, only starts the `TranscriberPool` instead of the whole application. I also do not start the Phoenix app on that node (computer).
 
@@ -302,7 +303,7 @@ Then, on the two worker nodes, connected to the main node :
 Node.connect(:"skop1@MacBook-Air-de-Lucas.local")
 ```
 
-What's amazing in that and also not spectacular at all for BEAM-people is that there's nothing more to do. The three nodes are connected and can talk.
+What's amazing in that - and also not spectacular at all for BEAM-people - is that there's nothing more to do. The three nodes are connected and can talk.
 
 I then clicked on the "transcribe" button in Audioskop's UI on my main computer, and ...
 
@@ -312,9 +313,9 @@ Both computers happily transcribed my track :^) .
 
 ![](/pics/whisper/4.png)
 
-Going from the first state with a single synchronous process to this last state, where the fact that "Erlang node A" and "Erlang node B" are two physical computers and that the "Caller node" is co-located on the same host than "Erlang node A" has no incidence took about 150 lines of library-free code - (not discounting Oban, of course, that gives a lot for free too) -, to change a synchronous process to a concurrent and distributed system. I did not have to wrestle with order-of-execution, locks, or any concurrency primitives that are a given on our platform.
+Going from the first state with a single synchronous process to this last state, where the fact that "Erlang node A" and "Erlang node B" are two physical computers and that the "Caller node" is co-located on the same host than "Erlang node A" has no incidence, took about 150 lines of library-free code - (not discounting Oban, of course, that gives a lot for free too) -, to change a synchronous process to a concurrent and distributed system. I did not have to wrestle with order-of-execution, locks, or any concurrency primitives that are a given on our platform.
 
-Sure, the whole thing needs a cleanup, but going from zero to distributed transcription over LAN with **only applicative code**, no system configuration, felt really great.
+Of course, if something goes wrong now, it goes distributedly wrong. I don't think I will keep and maintain these features in the main branch. But going from zero to distributed transcription over LAN with **only applicative code**, no system configuration, felt really great.
 
 ![](/pics/whisper/lenovo.jpg)
 
