@@ -1,0 +1,45 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "My one-day white-hat career"
+description: "Finding and reporting a massive vulnerability just to be legally threatened"
+pubDate: "Feb 20 2024"
+tags: ["security"]
+---
+
+Sorting old e-mails (yes), I stumbled upon an e-mail I got in early 2019.  
+This e-mail read this way :
+
+<blockquote>
+Your business is a client of %company%,<br/>
+Following a technical problem, some technical data (DNS zones, etc.) stored on %platform% were publicly available on the web.<br/>
+As soon as the incident has been reported, all teams focused on solving it. As a preventive measure, %platform% has been shut off and we apologize for the inconvenience.<br/>
+
+The data that could have been exposed about you was : name, first_name, email, address, phone number, company number, company data, signature, contracts, and technical data.<br/>
+
+Our experts determined there was no unauthorized access to this data.
+</blockquote>
+
+I received this e-mail because I had to interact with this `%platform%` from `%big_company%` as part of a contract. A few days before this e-mail, I had reported to the French National Cybersecurity Agency (`ANSSI`, Agence nationale pour la sécurité des systèmes d'information) what I thought was a massive potential data leak with possible disastrous escalation paths.
+
+`%big_company%` had a platform to submit various requests for technical changes. **If you wanted to change a DNS entry, you had to print a form**, stamp it with your organization's stamp, sign it with the identified authorized person's signature, scan it, and upload it on `%platform%`. I thought that was a bit archaic, but complied, since things are often a bit archaic here.
+
+I had gotten into the habit of pre-filling forms, sending them to the authorized signer, printing and scanning them back for additionnal french cred, and uploading them onto this platform. Then some day, the platform did not work as expected. I was a bit worried, because I needed a DNS change to quickly come into effect.
+
+I started to do a bit of exploration, going a few path segments up (since you were always supposed to use the same URL to connect to `%platform%`, that conveniently logged you in, think a bit like a magic link). What I did not suspect to discover is that two path segments up, **I landed onto the employee-side of** `%platform%`.
+
+The first thing that jumped to my eyes was a funny notice : **Platform developed by Bob. I am retired now, if there's a problem call me at 06.XX.XX.XX.XX**.
+
+Now that looked **really** bad. I clicked on a few links, and saw :
+
+- Lists of every employee that can use this platform
+- Lists and documents sent by every client
+- Access to the form submission UIs of every client
+
+You can see where that was going. Basically, finding that link meant being able to impersonate clients of `%big_company%` and asking for wild DNS changes on high-profile domains. I took a few screenshots and wrote an e-mail to the national cybersecurity agency.
+
+A few days later, the whole portal was shut down and I received the apology e-mail summed up earlier.
+
+What I didn't know is that I would get another e-mail, thanking me for my disclosure, and reminding me that according to the law I could maybe be prosecuted if the entity chose to do so. That ultimately ended my interest on that "responsive disclosure" dream.
+
+French case law has a huge precedent on that matter, with the "Bluetouff" case https://www.silicon.fr/vol-information-jurisprudence-bluetouff-pour-gloire-117057.html where a french blogger who reported a massive data leak was ultimately judged guilty of illegally *stealing* data.
+
