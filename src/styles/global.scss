@@ -129,6 +129,11 @@ p code {
 	font-size: inherit;
 }
 
+.message.is-wrong {
+	background: rgb(187, 77, 77);
+	color: white;
+}
+
 ul {
 	max-width: 90ch;
 	padding-left: 1em;
