@@ -6,8 +6,11 @@ pubDate: "Feb 16 2024"
 tags: ["elixir", "audioskop", "bumblebee"]
 ---
 
-<div class="message">
-⚠️ After building this, I've learnt that all of that batching and distribution work is native to Nx.Serving. Well, that's another case of being in an ecosystem that does tremenous work for you ;-) . Thanks to the Nx team.
+<div class="message is-wrong">
+⚠️ After building this, I've learnt that all of that batching and distribution work is native to Nx.Serving.<br/>
+Well, that's another case of being in an ecosystem that does tremendous work for you.<br/>
+I'm leaving this post up as the experience of building a distributed server/worker model was interesting, but the AI part of it is ill-informed. You <strong>must</strong> let `Nx.Serving` handle batching and slicing of inputs.<br/>
+<strong>The good part </strong> is that I've been able to delete all that code and make things simpler and leaner :-).
 </div>
 
 After a [first post about Bumblebee and Whisper](https://lucassifoni.info/blog/hello-bumblebee-hello-whisper/), I've had the pleasure of working more with whisper in the context of [Audioskop](https://audioskop.fr). Audioskop will have to transcribe quite a lot of audio, and we prefer to do that locally while the project is being developed.
