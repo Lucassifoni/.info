@@ -1,0 +1,23 @@
+---
+const {me, lang} = Astro.props;
+const posts = (await Astro.glob("/src/pages/blog/*.{md,mdx}")).sort(
+	(a, b) =>
+		new Date(b.frontmatter.pubDate).valueOf() -
+		new Date(a.frontmatter.pubDate).valueOf()
+);
+const index = posts.findIndex(p => p.url === me);
+const last = posts.length - 1;
+---
+{ (index !== -1) ?
+(<hr><div class="posts-navigation">
+{
+    (index !== -1 && index == 0) ? (<div>Previous post : <a href={posts[index + 1].url} set:html={posts[index + 1].frontmatter.title}></a><br/></div>) : (<div></div>)
+}
+{
+    (index !== -1 && index !== 0 && index != last) ? (<div>Previous post : <a href={posts[index + 1].url} set:html={posts[index + 1].frontmatter.title}></a><br/>
+    Next post : <a href={posts[index - 1].url} set:html={posts[index - 1].frontmatter.title}></a></div>) : (<div></div>)
+}
+{
+    (index !== -1 && index == last) ? (<div>Next post : <a href={posts[index - 1].url} set:html={posts[index - 1].frontmatter.title}></a></div>) : (<div></div>)
+}
+</div>) : '' }

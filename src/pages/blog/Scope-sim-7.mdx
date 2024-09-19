@@ -1,0 +1,189 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "The Elixir Telescope -- Part 7 : Elixir architecture questions"
+description: "Seventh entry of my build log"
+pubDate: "Jan 15 2023"
+tags: ["elixir"]
+---
+
+Entries up to this point : 
+
+- [Part 6 : Three.js + websockets = a 3D moving telescope](/blog/Scope-sim-6)
+- [Part 5 : Porting the depth of field simulation to Elixir + Rust](/blog/Scope-sim-5)
+- [Part 4 : Simulating image capture and focusing](/blog/Scope-sim-4)
+- [Part 3 : Raytracing a parabolic mirror from scratch](/blog/Scope-sim-3)
+- [Part 2 : Primary mirror design & calculation](/blog/Scope-sim-2)
+- [Part 1 : Simulating movement & state with Elixir](/blog/Scope-sim)
+
+While working on the adaptation of the current virtual telescope and remote control to be able to control a physical telescope, I oscillated between a few design choices.
+
+My first instinct was the introduction of a configurable `InputManager` that would talk to a `TelescopeManager`. The `InputManager` would filter virtual and physical inputs based on its current configuration, and pass events to a `TelescopeManager` that would send them to physical or virtual telescopes.
+
+![](/pics/photoscope_7/arch_1.png)
+
+Would that work ? Yes, to an extent. But there are a few misconceptions on my side. The physical remote control will have a screen on it, and the virtual remote control + scope visualization reacts to state. But on this drawing, they are both shown as input devices, and with a bidirectional arrow to their transport layer. They are more to be seen as I/O devices.
+
+![](/pics/photoscope_7/arch_2.png)
+
+Here, we see the `TelescopeManager` passes inputs only to the enabled telescope, which sends outputs back, propagated via the `IoManager` only to the enabled device. That seems more to the point, but does it express my original intent ?
+
+I wanted to have 4 IO devices :
+
+- Virtual remote (input only)
+- Virtual telescope (output only)
+- Physical remote (input only)
+- Physical telescope (output only)
+
+To be able to develop as I go with combinations like `virtual remote` + `physical telescope`. But what was developed to this point is a `virtual telescope and remote control`, and what is currently built is a `physical telescope and remote control`. That cannot entirely be seen in the diagram, because the virtual telescope shares its transport layer with the virtual remote control, and the physical telescope shares its transport layer with the remote control.
+
+Here is a rearrangement that could show that :
+
+![](/pics/photoscope_7/arch_3.png)
+
+Quite gross ! Thankfully I didn't write code *that far* before realizing there was a problem.
+
+Let's reexamine the role of the `InputManager` or `IoManager` :
+
+- Its first role is plumbing between IO controllers and items that react to commands. It can enable one, none, or two IO controllers and reactive items. But I never wanted to be able to route a controller to two reactive items. Nor wanted I to route two controllers to a reactive item.
+
+- Its second role, deriving from the first, is configuring the plumbing. This configurability introduces runtime overhead. But the core problem is that *I do not want* to switch controllers / reactive items at runtime. When the telescope is built and finished.
+
+Maybe what I would like instead is compile-time configurability. That sounds great, let's write a simple POC.
+
+```elixir
+defmodule IoBehaviour do
+  @callback input(String.t) :: {:ok, String.t} | {:error, String.t}
+end
+
+defmodule DeviceBehaviour do
+  @callback handle_input(String.t) :: {:ok, String.t} | {:error, String.t}
+end
+
+defmodule DeviceA do
+  @behaviour DeviceBehaviour
+
+  def handle_input(string) do
+    if :rand.uniform() > 0.5 do
+      {:ok, "Got #{string}"}
+    else
+      {:error, "Unsupported operation #{string}"}
+    end
+  end
+end
+
+# A similar "DeviceB" module exists
+defmodule IoA do
+  @behaviour IoBehaviour
+
+  def input(str) do
+    InputManager.input(__MODULE__, str)
+  end
+end
+
+# A similar "IoB" module exists
+
+defmodule InputManager do
+  @io_device IoB
+  @reactive_device DeviceB
+
+  def input(@io_device, str), do: apply(@reactive_device, :handle_input, [str])
+
+  def input(mod, _), do: {:error, "IO device #{mod} not configured."}
+end
+```
+
+That is "configurable" since we can say which IO module is connected to which device. 
+
+```elixir
+iex(17)> IoB.input("foo")
+{:ok, "Received foo"}
+iex(18)> IoA.input("foo")
+{:error, "IO device Elixir.IoA not configured."}
+```
+
+But we still have a central `InputManager`. Maybe we could juste compile-time remove it. Here's a first try :
+
+```elixir
+# config.exs
+import Config
+
+config :confpoc,
+  selected_io: IoA,
+  selected_device: DeviceB
+```
+
+We'll then define an `IoMacro` and a `DeviceMacro`. Both of those modules add catch-all implementations for their communication bricks, `input` and `handle_notify` for `Io` modules, and `handle_input` and `notify` for `Device` modules. There's something very similar in all of that, and I could maybe simplify it again. But those two macros wire selected `Io` and `Device` modules together, and isolate the unselected ones.
+
+```elixir
+defmodule IoMacro do
+  defmacro __using__(_) do
+    selected_io = Application.fetch_env!(:confpoc, :selected_io)
+    selected_reactive_device = Application.fetch_env!(:confpoc, :selected_device)
+    if __CALLER__.module != selected_io do
+      quote do
+        defp input(term), do: {:error, "IO Device not available"}
+        defp input(term, payload), do: {:error, "IO Device not available"}
+        def handle_notify(term), do: {:error, "IO Device not available"}
+        def handle_notify(term, payload), do: {:error, "IO Device not available"}
+      end
+    else
+      quote do
+        defp input(term), do: apply(unquote(selected_reactive_device), :handle_input, [term])
+        defp input(term, payload), do: apply(unquote(selected_reactive_device), :handle_input, [term, payload])
+      end
+    end
+  end
+end
+
+defmodule DeviceMacro do
+  defmacro __using__(_) do
+    selected_io = Application.fetch_env!(:confpoc, :selected_io)
+    selected_reactive_device = Application.fetch_env!(:confpoc, :selected_device)
+    if __CALLER__.module != selected_reactive_device do
+      quote do
+        defp notify(term), do: {:error, "Reactive device not available"}
+        defp notify(term, payload), do: {:error, "Reactive device not available"}
+        def handle_input(term), do: {:error, "Reactive device not available"}
+        def handle_input(term, payload), do: {:error, "Reactive device not available"}
+      end
+    else
+      quote do
+        defp notify(term), do: apply(unquote(selected_io), :handle_notify, [term])
+        defp notify(term, payload), do: apply(unquote(selected_io), :handle_notify, [term, payload])
+      end
+    end
+  end
+end
+```
+
+A sample implementation of the modules :
+
+```elixir
+defmodule IoA do
+  use IoMacro
+
+  def take_a_picture(), do: input(:take_a_picture)
+  def handle_notify(term), do: IO.inspect(["IoA got:" , term])
+end
+
+defmodule DeviceB do
+  use DeviceMacro
+  
+  def handle_input(:take_a_picture), do: notify(:heres_your_picture)
+  def handle_input(_), do: :ok
+end
+```
+
+Now, whenever `IoA.take_a_picture/0` is called, `DeviceB.handle_input(:take_a_picture)` is really called. A call to `notify/1` in `DeviceB` really calls `IoA.handle_notify/1`, and our middleman `InputManager` is gone. It is gone, and the design is now a 1-to-1 mapping between an active IO device and a reactive device, which is what I wanted to start with.
+
+```
+iex(15)> IoA.take_a_picture
+["IoA got:", :heres_your_picture]
+["IoA got:", :heres_your_picture]
+iex(16)> IoB.take_a_picture
+{:error, "IO Device not available"}
+```
+
+Is it a final design ? I don't know yet, but it's simpler and removes unneeded complexity. By being configurable with a traditional `config.exs` script, it also feels more idiomatic and reflects the reality of a dev environment with a virtual i/o device and telescope, and a prod environment where hardware can be real, while having both implementations co-located.
+
+What I like here is that there is no idea of synchronous or asynchronous work. If a device needs to respond synchronously, it can just call `notify` in its `handle_input` callback. If there's a future notification to be emitted after some work, it can `notify` later. That's a detail and not part of the contract, since communication is just a function call on another module. I also like being able to `defp` the `input` and `notify` functions to limit the temptation to call them from outside their boundaries and should explore better ways of enforcing this isolation.

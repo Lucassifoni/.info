@@ -1,0 +1,67 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "DFTFringe on Mac ARM via multipass ... or Natively !"
+description: "Run DFTFringe on Mac ARM via a VM"
+pubDate: "Mar 19 2023"
+tags: ["optics", "mac"]
+---
+
+### Update on Jul 6th, 2023
+https://groups.io/g/Interferometry user Dan notified me of the completion of an universal build of DFTFringe. I'm very happy to declare this blog post obsolete as their native app will logically take over :
+
+https://groups.io/g/Interferometry/topic/99192778#33176
+
+Porting DFTFringe to Apple silicon will certainly help a tiny portion of the tiny ATM community, but a tiny portion that was stuck without a native software application to analyze igrams. Thanks a lot for this work.
+<br/>
+### The old article to run it in a light VM
+
+This article could simply be titled "using an Ubuntu VM graphically on Mac ARM", but I specifically needed to be able to launch [DFTFringe](https://github.com/githubdoe/DFTFringe) and had not yet managed to do so via `wine`, nor via `crossover`, and `VirtualBox 7` failed to launch the installation of a linux distro.
+
+So I discovered [`Multipass`, a tool offered by Canonical](https://multipass.run/) to launch Ubuntu VMs (via Qemu + hyperkit under the hood) very easily, regardless of the host OS.
+
+A Github user, Julien Staub has [recently added](https://github.com/githubdoe/DFTFringe/pull/10) a Linux CI based on a dockerfile from [gr5](https://gr5.org) to compile DFTFringe on linux. All of this, combined, makes it possible to properly use DFTFringe on my laptop, a Macbook Air M1 under Monterey.
+
+Once `multipass` is installed, let’s create a VM with enough disk space to install a desktop environment :
+
+```bash
+multipass launch --cpus 2 --disk 10G --memory 4G
+```
+
+Once the VM is created, we can connect to it with its name and `multipass shell`:
+
+```bash
+multipass shell artful-copperhead
+```
+
+In the VM, I installed `lubuntu-desktop` and `xrdp` and then gave the default user, `ubuntu`, a password :
+
+```bash
+sudo apt update
+sudo apt install lubuntu-desktop xrdp
+sudo passwd ubuntu
+```
+
+Then, under Mac OS, I install Microsoft Remote Desktop from the App Store.
+
+Via `multipass list`, I get the IP of the VM and connect to it from Microsoft Remote Desktop. I’m landing in a graphical LXDE desktop environment.
+
+In the VM, in a terminal, you only have to clone DFTFringe, and install the necessary dependencies based on [the CI workflow](https://github.com/githubdoe/DFTFringe/blob/masterflow/.github/works/build-linux.yml):
+
+```bash
+sudo apt update
+sudo apt install -y apt-utils build-essential wget qt5-qmake qt5-qmake-bin qt5-assistant qtbase5-dev qtmultimedia5-dev libqt5charts5 libqt5charts5-dev libqt5multimedia* libqt5datavisualization5-dev libqt5datavisualization5 libopencv-core-dev libopencv-core4.5d libopencv-core4.5ddev libqwt-qt5-6 libqwt-qt5-dev libarmadillo-dev libarmadillo10
+git clone https://github.com/githubdoe/DFTFringe.git
+cd DFTFringe
+qmake
+make -j4
+```
+
+The compilation is quite fast (a few minutes).
+
+```bash
+./DFTFringe
+```
+
+![](/pics/dftfringe/dftfringe_mac.png)
+
+Fantastic :^) .

@@ -1,0 +1,30 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "A first silvering attempt yielding a result"
+description: "After some unsuccessful attempts, a first successful mirror spray silvering."
+pubDate: "Feb 20 2023"
+tags: ["optics", "chemistry"]
+---
+
+After some unsuccessful tests caused by the lack of purity of the various products involved in the silvering process, and confusion between the different types of sugars (dextrose, glucose, sucrose...), a new attempt yielded a reflective and homogeneous deposit.
+
+The coating is slightly translucent:
+
+![](/pics/silvering/c.jpeg)
+
+One can estimate its reflectivity with a block of teflon, photographed at 45°, placed on the mirror:   
+
+![](/pics/silvering/a.jpeg)
+
+The Teflon block has its average RGB components at (194, 191, 186). Its reflection on the mirror is at (165, 158, 143).
+The reflectivity can therefore be calculated to be { (1/(((194+191+186)/3) / ((165+158+143)/3))).toFixed(2) }, or 82%.
+For a first coating, it is not too unsatisfactory, although it should be possible to reach more than 96%.
+
+The process could be improved in many ways:
+- Cleaning of the mirror left something to be desired, giving rise to brown streaks
+- the purity of the various products could still be improved
+- the amount of solution prepared was too small and this caused me difficulties
+
+That said, this trial lays the foundation for autonomy in optical manufacturing and coating for my personal use.
+
+The process followed is described in my [previous post](/blog/SpraySilvering). Be careful to ensure that the brown precipitate dissolves properly when preparing the solution, which requires a little time.

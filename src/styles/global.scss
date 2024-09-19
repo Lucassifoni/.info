@@ -1,0 +1,440 @@
+html {
+	background: url('/bg.png');
+	background-repeat: repeat;
+	background-size: 100px 100px;
+	image-rendering: pixelated;
+	-moz-text-size-adjust: none;
+	-webkit-text-size-adjust: none;
+	text-size-adjust: none;
+}
+
+html img {
+	image-rendering: auto;
+}
+
+body {
+	max-width: 960px;
+	margin: auto;
+	padding: 1em;
+}
+
+a {
+	color: black;
+	text-decoration: underline;
+}
+
+a[href*="github"], a[href*="printables"] {
+	font-size: .75em;
+}
+
+blockquote {
+	font-style: italic;
+}
+
+p {
+	max-width: 70ch;
+	line-height: 1.3;
+}
+
+html * {
+	box-sizing: border-box;
+}
+
+
+a {
+	color: black;
+}
+
+html {
+	font-size: 15.5px;
+	font-family: Helvetica, Arial, sans-serif;
+	margin: 0;
+	padding: 0;
+}
+
+h1,
+h2,
+h3 {
+	font-family: Helvetica, Arial, sans-serif;
+	margin-top: 0;
+}
+
+ul {
+	margin-bottom: 2em;
+}
+
+
+#app {
+	max-width: 1080px;
+	margin: auto;
+}
+
+.mobile-menu {
+	display: none;
+
+	@media screen and (max-width: 960px) {
+		display: block;
+	}
+}
+
+.lang-button {
+	border: 1px solid;
+	font-size: 1em;
+	border-radius: 3px;
+	background: none;
+	font-family: inherit;
+}
+
+
+img {
+	max-width: 100%;
+	height: auto;
+	//border: 1px solid #666;
+	border-radius: 16px;
+	box-shadow: 0 0 10px rgba(18, 11, 52, 0.5);
+}
+
+pre.astro-code {
+	line-height: 1.6;
+	border-radius: 4px;
+	padding: 8px;
+	font-family: monospace;
+	font-weight: 300;
+	font-size: 12px;
+	background-color: #eee !important;
+
+	code {
+		box-shadow: none;
+		background: transparent;
+	}
+}
+
+
+code,
+.message,
+p code {
+	font-size: 12px;
+	font-family: monospace;
+	box-shadow: 1px 1px rgb(127, 156, 194);
+	background: rgb(180, 211, 251);
+	border-radius: 4px;
+	padding: 0 4px;
+}
+
+.message {
+	background: rgb(226, 238, 254);
+	max-width: 65ch;
+	padding: 8px;
+	font-family: inherit;
+	font-size: inherit;
+}
+
+.message.is-wrong {
+	background: rgb(187, 77, 77);
+	color: white;
+}
+
+ul {
+	max-width: 90ch;
+	padding-left: 1em;
+}
+
+ul.news time {
+	font-weight: bold;
+	font-family: Helvetica, Arial, sans-serif;
+	font-size: .8em;
+	margin-left: -16px;
+}
+
+ul.news li {
+	padding-left: 16px;
+	border-bottom: 1px dotted gray;
+
+	&:last-child {
+		border-bottom: none;
+	}
+}
+
+ul ul {
+	margin-bottom: 0;
+}
+
+.tags-container {
+	display: block;
+}
+
+.tags {
+	display: flex;
+	flex-wrap: wrap;
+
+	.tag {
+		margin: 3px;
+		border-radius: 10px;
+		font-family: monospace, Helvetica, sans-serif;
+		font-size: .65em;
+		padding: 2px 6px;
+		color: black;
+		background: rgb(223, 223, 223);
+
+		@media (prefers-color-scheme: dark) {
+			opacity: 1;
+		}
+
+		&.optics {
+			background: rgb(161, 182, 239);
+		}
+
+		&.astronomy {
+			background: rgb(2, 0, 36);
+			background: linear-gradient(180deg, rgba(2, 0, 36, 1) 0%, rgba(100, 145, 154, 1) 100%);
+			color: white;
+		}
+
+		&.hot.sauce {
+			background: rgb(239, 4, 63);
+			background: linear-gradient(180deg, rgb(239, 4, 63) 0%,  rgb(239, 126, 63) 100%);
+			color: white;
+		}
+
+		&.explorations {
+			background: rgb(119, 100, 154);
+			color: white;
+		}
+
+		&.mini-tools {
+			background: rgb(161, 239, 201);
+		}
+
+		&.rustler {
+			background: rgb(131, 58, 180);
+			color: white;
+			background: linear-gradient(148deg, rgba(131, 58, 180, 1) 0%, rgba(252, 176, 69, 1) 100%);
+		}
+
+		&.elixir,
+		&.bumblebee {
+			background: rgb(205, 136, 205);
+			color: white;
+		}
+
+		&.erlang {
+			background: rgb(238, 15, 63);
+			color: white;
+		}
+
+		&.wip {
+			background: rgb(179, 215, 240);
+		}
+
+		&.vue,
+		&.nuxt {
+			background: rgb(163, 225, 163);
+		}
+
+		&.maintain {
+			background: rgb(212, 211, 211);
+		}
+
+		&.laravel {
+			background: rgb(236, 91, 115);
+			color: white;
+		}
+
+		&.rust {
+			background: chocolate;
+			color: white;
+		}
+
+		&.iot,
+		&.typescript {
+			background: lightblue;
+		}
+
+		&.audioskop {
+			background: gold;
+		}
+
+		&.php,
+		&.wp {
+			background: darkblue;
+			color: white;
+		}
+
+		&.node {
+			background: green;
+			color: white;
+		}
+
+		&.w2p,
+		&.etl,
+		&.ovo2 {
+			background: rgb(128, 126, 126);
+			color: white;
+		}
+
+		&.kirby {
+			background: lightpink;
+		}
+	}
+}
+
+@media screen {
+	.printonly {
+		display: none;
+	}
+}
+
+hr {
+	border: none;
+	border-top: 1px dotted #666;
+	margin-bottom: 1.5em;
+}
+
+img.slide {
+	width: 45ch;
+	max-width: 100%;
+}
+
+@media print {
+	.noprint {
+		display: none;
+	}
+
+	a[href*="github"] {
+		font-size: inherit;
+	}
+
+	html,
+	body {
+		width: 209.95mm;
+		height: 296.95mm;
+		font-size: 14px;
+		background: none;
+	}
+
+	html {
+		padding: 0;
+		margin: 0;
+	}
+
+	body {
+		margin: 0;
+		padding: 10mm;
+		overflow-x: hidden;
+	}
+
+	.page-cv {
+		position: relative;
+
+		.cv main, .cv .header-left {
+			flex: 0 0 58%;
+		}
+
+		.cv aside,
+		.cv .header-right {
+			flex: 0 0 36%;
+			//font-size: .8em;
+		}
+
+		#app>header {
+			margin-bottom: -.5em;
+		}
+
+		h3 {
+			font-size: 1rem;
+			margin-bottom: 0.15em;
+			margin-top: 2em;
+		}
+
+		ul {
+			margin: 0;
+
+			p.small {
+				margin-bottom: .5em;
+			}
+		}
+
+		.cv h4.year {
+			margin-top: 1em;
+			display: block;
+			margin-bottom: 0;
+		}
+
+		.project-list {
+			&:first-of-type {
+				h4.year {
+					margin-top: 0;
+				}
+			}
+		}
+
+		ul.dates {}
+
+		h3+p {
+			margin-top: 0;
+		}
+
+		footer {
+			position: absolute;
+			display: none;
+			bottom: 5mm;
+			left: 10mm;
+			right: 10mm;
+		}
+
+		li {
+			list-style: none;
+
+			&::before {
+				display: none;
+			}
+		}
+	}
+
+
+}
+
+.posts-navigation {
+	margin: 1em 0;
+	font-size: .7rem;
+	a {
+		display: inline-block;
+		margin-bottom: .25em;
+	}
+}
+
+table.table {
+	width: 100%;
+	max-width: 70ch;
+	text-align: left;
+	td, th {
+		padding: .25em;
+		border: 1px solid #ddd;
+	}
+	border-collapse: collapse;
+}
+
+.items-list {
+	display: flex;
+	width: 100%;
+	flex-wrap: wrap;
+	list-style: none;
+	padding: 0;
+	margin: 0 -.5em;
+}
+
+.items-list li {
+	margin: .5em;
+	flex: 0 0 200px;
+	padding: 0;
+}
+
+.items-list li a {
+	cursor: pointer;
+	text-decoration: none;
+}
+
+.items-list li h3 {
+	font-size: 1em;
+	display: inline;
+}

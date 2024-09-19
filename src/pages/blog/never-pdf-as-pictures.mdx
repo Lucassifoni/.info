@@ -1,0 +1,52 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "I would never allow users to upload PDFs in place of pictures"
+description: "Theory VS Practice of users needs re: usage of PDF files"
+pubDate: "Jul 20 2023"
+tags: ["programming", "file-formats"]
+---
+
+*fiction on technical elegance VS user workflow disturbance as implemented*
+
+### Accepted formats : jpeg, svg, png
+
+It starts like this. My media upload field field is neat, and allows `jpg`, `png`, and `svg`, versatile enough to cover photos, graphics, and vector graphics, all well compatible and lightweight for the web.
+
+### It's quite.. static 
+
+But those are for static images. I'll add `mp4`, `mov` and `mkv` videos to the mix, and convert them to the correct `mp4` format and `webm`. Covertly, a poster will be generated, so an image can be displayed while a `muted loop playsinline` video tag is generated. People are used to have images and videos indifferently supported now. Why should they be treated differently in 2023 ? Images now can move, let's move on.
+
+### Can we have PDFs too ?
+
+But you can upload `SVG`, they're neat for vector graphics and plans. But users do not know about `SVG`, so I'll just convert any uploaded PDF to another format, like SVG. Oh but that isn't straightforward at all. The way I do it on my computer, with Inkscape, isn't a catch-all and other alternatives like ghostscript are quite outdated and have rendering issues.
+
+I might run `inkscape` on the backend though. But inkscape, while being fantastic software, is sometimes slow, and sometimes crashes too. Oh well. Let's just convert those PDFs to a static `jpg`, with a high enough resolution it should be good to go. 
+
+Oh, you've read too about how converting `pdf` files with `imagemagick` can lead to RCE or a compromised server ? Well I'll put the conversion on another microservice that'll only handle converting PDF to high-definition JPG pictures then.
+
+### But pages ?
+
+Indeed those PDF files can have pages while a jpg picture cannot. So maybe it's the second page that's really interesting, not the first, and we would like the software to understand that. So we'll handle PDFs on the client maybe and silently convert to PNG ?
+
+### Text isn't highlightable anymore 
+
+So maybe the goal was to embed a document in a web document instead, but without a reader UI ? SVG pages would have been great for that. But we wouldn't like to re-save every inbound file we upload in the app.
+
+----
+<br/>
+### Final system
+
+The media input field supports `jpg`, `pdf`, `png`, `svg`, `mov`, `mp4`, `mkv`. 
+
+Videos are rendered as `<video>` tags with an auto-generated `poster` after they have been handled by `ffmpeg`.
+
+PDFs are rendered in a `JSPdf` UI, and as soon as they're displayed, the output canvas is saved to `PNG` while the annotation layer (containing transparent text over the canvas, to allow to select text), is saved in metadata to be placed over the image upon display. You can select the page(s) you wish to keep.
+
+All PDF conversion compute and risks are taken by the person uploading the PDF. Needs are met with a little bookkeeping and addition of metadata on pictures. Indexing for search is better thanks to the annotation layer.
+
+No outside user ever sees a PDF file, but they're heavily used inside and existing workflows aren't disturbed too much. Pushing this logic further, should we allow users to upload PDF files, or anything that displays in 2D\*, really, as images ?
+
+\**though some PDF files can embed 3D rendering engines : see Tetra4D's "3D PDF samples" : https://tetra4d.com/pdf-samples/. Luckily JSPdf displays them just fine. Screengrab below, file © Tetra4D*
+
+![](/pics/3d_pdf.png)
+

@@ -1,0 +1,48 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "35c3 Leipzig notes - What the Fax ?"
+description: "Notes from the conferences at 35c3 Leipzig - What the fax ?"
+pubDate: "Dec 30, 2018"
+tags: []
+---
+
+I had the pleasure to go to the 35th edition of the Chaos Communication Congress. Here are some notes of some talks.
+
+# What the fax - Borg - 20h50 27/12
+
+software dev in security industry, interested in faxes
+Yaniv Balmas + Eyal Itkin
+Alexander Bain, 1846 : transmission of an image on copper wire
+All-in-one printers are (still) vulnerable : Multiple connectivity solutions, phone lines, and embedded software.
+Fax as a pivot to LAN
+
+- Firmware extraction & analysis (canon-like interfaces?)
+- Debugging
+- Reco, exploitation?, etc
+
+### Obtaining the firmware
+
+Target :
+    OfficeJet (40% of the market), cheapest printer.
+    Firmware extraction Ã  la dark\_alex ?
+    Main CPU : no specs, no datasheet
+    Fax Modem : CSP1040
+
+Exposed JTAG & serial debug interfaces - JTAG is disabled.
+A serial terminal is exposed - and doesn't understand anything.
+
+Extracting the firmware (update) from HP's public FTP.
+How do you even upgrade a cheap HP's printer firmware ? => You print it (seriously).
+
+The file has the PJL header, it *should* be a valid PrintJob Language.
+After decompression (with a method specific to plaintext printjobs), they got the firmware.
+
+The firmware code was compressed with a basic algorithm found before in prior art in the name of Commander Keen
+
+HP Printers contain a whole copy of spidermonkey (Firefox's JS implementation) & make calls to an abandoned (until then) domain fakeurl11234.com
+There's a hardware watchdog preventing debugging by rebooting the printer.
+
+Exploitation of a buffer overflow vulnerability by sending > 2GB to the printer. It took 7 minutes.
+Every 2 minutes after debugger injection, the printer crashed.
+
+

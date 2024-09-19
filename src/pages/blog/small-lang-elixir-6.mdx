@@ -1,0 +1,180 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "Hosting a small language (Ovo2) from scratch in Elixir, pt 6<br/>Basic recursion : an environment is a process"
+description: "Adding basic recursive abilities to ovo2"
+pubDate: "Jun 17 2023"
+tags: ["elixir", "explorations"]
+---
+
+*full code [hosted on github](https://github.com/lucassifoni/ovo)*
+
+- Part 1 : [gathering requirements from a previous experiment](/blog/small-lang-elixir)
+- Part 2 : [tokenization](/blog/small-lang-elixir-2)
+- Part 3 : [parsing](/blog/small-lang-elixir-3)
+- Part 4 : [AST emission and print-parse-print loop](/blog/small-lang-elixir-4)
+- Part 5 : [evaluation](/blog/small-lang-elixir-5)
+- [x] Part 6 : [basic recursion : environment as processes](/blog/small-lang-elixir-6)
+- Part 7 : [weird features, towards a global stateful machine](/blog/small-lang-elixir-7)
+- Part 8 : [a graphical environment with liveview](/blog/small-lang-elixir-8)
+
+After my last post where evaluation was granted by walking Ovo's AST, I continued experimenting a bit, then hit a wall with recursion.
+
+```elixir
+test "basic recursion" do
+  program = """
+  radd = \\a -> if equals(a, 0) then
+      radd(add(a, 1))
+    else
+      add(a, 2)
+    end
+  end
+
+  radd(0)
+  """
+
+  assert Ovo.run(program) == %Ovo.Ast{kind: :integer, nodes: [], value: 3}
+end
+```
+
+Indeed, since lambdas cloned the parent environment when they were defined, and function definitions are assignments of a lambda to a symbol, this means that a lambda doesn't have access to the environment where it is registered under its name. 
+
+To solve this problem and progress a bit further, I started to move the functions `find_callable/2`, `update_env/2`, and `find_value/2` to the `Ovo.Env` module. I then made `Ovo.Env` an `Agent`, and updated `update_env/2` and `find_\*/2` functions to handle this new characteristic :
+
+```elixir
+defmodule Ovo.Env do
+
+  use Agent
+  require Logger
+
+  def start_link(initial_value) do
+    Logger.info("Starting an environment")
+    Agent.start_link(fn -> initial_value end)
+  end
+
+  def update_env(env, key, val) do
+    Agent.update(env, fn state ->
+      put_in(state, [:user, key], val)
+    end)
+    env
+  end
+
+  def find_callable(name, env) do
+    Agent.get(env, fn state ->
+      if Map.has_key?(state.user, name) do
+        {:user, Map.get(state.user, name)}
+      else
+        if Map.has_key?(state.builtins, name) do
+          {:builtins, Map.get(state.builtins, name)}
+        else
+          :error
+        end
+      end
+    end)
+  end
+```
+
+From the caller side, nothing really changes. Only bootstrapping an environment is a bit different because it now returns `{:ok, pid}`, but all the env-passing-around stays the same.
+
+```elixir
+initial_state = Env.make(bindings) |> Env.bind_input(ovo_input)
+{:ok, env} = Env.start_link(initial_state)
+```
+
+To allow lambdas to capture surrounding values without leaking values declared inside them to the outside environment, I added `Ovo.Env.fork/1`, allowing to clone an environment, and to use this new environment in the lambda. To keep track of all of those processes, I also made `Ovo.Interpreter` an `Agent`, keeping track of spawned `pids`.
+
+```elixir
+defmodule Ovo.Interpreter do
+  use Agent
+
+  def start_link(initial_value) do
+    Logger.info("Starting an interpreter")
+    Agent.start_link(fn -> initial_value end)
+  end
+
+  def register_pid(pid, fork_pid) do
+    Logger.info("Registering a forked environment")
+    Agent.update(pid, fn pids -> [fork_pid | pids] end)
+  end
+```
+
+The `Ovo.Env` data shape was updated to keep track of a `parent` and `evaluator_pid`, allowing to go up in the tree of values, and register forked agents to the root interpreter.
+
+```elixir
+  def fork(env) do
+    Logger.info("Forking an environment")
+    state = Agent.get(env, & &1) |> Map.put(:parent, env)
+    {:ok, fork_pid} = start_link(state)
+    Interpreter.register_pid(state.evaluator_pid, fork_pid)
+    {:ok, fork_pid}
+  end
+```
+
+The `find_callable/2` function was then updated to go up the process tree :
+
+```elixir
+  def find_callable(name, env) do
+    Agent.get(env, fn state ->
+      if Map.has_key?(state.user, name) do
+        {:user, Map.get(state.user, name)}
+      else
+        if Map.has_key?(state.builtins, name) do
+          {:builtins, Map.get(state.builtins, name)}
+        else
+          case state.parent do
+            nil -> :error
+            pid -> find_callable(name, pid)
+          end
+        end
+      end
+    end)
+  end
+```
+
+Finally, `Ovo.Interpreter` was updated to handle starting and stopping all those processes.
+
+```elixir
+  def stop_env(pid) do
+    pids = Agent.get(pid, & &1)
+
+    pids
+    |> Enum.each(fn p ->
+      Logger.info("Stopping an environment")
+      Agent.stop(p)
+    end)
+
+    Logger.info("Stopping the interpreter")
+    Agent.stop(pid)
+  end
+
+  def run(ast), do: run(ast, %{}, %{})
+
+  def run(%Ast{} = ast, input, bindings) do
+    {:ok, evaluator_pid} = start_link([])
+    ovo_input = Ovo.Converter.elixir_to_ovo(input)
+    initial_state = Env.make(bindings, evaluator_pid) |> Env.bind_input(ovo_input)
+    {:ok, env} = Env.start_link(initial_state)
+    {_, v} = evaluate(ast, env)
+    stop_env(evaluator_pid)
+    v
+  end
+```
+
+We can then pass the failing test shown at the top of this page, and see in the logs that everything starts and stops smoothly. The interpreter starts, the root environment is registered, creating the lambda forks it and registers the second environment, evaluation is done, two environments are stopped, and the interpreter is stopped.
+
+```
+11:35:20.292 [info] Starting an interpreter
+
+11:35:20.292 [info] Starting the root environment
+11:35:20.292 [info] Registering an environment
+
+11:35:20.292 [info] Forking an environment
+11:35:20.292 [info] Registering an environment
+
+11:35:20.292 [info] Stopping an environment
+11:35:20.292 [info] Stopping an environment
+
+11:35:20.292 [info] Stopping the interpreter
+```
+
+Wait. *Did I just manually kind of make a supervision tree ?*  
+This will have to be rewritten B^) 

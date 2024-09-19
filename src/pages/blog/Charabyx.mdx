@@ -1,0 +1,73 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "Charabyx, Elixir bindings to the Rust lib. Charabia"
+description: "Elixir NIFs for Meilisearch's Charabia crate."
+pubDate: "Dec 12, 2022"
+tags: ["elixir", "rust", "rustler"]
+---
+
+I needed to bind to a good tokenization library, and used Charabia by the Meilisearch team. 
+The code is quite simple, only wrapping the `tokenize` function from the crate (but chances are that I'll need more functionnality and wrap the rest).
+This gradually exposes me to Rustler's ability to return native Elixir types (atoms, structs) at the cost of a bit of ceremony, but it's overall a really pleasant experience.
+
+```rs
+#[rustler::nif]
+fn tokenize<'a>(env: Env<'a>, input: String) -> Vec<NifToken> {
+    input
+      .as_str()
+      .tokenize()
+      .into_iter()
+      .map(|x| NifToken {
+          kind: to_default_atom(&env, to_token_kind(&env, x.kind), "default_kind"),
+          lemma: x.lemma().to_string(),
+          script: to_default_atom(&env, to_script(&env, x.script), "default_script"),
+          char_end: x.char_end,
+          char_start: x.char_start,
+          language: to_language(&env, x.language),
+      })
+      .collect()
+}
+```
+
+Feel free to use the code available here : https://github.com/Lucassifoni/charabyx
+
+
+```
+iex> Charabyx.tokenize("bonjour chers amis !")
+[
+  %Charabyx.NifToken{
+    kind: :word,
+    lemma: "bonjour",
+    script: :Latin,
+    char_start: 0,
+    char_end: 7,
+    language: nil
+  },
+  %Charabyx.NifToken{
+    kind: :separator_soft,
+    lemma: " ",
+    script: :Latin,
+    char_start: 7,
+    char_end: 8,
+    language: nil
+  },
+  %Charabyx.NifToken{
+    kind: :word,
+    lemma: "chers",
+    script: :Latin,
+    char_start: 8,
+    char_end: 13,
+    language: nil
+  },
+  %Charabyx.NifToken{
+    kind: :separator_soft,
+    lemma: " ",
+    script: :Latin,
+    char_start: 13,
+    char_end: 14,
+    language: nil
+  },
+  ...
+```
+
+

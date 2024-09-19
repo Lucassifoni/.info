@@ -1,0 +1,72 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "35c3 Leipzig notes - Symbiflow : GCC for FPGAs ?"
+description: "Notes from the conferences at 35c3 Leipzig - Symbiflow : GCC for FPGAs ?"
+pubDate: "Dec 30, 2018"
+tags: []
+---
+
+I had the pleasure to go to the 35th edition of the Chaos Communication Congress. Here are some notes of some talks.
+
+# Symbiflow : the GCC of FPGAs
+
+Tomu : a FPGA inside an USB port. Still missing a bootloader.
+iCE1040
+
+Symbiflow : 8 people work on it in some way or another.
+Replacing the (plural) proprietary toolchain with open tools when it comes to programming FPGAs. 
+
+Compiler -> frontend (generic optimizations) -> specific backend
+
+EDA : 
+VHDL | VERILOG -> Synthesis tools -> ASIC tools | FPGA tools | Simulation tools
+
+Symbiflow is currently a toolchain from Verilog to FPGA bitfiles.
+GCC metaphor in the sense of FLOSS + XPlatform + Pluggable.
+
+---
+
+Project IceStorm :
+Synthesis + FPGA Tools
+Yosis       arachne-pnr + Project IceStorm.
+
+Project X-Ray
+
+	Last year, symbiflow was meant to target two distinct FPGA architectures and document the process of getting there.
+
+Training and demonstration on project 2064 (xlilinx xc20xx) : solving the symbiflow process for this 20-old-chip should serve as a guide to have a rigorous process for every type of later FPGA. The Symbiflow project aims to build a generic frontend AND backend for every existing FPGA. Contribution is welcome for any chip.
+
+At the time, the project is conducted as a means of experimentation on the documentation process. That's pretty clever and humble.
+
+---
+
+Synthesis, mapping, P&R :
+The bistream being documented is only a third of the project : tooling must be developed. That's where Yosys and nextpnr (or Verilog To Routing) come into play. Both tools plug into Yosis which serves as a frontend.
+
+NextPNR & VTR are timing-driven.
+http://kalman.mee.tcd.ie/fpl2018/content/pdfs/FPL2018-43iDzVTplcpussvbfIaaHz/1yyZmi1MPncwybkc4SIlrK/4DeOjE9A4zZggobiOvhBTn.pdf
+
+Update tutorials about arachne-pnr for NextPNR ?
+Lattice ICE40 is a nice chip to start.
+
+See TOMU for USB-insider ARM processors
+
+Calls for help even with simple tasks
+
+
+---
+
+How did you reverse engineer bitstreams ? We couldn't, legal prevented us to do so. We (simplified) randomized loaded bitstreams and observed across runs which bits were set when a particular feature was on.
+
+Why is there no VHDL support ? Too complicated, clunky.
+
+What about CPLD support ? https://www.xilinx.com/support/answers/7598.html
+
+Why the split between NextPNR & VTR ?
+VTR = academic research tool, but slightly worse bitgen
+NPR = nice gui, better bitgen
+
+https://github.com/YosysHQ/nextpnr
+
+Are vendors hostile or ready to collaborate on this project ? A : some are hostile, some start to be ready to consider OSS tooling.
+AAt the end of the day, this is sales-driven.

@@ -1,0 +1,163 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "Hosting a small language (Ovo2) from scratch in Elixir, pt 1 <br/> gathering requirements from a previous experiment."
+description: ""
+pubDate: "May 18 2023"
+tags: ["elixir", "parsing", "explorations"]
+---
+
+*full code [hosted on github](https://github.com/lucassifoni/ovo)*
+
+- [x] Part 1 : [gathering requirements from a previous experiment](/blog/small-lang-elixir)
+- Part 2 : [tokenization](/blog/small-lang-elixir-2)
+- Part 3 : [parsing](/blog/small-lang-elixir-3)
+- Part 4 : [AST emission and print-parse-print loop](/blog/small-lang-elixir-4)
+- Part 5 : [evaluation](/blog/small-lang-elixir-5)
+- Part 6 : [basic recursion : environment as processes](/blog/small-lang-elixir-6)
+- Part 7 : [weird features, towards a global stateful machine](/blog/small-lang-elixir-7)
+- Part 8 : [a graphical environment with liveview](/blog/small-lang-elixir-8)
+
+I wanted to try for a while to have a (another, really) mini-language with a very small footprint, not allowing anything else than small transformations of data, in a visual programming environment. My language had to fill these needs :
+
+- Given input data from the host language, write arbitrary transforms on it using pure functions.
+- Return output data in a format the host language can read.
+- Data is whatever can be encoded in plain JSON, without extensions.
+
+And my language should not have : 
+- Sources of impurity (I/O, randomness, networking, timers, anything really).
+
+These goals would allow me to create a simple visual editor operating on a simplified graphical representation of the language's AST. Ovo2 worked enough for a proof of concept, but was hosted in Typescript. I want to steer this project towards an end-to-end Elixir environment and its side-exploration project status makes this possible.
+
+<figure>
+![](/pics/smalllang/env0.png)
+<figcaption>
+A data labelling UI, from which you define data accessors in Ovo2
+</figcaption>
+</figure>
+
+The language also had a few quirks in its parsing strategy, as I wanted to "re-discover" parser combinators without documentation as an exercise, so expression nesting wasn't totally supported. Having read in-between about many parsing and lexing strategies, I should now be able to complete that task without resorting to top-level assignments.
+
+<figure>
+![](/pics/smalllang/env1.png)
+<figcaption>
+An Ovo2 data accessor being defined.
+</figcaption>
+</figure>
+
+### Syntax samples
+
+Here would be a sample of the syntax of my language :
+
+```elixir
+add1 = \w -> w + 1 end
+
+add3 = \w ->
+    z = w + 1
+    z + 2
+end
+
+map([1,2], add3)
+
+fn = data°first_name
+ln = data°last_name
+
+join2 = \strs, spacer ->
+ reduce(strs, \out, s ->
+    out <> spacer <> s
+ end)
+end
+
+join2([fn, ln], ` `)
+```
+
+This should look quite familiar, and really is the current state of a small language I called `ovo2` and implemented in typescript for my no-code design automation environment side-project [presented here in french](/blog/fxdesign).
+
+What can we learn about ovo2 from these excerpts ?
+
+`add1 = \w -> w + 1 end`
+
+We have `statements`, in the form of `assignment` of the result of an `expression` (here a `lambda`) to a `symbol`.
+
+```elixir
+add3 = \w ->
+    z = w + 1
+    z + 2
+end
+```
+
+Lambdas seem to return the result of the last evaluated `expression`. In fact, the result of an ovo2 program is the last evaluated expression.
+
+`map([1,2], add3)`
+
+We have `function calls`, made with a `symbol` followed by expressions, separated with commas, between parentheses.
+
+`fn = data°first_name`
+
+An oddity : `°` is the `access` operator. It works on `maps`, so ovo2 has a kind of `dictionary` or `map`. The symbol `data` is pre-filled with the program input data and has a special status.
+
+Not shown in the above snippets is the ability to have shadowing.
+
+```elixir
+foo = 5
+addFoo = \n -> n + foo end
+foo = 6
+addFoo(2)
+```
+
+Will return 7, and not 8, since the lambda properly captured the value of `foo` in its environment.
+
+```elixir
+join2 = \strs, spacer ->
+ reduce(strs, \out, s ->
+    out <> spacer <> s
+ end)
+end
+
+join2([fn, ln], ` `)
+```
+
+We can see here that we also have syntax for `lists`, that can include primitive values or symbols, and strings, delimited by \`. String concatenation is the operator `<>`. I wanted to make clear that ovo2 is strongly typed, and there are no implicit conversions between numbers and strings.
+
+Ovo2 also has booleans, in the form of `T` and `F`, and conditions, which are expressions. Since an expression must produce a value, you cannot have single-branch `ifs` and will always have to provide an alternative result.
+
+```elixir
+if (w == 1) do
+    w + 1
+else do
+    w + 2
+end
+```
+
+This means we have `infix operators`, most of which are for `arithmetic` or `comparison`. All comparisons are done by value, and in the case of complex data, are done by comparing the full data.
+
+That's already quite a lot of requirements actually, but it worked well in practice. Another (funky) feature is the ability to switch the language that should be used to write the program, with a second special symbol called `lang`, on which you can assign one of three supported values.
+
+As such, the builtin environment for ovo2 in the typescript implementation had translations in french, english, and "lengthy french" for various built-in functions : 
+
+```ts
+    join: {
+        fr: 'coller',
+        en: 'join',
+        long_fr: 'rassembler',
+        _fn: (env: Ovo2Env, list: Ovo2Node, glue: Ovo2Node) : [Ovo2Env, Ovo2Node] => {
+            let checked_list = argToList(list, env); // evaluation to a list, throws type errors if needed.
+            let checked_glue = argToString(glue, env); // evaluation to a string, throws type errors if needed.
+            const reduced_string = checked_glue.children
+                .map(node => do_evalOvo2([node], env).value)
+                .join(checked_glue.value);
+
+            return [
+                env,
+                {
+                    kind: 'string',
+                    value: reduced_string,
+                }
+            ];
+        }
+    }
+```
+
+So, if you had called `lang = long_fr`, you could write ```rassembler([`foo`, `bar`], `glue`)``` instead of ```join([`foo`, `bar`], `glue`)```. Why not ? :^) .
+
+We'll leave this behind though ! In the next part, we'll see how we can formalize this syntax and draft a parsing strategy.
+

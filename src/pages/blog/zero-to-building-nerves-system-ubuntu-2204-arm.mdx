@@ -1,0 +1,35 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "From a fresh ubuntu 22.04 ARM VM to building nerves_system_rpi3 & circuits_quickstart"
+pubDate: "Jan 19 2024"
+tags: ["elixir", "programming", "nerves"]
+---
+
+Just to spare me a bit of googling next time I need to setup a fresh environment to build a nerves_system :
+
+```bash
+  sudo apt update
+  sudo apt upgrade
+  sudo apt install curl git
+  git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.13.1 # adjust to the current version
+  vim .bashrc # add asdf to PATH (follow asdf doc)
+  asdf plugin add nodejs
+  asdf plugin add elixir
+  asdf plugin add erlang
+  asdf install nodejs latest
+  sudo apt-get -y install autoconf automake bc bison build-essential cmake flex fop gperf help2man libgl1-mesa-dev libglu1-mesa-dev libmnl-dev libncurses-dev libncurses5-dev libpng-dev libssh-dev libssl-dev libtool libtool-bin libtool-doc libwxgtk-webview3.0-gtk3-dev libwxgtk3.0-gtk3-dev libxml2-utils m4 openjdk-11-jdk pkg-config python3 squashfs-tools ssh-askpass texinfo unixodbc-dev unzip xsltproc
+  asdf install erlang 26.0.2 # adjust to your liking
+  asdf install elixir 1.15.4-otp-26 # adjust to your liking
+  git clone https://github.com/nerves-project/nerves_system_rpi3.git # adjust to your setup
+  cd nerves_system_rpi3/
+  mix archive.install hex nerves_bootstrap
+  mix deps.get
+  mix compile # grab a coffee
+  cd ..
+  cd circuits_quickstart/
+  export MIX_TARGET=rpi3 # adjust to your setup
+  asdf local erlang 26.0.2 # adjust to your setup
+  asdf local elixir 1.15.4-otp-26 # adjust to your setup
+  mix deps.get
+  mix firmware
+```

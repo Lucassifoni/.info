@@ -1,0 +1,90 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "Fastfish, Elixir + Rust 2D poisson disc sampling"
+description: "Fast poisson disk sampling in 2D in Elixir (& Elixir + Rust), also multi-radius disk placement based on the same method"
+pubDate: "Dec 1, 2022"
+tags: ["elixir", "rust", "explorations", "2d"]
+---
+
+Source at https://github.com/Lucassifoni/fastfish
+
+### Random but natural disk placement
+
+I recently had the occasion to implement two algorithms aiming to place disks on a surface. My constraints were perceptual, as the placement should look homogeneous to the eye while not too deterministic. An hexagonal grid is the opposite feel of what I was looking for.
+
+I stumbled on this elegant visualisation by Jason Davies (https://www.jasondavies.com/poisson-disc/), based on the paper "Fast Poisson Disk Sampling in Arbitrary Dimensions" by Robert Bridson, University of British Columbia.
+
+A first implementation in Elixir & Rust, based on the paper, quickly gave me a similar result to Jason's visualisation.
+
+![](/pics/fastfish/screenshot.jpg)
+
+### The algorithm
+
+Letting aside the performance optimizations in Roberd Bridson's paper, here are the general steps :
+
+- Given a minimum distance between samples `D`, a domain width, a domain height, a number of attempts `K`,
+- Place a disk of radius `r < D` at the center of the domain
+- This disk is put in the `active disks list`
+- While the `active disks list` is not empty
+    - The current disk is chosen randomly in the active disks list
+    - While the current attempts to place a disk is lower than `K` and a disk wasn't placed
+        - Generate a disk at a radius > 2D around the current disk
+        - If there's a collision with either another disk or the domain bounds, `increment K`
+        - Else save this disk as the next and `break`
+    - If you have a next disk (so attempts are &lt; K), add it to the active disks list
+    - Else, remove the current disk from the active list
+
+This works but lifts the need to check for collisions at every step. Bridson's paper solves this with a data structure that represents a background grid, sampling the domain to ensure there's at most one disk in every cell. As every disk has the same radius, you just have to check nearby cells for collisions.
+
+### Multi-radius sampling
+
+My task needed to have a compact cluster of disks, unbounded, with a defined number of disks having defined radii. The picture below is a visualisation of the expected result&thinsp;:
+
+![](/pics/fastfish/multiradius.png)
+
+I replaced the background grid by a subsetting of the total disk list, based on existing radii and next-disk radius. We check the circles in a circular shell for collisions. It is less efficient than the background grid but works well with a diverse disk list.
+
+What is interesting is the variety of clusters you get by varying the value of K, the number of allowed attempts :
+
+#### K = 2
+
+![](/pics/fastfish/k2.png)
+
+#### K = 5
+
+![](/pics/fastfish/k5.png)
+
+#### K = 10
+
+![](/pics/fastfish/k10.png)
+
+#### K = 30
+
+![](/pics/fastfish/k30.png)
+
+### Performance
+
+My use-case has those parameters :
+    - Runs one-time per person who visits the website (as long as their session holds)
+    - Runs server-side
+    - Number of disks : 100 &lt; N &lt; 1000 (more 100 than 1000 though)
+    - Different radii : 2, (90% of disks have a radius of R, 10% of disks have a radius of 3R)
+
+```
+Benchmarking Elixir, 100 samples, k=30 ...
+Benchmarking Rust  , 100 samples, k=30 ...
+
+Name                                ips        average  deviation         median         99th %
+Rust  , 100 samples, k=30        6.90 K       0.145 ms    ±67.27%       0.186 ms        0.31 ms
+Elixir, 100 samples, k=30        0.71 K        1.42 ms     ±8.98%        1.40 ms        1.69 ms
+
+Benchmarking Elixir, 500 samples, k=30 ...
+Benchmarking Rust  , 500 samples, k=30 ...
+
+Name                                ips        average  deviation         median         99th %
+Rust  , 500 samples, k=30        1.16 K        0.86 ms    ±93.65%        1.01 ms        1.96 ms
+Elixir, 500 samples, k=30      0.0477 K       20.96 ms     ±2.88%       20.92 ms       22.45 ms
+```
+
+So, for my use-case, fair enough. I'll have to start investigating how did I get this variability on the Rust side though. My Rust isn't yet *that* idiomatic, and rewriting it in a few months should shed light on that matter.
+

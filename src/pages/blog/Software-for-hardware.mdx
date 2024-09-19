@@ -1,0 +1,107 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "Planning an hardware interface when you're from the software side"
+description: "How I approach writing software that will work with, or use a hardware interface"
+pubDate: "Dec 26 2022"
+tags: ["design", "hardware", "vue"]
+---
+
+## An art piece that disappeared :| 
+
+A few years ago, I built with the members of [Documents](https://documents.design) a hardware interface for a piece of an exhibition hosted at IPN, Toulouse. We had built a design language of 26 pictural "fonts" composed each of 64 "characters" and various ways of interacting with them, either totally analog with rugged tools, or by controlling digital visualizations with an hardware control panel.
+
+Sadly, everything from this time is lost and I do not have images anymore. The lessons on hardware design still stand though.
+
+![The control panel for the digital visualization, and its software simulation](/pics/harddesign/panneau.jpg)
+
+Before we could manufacture the control panel, we had a lot of other stuff to do, and it was becoming clearer and clearer that the physical panel wouldn't be available until the very end. So I made a simulated software panel that modeled the future physical one. The simulated panel emitted events to a websocket connexion that the future physical panel (interfaced to a raspberry PI) would also connect to. When the physical panel was ready, we just had to plug it in and everything *just worked*.
+
+## Simulating an hardware interface
+
+I started by enumerating what controls are available on the physical panel, and assigned each of them types :
+
+### Available controls
+
+- There are eight (normally open) pushbuttons.<br/>When pressed, they close and current can flow through them.<br/>They have a LED indicator next to them telling if a cooldown is active.
+- There is a selector with two modes and an idle state.
+- There are two on/off switches that stay in their position.
+- There is a joystick with an idle state and two directions.
+- There is a last (normally open) pushbutton.<br/>Next to it, there are two status LEDs that should indicate if you can press it, or if you are still in a cooldown period. This is only a variation on the standard pushbutton.
+
+### Implementations
+
+Here is pseudo-code for each physical trigger type.
+
+**The pushbutton** : easy, we just have to model a cooldown. Let's assume we have `emit(event, control, payload?)` and `delay(number)` available. Even if the server also debounced presses and events, the simulated panel was responsible for keeping track of its own state. A good reason for that is that the network connection could be interrupted. The server thus just accepted the last event because a valid local state transition could become invalid if an intermediate event failed to be sent. A missing event didn't affect the art piece.
+
+```ts
+type Pushbutton = {
+    identifier: string // pushbutton name, id, etc.
+    locked: boolean // tracking cooldown
+}
+const pressPushbutton = async (btn: Pushbutton) => {
+    if (btn.locked) return;
+    btn.locked = true;
+    emit('press', btn.identifier);
+    await delay(500);
+    btn.locked = false;
+}
+```
+
+**The mode selector** can only switch to a nearby state. You can't jump from `high` to `low` without going through the `idle` state first. Here, high and low are represented with -1 and 1, idle is 0. There is no notion of a delay or a cooldown here.
+
+```ts
+type Modeselector {
+    state: -1 | 0 | 1,
+    identifier: string,
+}
+const changeMode = async (ms: Modeselector, mode: -1 | 0 | 1) => {
+    if (ms.state === 0) {
+        if (mode !== 0) {
+            ms.state = mode;
+            emit('modeChange', ms.identifier, mode);
+        }
+    } else {
+        if (mode === 0) {
+            ms.state = mode;
+            emit('modeChange', ms.identifier, mode);
+        }
+    }
+}
+```
+
+**The on/off switch** is the simplest switch : its state can only be toggled.
+
+```ts
+type Switch {
+    state: boolean,
+    identifier: string
+}
+const toggle = async (s: Switch) => {
+    s.state = !s.state;
+    emit('toggle', s.identifier);
+}
+```
+
+**The joystick** is similar to the mode selector, but does not stay in a non-idle state : as soon as you stop pushing it, it just springs back to the idle state. On the simulated control panel, you could tie `push` to `mousedown` and `stopPushing` to `mouseup`, as an example.
+
+```ts
+type Joystick {
+    state: -1 | 0 | 1,
+    identifier: string
+}
+const push = async (j: Joystick, dir: -1 | 1) {
+    if (j.state !== 0) return; // we can't push from a non-idle state.
+    j.state = dir;
+    emit('push', j.identifier, dir);
+}
+const stopPushing = async (j: Joystick) {
+    if (j.state === 0) return; // we can't stop pushing from the idle state
+    j.state = 0;
+    emit('stopPush', j.identifier);
+};
+```
+
+### Using those components
+
+We had a little Vue app looking like the picture at the top of this post running on an iPad, that allowed us to try and tune our visualizer without the real control panel. By abstracting how actions were sent to a websocket client/server model where the physical panel would only be a specific client, I've been able to prototype the final panel at no cost.

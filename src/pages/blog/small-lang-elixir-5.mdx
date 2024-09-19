@@ -1,0 +1,227 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "Hosting a small language (Ovo2) from scratch in Elixir, pt 5<br/>Evaluation"
+description: "Evaluation of Ovo2 by walking its AST"
+pubDate: "Jun 15 2023"
+tags: ["elixir", "parsing", "explorations"]
+---
+
+*full code [hosted on github](https://github.com/lucassifoni/ovo)*
+
+- Part 1 : [gathering requirements from a previous experiment](/blog/small-lang-elixir)
+- Part 2 : [tokenization](/blog/small-lang-elixir-2)
+- Part 3 : [parsing](/blog/small-lang-elixir-3)
+- Part 4 : [AST emission and print-parse-print loop](/blog/small-lang-elixir-4)
+- [x] Part 5 : [evaluation](/blog/small-lang-elixir-5)
+- Part 6 : [basic recursion : environment as processes](/blog/small-lang-elixir-6)
+- Part 7 : [weird features, towards a global stateful machine](/blog/small-lang-elixir-7)
+- Part 8 : [a graphical environment with liveview](/blog/small-lang-elixir-8)
+
+I brought Ovo to the point to these kind of small tests pass. 
+
+```elixir
+test "basic evaluation 2" do
+    program = fn num -> """
+    sometimes_add_things = \\a -> if equals(a, 0) then
+        add(add(1, a), 2)
+      else
+        2
+      end
+    end
+
+    sometimes_add_things(#{num})
+    """ end
+
+    assert Ovo.run(program.(2)) == %Ovo.Ast{kind: :integer, nodes: [], value: 2}
+    assert Ovo.run(program.(0)) == %Ovo.Ast{kind: :integer, nodes: [], value: 3}
+end
+```
+
+This post will summarize how I chose to go from parsing to evaluation.
+The last step, parsing, left us with an abstract syntax tree where each node maybe bears a value, and maybe bears child nodes.
+
+Evaluating the AST is a matter of updating an environment with user bindings as they are created, then evaluating expressions one after another, up to a final evaluation result.
+
+
+```elixir
+def run(%Ast{} = ast, input, bindings) do
+    ovo_input = Ovo.Converter.elixir_to_ovo(input)
+    env = Env.make(bindings) |> Env.bind_input(ovo_input)
+    {_, v} = evaluate(ast, env)
+    v
+end
+```
+
+`Env.make/1` returns a basic environment, a map, split in two keys : `:user` and `:builtins`. I wanted user bindings to be able to shadow predefined bindings. `bind_input` pre-fills the special symbol `data` in the `:user` part of the environment, before giving this fresh environment to `evaluate/2`.
+
+`evaluate/2` has two heads, one handling a list and calling `reduce_nodes/2`: 
+
+```elixir
+ def evaluate(nodes, env) when is_list(nodes), do: reduce_nodes(nodes, env)
+
+ def reduce_nodes(nodes, env) do
+    Enum.reduce(nodes, {env, nil}, fn node, {ev, _lev} ->
+      evaluate(node, ev)
+    end)
+ end
+```
+
+Where `reduce_nodes/2` evaluates each node, returning an environment that has possibly been updated. This is how each expression in the list of expressions making up a program gets access to new bindings.
+
+The other head of `evaluate/2` is a "big old switch statement" in the sense of we only pattern match on Ast node kinds :
+
+```elixir
+def evaluate(%Ovo.Ast{} = ast, env) do
+    case ast.kind do
+      :root ->
+        evaluate(ast.nodes, env)
+
+      :assignment ->
+        key = ast.value
+        {_, val} = evaluate(ast.nodes, env)
+        {update_env(env, key.value, val), val}
+
+      :block ->
+        evaluate(ast.nodes, env)
+
+      :condition ->
+        [predicate, branch1, branch2] = ast.nodes
+        {_, val} = evaluate(predicate, env)
+
+        {_, v} =
+          case val do
+            %Ast{kind: :bool, value: true} -> evaluate(branch1, env)
+            %Ast{kind: :bool, value: false} -> evaluate(branch2, env)
+          end
+
+        {env, v}
+    #...
+```
+
+We can see that `evaluate/2` returns a `{env, value}` tuple, and that assignments return an updated env. Symbols ultimately evaluate to a value : 
+
+```elixir
+ :symbol ->
+        {env, find_value(ast.value, env)}
+```
+
+Where `find_value/2` checks if the value is in the user or builtins map. Error handling and logging are still minimal, but I made the checks explicit to add messages wherever possible :^).
+
+```elixir
+  def find_value(name, env) do
+    if Map.has_key?(env.user, name) do
+      Map.get(env.user, name)
+    else
+      if Map.has_key?(env.builtins, name) do
+        Map.get(env.builtins, name)
+      else
+        {:error, "Symbol does not resolve to a value"}
+      end
+    end
+  end
+```
+
+What's maybe more interesting is how function definitions / lambdas are handled :
+
+```elixir
+:lambda ->
+arity = length(ast.value)
+captured_env = env
+program = ast.nodes
+
+{env,
+    fn args ->
+    if length(args) != arity do
+        {:error, "#{length(args)} argument(s) passed instead of #{arity}"}
+    else
+        symbols_and_args = Enum.zip(ast.value, args)
+
+        env_with_applied_args =
+        Enum.reduce(symbols_and_args, captured_env, fn {sym, arg}, uenv ->
+            {_, v} = evaluate(arg, uenv)
+            update_env(uenv, sym.value, v)
+        end)
+
+        {_, k} = evaluate(program, env_with_applied_args)
+        k
+    end
+end}
+```
+
+A lambda evaluates to a function keeping a copy of the environment at the time it is created, and evaluating the child nodes of the lambda after having set environment keys with positional arguments. When called, this function only returns a value and no environment, since anything happening inside the lambda is private.
+
+Function calls are then handled by finding a callable either tagged with :user or :builtins, and calling it on nodes.
+
+```elixir
+:call ->
+    case find_callable(ast.value.value, env) do
+        {:user, fun} ->
+        v = fun.(ast.nodes)
+        {env, v}
+
+        {:builtins, fun} ->
+        r = fun.(ast.nodes, env)
+        {env, r}
+
+        {:error, msg} ->
+        throw({:error, msg})
+    end
+```
+
+Builtins then have the task of evaluating their arguments, type-checking them, and perform operations on them, converting them back to Ast nodes :
+
+```elixir
+"add" => fn nodes, env ->
+    case map_nodes(nodes, env) do
+    [%Ast{kind: :integer, value: v1}, %Ast{kind: :integer, value: v2}] ->
+        Ast.integer(v1 + v2)
+
+    [%Ast{kind: :float, value: v1}, %Ast{kind: :float, value: v2}] ->
+        Ast.float(v1 + v2)
+
+    [%Ast{kind: k1, value: v1}, %Ast{kind: k2, value: v2}]
+    when k1 in [:integer, :float] and k2 in [:integer, :float] ->
+        Ast.float(v1 + v2)
+
+    _ ->
+        :error
+    end
+end,
+"map" => fn nodes, env ->
+    case map_nodes(nodes, env) do
+    [fun, %Ast{kind: :list, nodes: items}] when is_function(fun) ->
+        Enum.map(items, fn i -> fun.([i]) end)
+
+    _ ->
+        :error
+    end
+end,
+```
+
+The `map_nodes/2` function also takes adantage of `evaluate/2` to resolve values from arguments.
+
+```elixir
+defp map_nodes(nodes, env) do
+    Enum.map(nodes, fn node ->
+        {_, v} = Ovo.Interpreter.evaluate(node, env)
+        v
+    end)
+end
+```
+
+All of this, stiched together (see *full code [hosted on github](https://github.com/lucassifoni/ovo)*) for reference, allows me to evaluate basic programs like the one shown on top of this page :
+
+```elixir
+sometimes_add_things = \\a -> if equals(a, 0) then
+        add(add(1, a), 2)
+    else
+        2
+    end
+end
+
+sometimes_add_things(0)
+```
+
+Evaluating to `%Ovo.Ast{kind: :integer, nodes: [], value: 3}`.
+
+The next task is the implementation of a wide enough "standard library" before going for the visual editor. I encourage any reader to give a try to the construction of a small interpreted language in a high-level language :^) .

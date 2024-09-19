@@ -1,0 +1,206 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "What if LiveView gave DOM access to Elixir ?"
+description: "An experiment in filling in the imperative parts of interaction-heavy UIs in Elixir"
+pubDate: "Aug 5 2024"
+tags: ["elixir", "programming"]
+---
+
+### Background :
+
+I build multi-user document editors in Elixir + Typescript + Vue and am exploring the removal of Vue from the equation (I like Vue and TS a lot, but… a mono-Elixir codebase feels better). The documents are not text as in a word processor but more like a mix of inDesign & Figma. There is sometimes free-flowing text across blocks or pages, sometimes not, and auto-layout features that respond to client-specific rules.
+
+In a lot of cases, I need to position things, query their size, re-calculate other sizes accordingly. In Vue-land (and certainly other frameworks), we have user or library-defined abstractions that allow to interact with the DOM. If I need to track the bounds of an element, I would use :
+
+```ts
+const bounds = useElementBounding(element);
+```
+
+And the underlying implementation would allow me to query that when I need to re-layout.
+
+### What I want :
+
+I want that, at any point in time, the current document (not the HTML Document, the document that the user edits from my application) layout can be fully computed from Elixir, and that changes happen in plain Elixir modules defining the layout logic.
+
+### What I don’t need :
+
+Real-time position/dimension tracking. This means that in my case, an user dragging an element to move, rotate or scale it, does not update the liveview at high frequency. Only its final dimension/position is of interest to the LiveView and this is perfectly handled with hooks.
+
+### Obstacles :
+Querying DOM elements for their sizes, querying or setting styles, setting dimensions / offsets, via hooks, can be tedious and can lead to a lot of operation-specific hooks. A good example would be that an element got a fixed height, but its surroundings changed in a way, so it is set back to auto height, the resulting height is queried, and is saved somewhere to keep track of available space.
+
+All of that exists in hooks, of course, but I’m trying to find a path where I massively reduce the amount of rendering logic javascript-side, not to move it from Vue to vanilla JS in Hooks.
+
+### Example :
+I’m working directly on the assigns for the sake of brevity. The examples are very imperative and those operations would be hidden behind higher-level operations just like we do in JS.
+
+You will see that I stumbled on a query/response implementation. Maybe if you worked with browser automation a lot it will remind you of executing JS on the current page to extract information.
+
+#### Get the bounding box of a DOM element, update an assign with the value
+
+```elixir
+@impl true
+  def handle_event("get_dimensions", _, socket) do
+    {:noreply,
+     TestWeb.DOMStuff.push_exec(socket, :get_bounding_client_rect, [], "#some_box", fn s, v ->
+       update(s, :box_dimensions, fn _ -> v end)
+     end)}
+  end
+```
+
+![](/pics/liveview-dom-access/00.jpeg)
+
+#### Get a batch of values in a single call, call a callback after the batch. The socket gets updated after all the calls came back. This can be important to avoid re-renders between calls.
+
+```elixir
+@impl true
+  def handle_event("get_all_dimensions", _unsigned_params, socket) do
+    {:noreply,
+     TestWeb.DOMStuff.batch_exec(
+       socket,
+       [
+         {:get_bounding_client_rect, [], "#some_box",
+          fn s, v ->
+            update(s, :box_dimensions, fn _ -> v end)
+          end},
+         {:get_bounding_client_rect, [], "#some_other_box",
+          fn s, v ->
+            update(s, :blue_box_dimensions, fn _ -> v end)
+          end}
+       ],
+       fn s -> update(s, :got_everything, fn _ -> true end) end
+     )}
+  end
+```
+
+![](/pics/liveview-dom-access/01.jpeg)
+
+#### Sequential execution of DOM operations. This can be useful when an operation depends on another, like sizing an element after another has been rendered. I included setting and reading a style property on the blue box to give a feel of the level of control I’m thinking of. I added pauses between calls to be able to take screenshots.
+
+```elixir
+@impl true
+  def handle_event("sequential_example", _unsigned_params, socket) do
+    {:noreply,
+     TestWeb.DOMStuff.seq_exec(
+       socket,
+       [
+         # query dimensions of the first box
+         {:get_bounding_client_rect, [], "#some_box",
+          fn s, v -> update(s, :box_dimensions, fn _ -> v end) end},
+         # set height of the second box, computed from the width of the first
+         {:"style.height", [fn s -> "#{2 * s.assigns.box_dimensions["width"]}px" end],
+          "#some_other_box", fn s, _v -> s end},
+         # set the background of the second box to be green
+         {:"style.backgroundColor", ["green"], "#some_other_box", fn s, _v -> s end},
+         # reads the background color of the second box
+         {:"style.backgroundColor", [], "#some_other_box",
+          fn s, v -> update(s, :second_box_bg, fn _ -> v end) end},
+         # reads the bounding box of the second box
+         {:get_bounding_client_rect, [], "#some_other_box",
+          fn s, v -> update(s, :blue_box_dimensions, fn _ -> v end) end}
+       ],
+       # final callback
+       fn s -> update(s, :got_everything, fn _ -> true end) end
+     )}
+  end
+```
+
+![](/pics/liveview-dom-access/03.jpeg)
+
+![](/pics/liveview-dom-access/02.jpeg)
+
+
+### Abstraction leak / implementation :
+
+Currently, this POC is implemented as a hook and a LiveComponent, so as user-land LiveView.
+
+The LiveView that uses it is “polluted” by :
+
+- The inclusion of a live component
+
+```elixir
+<.live_component module={TestWeb.DOMStuff} id="exec_renderer" execs={@__execs} />
+```
+
+- A DOMStuff-specific assign on the socket
+
+```elixir
+ @impl true
+  def mount(_, _, socket) do
+    {:ok, socket |> assign(:box_dimensions, nil) |> TestWeb.DOMStuff.with_execs() }
+  end
+````
+
+- Two callbacks for “exec” replies and next call execution of a sequence
+
+```elixir
+  def handle_event("exec:reply", params, socket), do: {:noreply, TestWeb.DOMStuff.handle_reply(socket, params)}
+  def handle_info({:schedule_batch, t, cb}, socket), do: {:noreply, TestWeb.DOMStuff.seq_exec(socket, t, cb)}
+```
+
+So it is super leaky and not worth keeping.
+
+I would be very happy to be able to define higher-level DOM operations like “move this element to this other element, reset its height, see how it fits, move it back” from imperative calls and compose them in batches and sequences of batches, always able to have the actual numbers in my liveview state, without resorting to polling the DOM.
+
+In terms of my example, it could look like this instead of manually constructing tuples (where `Ops.set_height` is implemented with a `Ops.set_style` primitive) :
+
+```elixir
+  def handle_event("sequential_example", _unsigned_params, socket) do
+    alias TestWeb.DOMStuff.Ops
+    box_1 = "#some_box"
+    box_2 = "#some_other_box"
+    {:noreply,
+     TestWeb.DOMStuff.seq_exec(
+       socket,
+       [
+          Ops.ignore(box_2),
+          Ops.get_bounding_client_rect(box_1, fn s, v -> update(s, :box_dimensions, fn _ -> v end) end),
+          Ops.set_height(box_2, fn s -> "#{2 * s.assigns.box_dimensions["width"]}px" end),
+          Ops.get_bounding_client_rect(box_2, fn s, v -> update(s, :blue_box_dimensions, fn _ -> v end) end),
+          Ops.un_ignore(box_2),
+       ],
+       fn s -> update(s, :got_everything, fn _ -> true end) end
+     )}
+  end
+```
+
+Now the blue box is two times as high as the red box is large, but at the next render this property comes from the Elixir state and not from the DOM operation anymore.
+
+This fictional operation would maybe be common in our application that deals with red and blue boxes, so we can extract it further. Instead of plain assign keys, we would pass state transition functions from a module dedicated to this task, but you get the idea. Compose high level DOM manipulations from small primitives to get information from the browser and use it in our state.
+
+```elixir
+  @impl true
+  def handle_event("sequential_example", _unsigned_params, socket) do
+    {:noreply,
+      from_element_double_width_set_height(socket,
+        {"#some_box", :box_dimensions},
+        {"#some_other_box", :blue_box_dimensions},
+        fn s -> update(s, :got_everything, fn _v -> true end) end)
+      }
+  end
+````
+
+How do you handle heavy DOM-manipulation situations in Liveview : did you settle to use hooks, or maybe custom events dispatching ?
+Did you develop abstractions over them ? Do you use webcomponents, or live_vue / live_svelte ?
+Maybe you even tried some hacks with on-the-fly classes generation and JS commands ?
+
+### Implementation notes
+
+- A `Command` is an operation, either a read, a write, or a function call on a DOM property of an Element
+- A `Batch` is a list of `Commands` that execute in no defined order, but report to LiveView when all `Commands` executed.
+- After a `Batch` completes, we have the ability to schedule a `callback`.
+- A `Sequence` uses this property to schedule `Batches` in-order, akin to the classic sequential execution of promises with `then`+`reduce` in JS.
+- A nested list of `Batches` of `Commands` is rendered to a hidden `<div>`. By this, I mean a literal `<ul>` for each `Batch` and a nested `<li>` tag for each `Command` in a `Batch`.
+- All `<li>` tags have a `phx-hook` property that triggers the `DOMStuff` hook. Inside it, I translate the snake_case command names, split nested property accesses, test if the target property is a function or not, and either read or write the property if it is not a function. The result of this read/write/call triggers an event.
+- Events are handled by a nested data structure that represents ongoning `Batches`, and for each reply, check if the batch is complete or not. 
+- When a reply from a single operation, or a closing batch reply comes in, the individual and batch-related callbacks are run, allowing the user to store or further process the information gathered from JS.
+
+### Current point of view
+
+This is fine in some way, but could also easily snowball into use-cases where the companion hook that allows for this interaction gets stateful, and the ability to store reference to elements and use them in commands Elixir-side gets added… and I think I know where that road leads.
+
+I have another POC that allows to dynamically register Hooks which code is co-located with the Elixir code of a component, akin to Vue single file components, which could be another point of view / another take on this.
+
+In the meantime, I’ll be wise and not use any of that, but the underlying ideas are of interest to me. Maybe LiveView does not have the goal of fully replacing interaction-heavy parts of more advanced SPAs, but people who have the joy to use LiveView and at the same time work on SPAs will try to shoehorn it into that use-case.
+
+*Originally posted on ElixirForum : https://elixirforum.com/t/heavy-dom-querying-dom-interaction-from-liveview/65092/4*

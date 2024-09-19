@@ -1,0 +1,68 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "Josef, an attempt at a video game"
+description: "Writing an engine sounds fun, doesn't it ?"
+pubDate: "Sep 9, 2017"
+tags: ["gamedev", "explorations"]
+---
+
+Josef was an attempt made in 2017 to do a small game from scratch. It worked, in the sense that it allowed a player to move/jump and collide with CPU-controlled josefs. (A josef being a small white ball with two elliptical eyes.)
+
+![](/pics/josef/josef.png)
+
+Levels were created by filling a tile map, with render instructions in a small DSL :
+
+```js
+level01.levelData = [
+  [n,n,n,n,n,n,n,n,n,n,n,n,n,n,n,n,n,n,n,n],
+  [n,n,n,n,n,n,n,n,n,n,n,n,n,n,n,n,n,n,n,n],
+  [n,n,n,0,n,n,n,n,n,n,n,n,n,n,n,n,n,n,n,n],
+  [n,c,c,0,0,0,n,n,n,n,n,n,n,n,n,n,n,n,n,n],
+  [n,n,c,n,n,n,n,n,n,n,n,n,n,n,n,n,n,n,n,n],
+  [n,n,n,n,n,n,n,n,n,n,n,n,n,0,0,0,n,n,n,n],
+  [n,n,n,n,n,n,n,n,n,n,n,n,c,c,c,c,c,n,n,n],
+  [n,n,n,n,n,n,n,n,n,n,n,n,n,n,n,c,n,n,n,n],
+  [n,n,n,n,n,n,n,n,n,c,n,n,n,n,n,n,n,n,n,n],
+  [n,n,n,n,n,n,c,c,c,c,c,0,n,n,n,n,n,n,n,n],
+  [n,n,n,n,n,n,n,0,0,0,0,n,n,n,n,n,n,n,n,n],
+  [n,n,n,n,n,n,n,n,n,0,n,n,n,n,n,n,n,n,n,n],
+  [n,n,n,n,n,n,n,n,n,n,n,n,n,n,n,n,n,n,n,n],
+  [n,n,n,n,n,n,n,n,n,n,n,n,n,n,n,c,c,c,n,n],
+  [n,n,n,n,n,n,n,n,n,n,n,n,n,n,n,n,n,0,n,n],
+  [n,n,n,n,n,n,n,n,n,n,n,n,n,n,n,n,n,n,n,n],
+  [n,n,n,n,n,n,n,n,1,1,1,1,1,1,n,n,n,n,n,n],
+  [1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2],
+];
+
+level01.renderData = [
+  {
+    index: n,
+    type: 'color',
+    value: 'rgba(0,0,0,0)',
+  },
+  /*
+   {
+    index: n,
+    type: 'continuousGradient',
+    value: '0:rgba(21, 66, 119, .75)->0.3:rgba(87, 110, 113, .75)->0.7:rgba(225, 196, 94, .75)->1:rgba(178, 99, 57, .75)',
+    direction: 'top->bottom',
+  },
+   */
+  {
+    index: 0,
+    type: 'gradient',
+    value: '0:white->1:#333333',
+    direction: 'topLeft->bottomRight',
+    collision: true,
+  }
+  ...
+]
+```
+
+After implementing gravity, jumps, and a kind of "debug mode" to help me with collisions, I quickly faced the fact that what makes a game isn't its graphics, code, or technical features, but its playability. Almost nothing, and almost anything can be playable.
+
+Here's a screenshot of a video showing Flipcase, a game released in 2013 taking advantage of iPhone 5c plastic cases, sold with holes. The game cleverly exploited that feature to mask the iPhone screen by flipping the case, akin to a game board.
+
+![](/pics/josef/flipcase.png)
+
+In my case, programming itself was the game. Josef was thus a playable-once game for my personal use.

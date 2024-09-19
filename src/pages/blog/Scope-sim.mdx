@@ -1,0 +1,451 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "A remote-controlled telescope with Elixir, Vue, & Rust -- Part 1 : Simulating movement & state with Elixir"
+description: "First entry of my build log"
+pubDate: "Dec 27 2022"
+tags: ["optics", "elixir"]
+---
+
+## Project summary
+
+This is the first entry of a series about a project I'm working on : a daylight photographic telescope, remote controlled with a smartphone, or with a little hardware remote. I'm already polishing its mirror on the side, a quite fast 114mm mirror with a focal length of 400mm. This mirror has the particularity to have a large hole cored in its center, so it naturally has a central obstruction of 45%.
+
+<figure>
+![](/pics/photoscope/mirror.jpg)
+<figcaption>The mirror, resting on its LP66 polishing tool.</figcaption>
+</figure>
+
+This telescope will have a webcam sensor at its focal plane, so, no secondary mirror. Focusing will be done by translating the primary mirror with a mechanism akin to a [clement focuser](https://www.clementfocuser.com/), but with a hinged design. Clement's metallic flexures design is patented, and I have had luck building a hinged version already. More details on the build itself will go into other blog posts.
+
+The brains will be a small RISC-V SOC called the MangoPI MQ Pro, which is supported by the [Nerves Project](https://nerves-project.com), a platform for embedded Elixir, thanks to the open-source work of [Frank Hunleth](https://github.com/fhunleth/nerves_system_mangopi_mq_pro).
+
+## Controlling the telescope
+
+I want to have two ways of interacting with the telescope :
+
+- a physical remote control, allowing to use it standalone
+- a web UI that can be accessed over Wifi
+
+Having those two control mechanisms allows me to abstract them behind a similar interface, giving a lot of benefits on the system design itself, as outlined in this previous post : [12/26/2022 Planning an hardware interface when you're from the software side](/blog/Software-for-hardware). It allows to iterate on a software prototype of the control tool quickly, and build the hardware controller to mimic the software one afterwards.
+
+Both the hardware interface and the physical remote control will interact with the telescope's program by exchanging messages on a websocket. We can leverage Phoenix for that.
+
+## Modeling the telescope state
+
+We'll start by defining a struct for our telescope : it has a name (to find it in a telescope registry ?), its position on the altitude axis, its position on the azimuth axis, and its focus position. That says a lot about its physical configuration : indeed, I want to use encoding strips on both the altitude and azimuth axis, to have positional feedback after a move.
+I also want a home sensor for the azimuth axis (even if we can freely rotate around the axis), and endstops for the alt position and focus.
+
+```elixir
+defmodule Scope.Telescope do
+  defstruct name: "",
+            position_alt: 0,
+            position_az: 0,
+            position_focus: 0,
+            home_az: false,
+            lower_alt_stop: false,
+            upper_alt_stop: false,
+            lower_focus_stop: false,
+            upper_focus_stop: false
+end
+```
+
+We'll make that a GenServer, and will start implement its API. To begin, we need to be able to home the telescope. Indeed, when it comes online, the azimuth, focus, and altitude, are all three in undefined stated. Maybe some endstops are activated, but we will still have a `homed?/1` helper and a `home(pid)` call to move the scope to a known position.
+
+```elixir
+  use GenServer
+  alias Scope.Telescope
+
+  def init(name) do
+    {:ok,
+     %Telescope{
+       name: name,
+       position_alt: -1,
+       position_az: -1,
+       home_az: false,
+       lower_alt_stop: false,
+       upper_alt_stop: false,
+       lower_focus_stop: false,
+       upper_focus_stop: false
+     }
+    }
+  end
+
+  def home(pid) do
+    GenServer.call(pid, :home, 10000)
+  end
+
+  def homed?(%Telescope{position_alt: -1}), do: false
+  def homed?(_), do: true
+
+  def handle_call(:home, _, state) do
+    new_state = %{
+      state |
+      lower_alt_stop: true,
+      lower_focus_stop: true,
+      home_az: true,
+      position_alt: 0,
+      position_az: 0
+    }
+    {:reply, :ok, new_state}
+  end
+```
+
+### Homing and moving
+
+Our new virtual telescope can then be homed. Note that this does not take the physical time needed to do it into account. For that, we'll need to implement a few more things below.
+
+```
+iex(15)> {:ok, scope} = GenServer.start_link(Scope.Telescope, "fooscope")
+{:ok, #PID<0.754.0>}
+iex(16)> scope |> Scope.Telescope.home
+:ok
+iex(17)> scope |> Scope.Telescope.show
+:ok
+%Scope.Telescope{
+  name: "fooscope",
+  position_alt: 0,
+  position_az: 0,
+  position_focus: 0,
+  home_az: true,
+  lower_alt_stop: true,
+  upper_alt_stop: false,
+  lower_focus_stop: true,
+  upper_focus_stop: false
+}
+```
+
+We'll implement `:start_move_up` and `:stop_move_up`. Let's establish a few facts :
+- The motor driving the altitude axis runs at 10RPM when active. That means it completes a 2π turn in 6 seconds, so it takes 1.5 seconds to cover the full altitude range (0 to π/2).
+
+That's way too fast for the user to have precise positioning. We'll reduce it 10x to take 15 seconds to cover the full altitude range. I'd like positioning to reach 0.1deg precision, which is enough for my non-stellar purpose. 0.1deg is 1/900th of the altitude range. If we cover the full range in 15 seconds, 1/900th of that is 16ms. That means our motor control loop will need to run at 16ms max per iteration.
+
+I want to be able to (manually) move an axis at a time. I'll add to my `Telescope` struct a `:moving` field, that can take the values `:no | :up | :down | :right | :left`.
+
+We'll start with the user-facing `start_move_up(pid)` and `stop_move_up(pid)`.
+
+```elixir
+  def start_move_up(pid) do
+    GenServer.cast(pid, :start_move_up)
+  end
+
+  def stop_move_up(pid) do
+    GenServer.cast(pid, :stop_move_up)
+  end
+
+  def handle_cast(:start_move_up, %Telescope{} = state) do
+    if homed?(state) and not state.upper_alt_stop do
+      GenServer.cast(self(), :move_up)
+    end
+
+    {:noreply,
+     %Telescope{
+       state
+       | moving: :up
+     }}
+  end
+```
+
+In the `handle_cast(:start_move_up..` callback, we check a few preconditions, then update the state to `moving: :up` and cast a message. Let's implement the `handle_cast(:move_up)` callback. First, I'll define a few constants as module attributes. They could become parameters later.
+
+```elixir
+  @alt_time 15
+  @alt_divisions 900
+  @alt_increment :math.pi() / 2 / @alt_divisions
+  @time_interval trunc(@alt_time / @alt_divisions * 1000)
+```
+
+Then, we calculate the next position, whether we will hit an endstop or not, and either stop the move, or continue moving up after 16ms. Of course, we will need to drive the motors when they physically exist.
+
+```elixir
+  def handle_cast(:move_up, %Telescope{moving: :up} = state) do
+    pos = state.position_alt + @alt_increment
+
+    {new_pos, new_stop_status} =
+      if pos >= :math.pi() / 2, do: {:math.pi() / 2, true}, else: {pos, false}
+
+    new_state = %Telescope{
+      state
+      | position_alt: new_pos,
+        upper_alt_stop: new_stop_status
+    }
+
+    if new_stop_status do
+      IO.inspect("Hit upper alt endstop.")
+      GenServer.cast(self(), :stop_move_up)
+    else
+      IO.inspect("Moving up to #{new_state.position_alt |> Float.floor(2)} rad")
+      Process.send_after(self(), :continue_move, @time_interval)
+    end
+
+    {:noreply, new_state}
+  end
+
+  def handle_cast(:move_up, %Telescope{moving: :no} = state) do
+    {:noreply, state}
+  end
+```
+
+The `handle_info(:continue_move)` callback just casts a `:move_up` message again, if applicable. Note that I'm starting to think that all directional callbacks could be unified, so code moves in that direction.
+
+```elixir
+  def handle_info(:continue_move, %Telescope{moving: :no} = state) do
+    {:noreply, state}
+  end
+
+  def handle_info(:continue_move, %Telescope{moving: dir} = state) do
+    msg =
+      case dir do
+        :up -> :move_up
+        :down -> :move_down
+        :right -> :move_right
+        :left -> :move_left
+        _ -> nil
+      end
+
+    if !is_nil(msg) do
+      GenServer.cast(self(), msg)
+    end
+
+    {:noreply, state}
+  end
+```
+
+Let's implement `handle_cast(:stop_move_up)` to be able to reflect that we released the "up" button on our remote control :
+
+```elixir
+  def handle_cast(:stop_move_up, %Telescope{} = state) do
+    {:noreply,
+     %Telescope{
+       state
+       | moving: :no
+     }}
+  end
+```
+
+We just break the loop by setting `moving: :no`. Again, this points to a generalization of the code to move. Let's try our virtual telescope in IEX :
+
+```
+iex(4)> {:ok, scope} = GenServer.start_link(Telescope, "fooscope")
+{:ok, #PID<0.510.0>}
+iex(5)> scope |> Tele
+Telemetry    Telescope
+iex(5)> scope |> Telescope.home
+:ok
+iex(6)> scope |> Telescope.show
+:ok
+%Scope.Telescope{
+  name: "fooscope",
+  position_alt: 0,
+  position_az: 0,
+  position_focus: 0,
+  moving: :no,
+  home_az: true,
+  lower_alt_stop: true,
+  upper_alt_stop: false,
+  lower_focus_stop: true,
+  upper_focus_stop: false
+}
+iex(7)> scope |> Telescope.start_move_up
+:ok
+"Moving up to 0.0 rad"
+"Moving up to 0.0 rad"
+"Moving up to 0.0 rad"
+"Moving up to 0.0 rad"
+"Moving up to 0.0 rad"
+"Moving up to 0.01 rad"
+"Moving up to 0.01 rad"
+...
+iex(8)> scope |> Telescope.stop_move_up
+:ok
+iex(9)> scope |> Telescope.show
+:ok
+%Scope.Telescope{
+  name: "fooscope",
+  position_alt: 0.5253441048502938,
+  position_az: 0,
+  position_focus: 0,
+  moving: :no,
+  home_az: true,
+  lower_alt_stop: true,
+  upper_alt_stop: false,
+  lower_focus_stop: true,
+  upper_focus_stop: false
+}
+```
+
+We can drive it up, and stop doing that. If I let it run for 15 seconds :
+
+```
+"Moving up to 1.56 rad"
+"Moving up to 1.56 rad"
+"Moving up to 1.56 rad"
+"Moving up to 1.56 rad"
+"Moving up to 1.56 rad"
+"Moving up to 1.57 rad"
+"Hit upper alt endstop."
+```
+
+It stops as it runs into the endstop. Nice !
+
+The code until this point is available here (specific commit pinned.)
+[github.com/lucassifoni/oiseaux](https://github.com/Lucassifoni/oiseaux/commit/1b17efa43e30362fd3560e9040094328f92361e1)
+
+### Alt/az moves and refactoring
+
+The code is now separated in two modules : a public `Scope.TelescopeApi` and the associated `Scope.Telescope` implementing the GenServer behaviour.
+
+```elixir
+defmodule Scope.TelescopeApi do
+  def create(name), do: GenServer.start_link(Scope.Telescope, name)
+  def home(pid), do: GenServer.call(pid, :home, 10000)
+  def show(pid), do: GenServer.cast(pid, :show)
+  def up(pid), do: GenServer.cast(pid, :start_move_up)
+  def down(pid), do: GenServer.cast(pid, :start_move_down)
+  def left(pid), do: GenServer.cast(pid, :start_move_left)
+  def right(pid), do: GenServer.cast(pid, :start_move_right)
+  def stop(pid), do: GenServer.cast(pid, :stop_move)
+end
+```
+
+The API is quite concise for now. On the GenServer side, I compacted things a bit :
+
+```elixir
+  def handle_call(:home, _, state), do: do_home(state)
+  def handle_info(:continue_move, %Telescope{moving: :no} = state), do: {:noreply, state}
+  def handle_info(:continue_move, %Telescope{moving: _dir} = state), do: continue_move(state)
+
+  def handle_cast(:show, state), do: {:noreply, IO.inspect(state)}
+
+  def handle_cast(:start_move_down, state), do: start_move(:down, state)
+  def handle_cast(:start_move_left, state), do: start_move(:left, state)
+  def handle_cast(:start_move_up, state), do: start_move(:up, state)
+  def handle_cast(:start_move_right, state), do: start_move(:right, state)
+
+  def handle_cast(:move_up, state), do: do_move(:up, state)
+  def handle_cast(:move_down, state), do: do_move(:down, state)
+  def handle_cast(:move_left, state), do: do_move(:right, state)
+  def handle_cast(:move_right, state), do: do_move(:left, state)
+
+  def handle_cast(:stop_move, %Telescope{} = state), do: stop_move(state)
+```
+
+Skipping `do_home` and `stop_move`, here are generalized `start_move` and `do_move` : We check preconditions with function clauses, and then proceed to cast the message triggering `do_move`.
+
+```elixir
+  def valid_move_preconditions?(_, %{position_alt: -1}), do: false
+  def valid_move_preconditions?(:down, %{lower_alt_stop: true}), do: false
+  def valid_move_preconditions?(:up, %{upper_alt_stop: true}), do: false
+  def valid_move_preconditions?(_, _), do: true
+
+  def dir_to_msg(dir) do
+    case dir do
+      :up -> :move_up
+      :down -> :move_down
+      :right -> :move_right
+      :left -> :move_left
+      _ -> nil
+    end
+  end
+  
+  def start_move(dir, state) do
+    msg = dir_to_msg(dir)
+
+    if valid_move_preconditions?(dir, state) and !is_nil(msg) do
+      GenServer.cast(self(), msg)
+      {:noreply, %{state | moving: dir}}
+    else
+      {:noreply, state}
+    end
+  end
+```
+
+`do_move` is quite simple too, with its logic for endstops and value normalization being split in `do_move_az` and `do_move_alt` :
+
+```elixir
+  def do_move(_dir, %Telescope{moving: :no} = state), do: {:noreply, state}
+  def do_move(dir, %Telescope{} = state) do
+    case dir do
+      :left -> do_move_az(-1 * @az_increment, state)
+      :right -> do_move_az(@az_increment, state)
+      :up -> do_move_alt(@alt_increment, state)
+      :down -> do_move_alt(-1 * @alt_increment, state)
+      _ -> {:noreply, state}
+    end
+  end
+
+  def do_move_az(inc, %Telescope{} = state) do
+    pos = state.position_az + inc
+    turns = trunc(pos / :math.pi())
+    normalized = pos - turns * :math.pi()
+    home_az = normalized == 0
+    Process.send_after(self(), :continue_move, @az_time_interval)
+    {:noreply, %{state | home_az: home_az, position_az: normalized}}
+  end
+
+  def do_move_alt(inc, %Telescope{} = state) do
+    pos = state.position_alt + inc
+    mmax = :math.pi() / 2
+    lower_stop = pos <= 0
+    upper_stop = pos >= mmax
+    normalized = min(mmax, max(pos, 0))
+    if lower_stop or upper_stop do
+      GenServer.cast(self(), :stop_move)
+    else
+      Process.send_after(self(), :continue_move, @alt_time_interval)
+    end
+    {:noreply, %{state |
+      lower_alt_stop: lower_stop,
+      upper_alt_stop: upper_stop,
+      position_alt: normalized
+    }}
+  end
+```
+
+For the moment, we can move our virtual telescope both in altitude and azimuth in iEx.
+
+```
+iex(4)> alias Scope.TelescopeApi, as: Api
+Scope.TelescopeApi
+iex(5)> {:ok, pid} = Api.create("kermit")
+{:ok, #PID<0.516.0>}
+iex(6)> pid |> Api.home()
+:ok
+iex(7)> pid |> Api.show()
+:ok
+%Scope.Telescope{
+  name: "kermit",
+  position_alt: 0,
+  position_az: 0,
+  position_focus: 0,
+  moving: :no,
+  home_az: true,
+  lower_alt_stop: true,
+  upper_alt_stop: false,
+  lower_focus_stop: true,
+  upper_focus_stop: false
+}
+iex(8)> pid |> Api.left
+:ok
+iex(9)> pid |> Api.up
+:ok
+iex(10)> pid |> Api.stop
+:ok
+iex(11)> pid |> Api.show
+:ok
+%Scope.Telescope{
+  name: "kermit",
+  position_alt: 0.7086036763096987,
+  position_az: 0.3647738136668153,
+  position_focus: 0,
+  moving: :no,
+  home_az: false,
+  lower_alt_stop: false,
+  upper_alt_stop: false,
+  lower_focus_stop: true,
+  upper_focus_stop: false
+}
+```
+
+Code until now is at [this specific commit on GitHub](https://github.com/Lucassifoni/oiseaux/commit/27e7b41276a3b1910374426109c947974341357e).
+
+[Next post](/blog/Scope-sim-2) will focus on some physical properties of the system, before moving to a basic remote control interface and scope state visualizer. This is important to refine both the digital and physical remotes UI/UX. 

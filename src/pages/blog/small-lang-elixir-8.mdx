@@ -1,0 +1,175 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "Hosting a small language (Ovo2) from scratch in Elixir, pt 8<br/>The end : the Ovo Optimal Personal System (oops), with liveview"
+description: "Going off the rails with Ovo2"
+pubDate: "Jul 12 2023"
+tags: ["elixir", "explorations"]
+---
+
+*full code [hosted on github](https://github.com/lucassifoni/ovo)*
+
+- Part 1 : [gathering requirements from a previous experiment](/blog/small-lang-elixir)
+- Part 2 : [tokenization](/blog/small-lang-elixir-2)
+- Part 3 : [parsing](/blog/small-lang-elixir-3)
+- Part 4 : [AST emission and print-parse-print loop](/blog/small-lang-elixir-4)
+- Part 5 : [evaluation](/blog/small-lang-elixir-5)
+- Part 6 : [basic recursion : environment as processes](/blog/small-lang-elixir-6)
+- Part 7 : [weird features, towards a global stateful machine](/blog/small-lang-elixir-7)
+- [x] Part 8 : [a graphical environment with liveview](/blog/small-lang-elixir-8)
+
+This post allows me to find closure with Ovo, an experiment that went off-track but that gave me a lot of joy in pursuing it.
+
+After the last post, I widened the standard library a bit, with a few additions :
+
+- `reduce` : reduces a list to a value with a function 
+- `concat` : concatenates two strings
+- `to_string` : converts its argument to a string
+- `errored` : checks for errors, allowing to convert from `:error` to an ovo boolean. useful for control flow.
+- `rshake` : shakes a value on a foreign runner
+
+I also made a graphical way of using Ovo with Liveview. It was the first time I used liveview, so the code isn't really idiomatic, but it was fun to build. The graphical part will stay in this messy state as my experiment found its conclusion. This post features a "complex program" made with this clunky way of thinking about state.
+
+<style>video \{
+    width: 100%;
+    max-width: 67ch;
+    height: auto;
+}</style>
+
+<br/>
+### Editing values
+
+The graphical representation is rendered by walking the Ast, and value editing is made possible by keeping track of every node traversed up to a displayed node.
+
+<video src="/pics/ovo_8/ovo_playground_1_c.mp4" poster="/pics/ovo_8/ovo_playground_1_c.jpg" controls autoplay muted loop>
+    <source src="/pics/ovo_8/ovo_playground_1_co.mp4"></source>
+    <source src="/pics/ovo_8/ovo_playground_1_c.webm"></source>
+</video>
+*In the video just above, we can see how editing a graphical node edits the corresponding source code.*
+<br/>
+### Chaining runners
+You can easily select multiple runners to run them in chain. In a chain, their execution results are still pushed to their stacks. The chain has the arity of its first runner.
+<video src="/pics/ovo_8/ovo_playground_2_c.mp4" poster="/pics/ovo_8/ovo_playground_2_c.jpg" controls autoplay muted loop>
+    <source src="/pics/ovo_8/ovo_playground_2_co.mp4"></source>
+    <source src="/pics/ovo_8/ovo_playground_2_c.webm"></source>
+</video>
+*In the video just above, we can see how chaining two runners can allow to compose a bit more complex programs.*
+<br/>
+### Popping values from other runners
+Since `rshake` has been introduced, you can use values pushed to the stack of a runner, from within another runner (or program).
+<video src="/pics/ovo_8/ovo_playground_4_c.mp4" poster="/pics/ovo_8/ovo_playground_4_c.jpg" controls autoplay muted loop>
+    <source src="/pics/ovo_8/ovo_playground_4_co.mp4"></source>
+    <source src="/pics/ovo_8/ovo_playground_4_c.webm"></source>
+</video>
+*In the video just above, we can see how you can use the stacks of other runners in a third party program.*
+<br/>
+### Remote invocation of other runners as functions
+With `invoke`, you can easily make your own library of programs as functions, filling their stacks at the same time.
+<video src="/pics/ovo_8/ovo_playground_5_c.mp4" poster="/pics/ovo_8/ovo_playground_5_c.jpg" controls autoplay muted loop>
+    <source src="/pics/ovo_8/ovo_playground_5_co.mp4"></source>
+    <source src="/pics/ovo_8/ovo_playground_5_c.webm"></source>
+</video>
+*In the video just above, we can see how using `invoke` to run a runner as a function fills both the result stack of the caller and the callee.*
+<br/>
+### Building a complete example 
+
+We will build the canonical *99 bottles of beer* with the graphical editor of Ovo. Of course, this could be a single program by recursing from 100 to 0, but that wouldn't take advantage of the OOPS's capabilities of small, modular, atomic programs working together to build high-performing systems.
+
+We will create a first runner, that I'll call **the register**, who will be responsible of holding numbers.
+```elixir 
+# hashes to EWTiZxncF
+arg(0)
+```
+It just returns its arg, but by being executed, it creates a stack of values.
+
+We will not fill this register manually, but by creating another program, **the filler** : 
+
+```elixir
+# hashes to 5sxMB4BiC
+foo = \n ->
+    if equals(n, 0) then
+      0
+    else
+      invoke(`EWTiZxncF`, [n])
+      foo(subtract(n, 1))
+    end
+end
+foo(arg(0))
+```
+It works by recursing from N to 0, invoking the register with `invoke` at each run. We will call it manually when the time has come.
+
+We will then need to manipulate strings, so enter a third program : **join**. To avoid bloat, you can build your own atomically-available **join** instead of using a bland, standard-library given **join**.
+
+```elixir
+# hashes to qjYwZaa3J
+join = \list,  joiner ->
+    reduce(\a, b ->
+    concat(concat(a, joiner), b)
+    end, list, ``)
+end
+
+join(arg(0), arg(1))
+```
+
+It isn't a perfect **join**, but it's ours to run with.
+
+We will also need three programs, one for the plural verses, one for the singular verse, and a last one for the last verse, where all bottles have been consumed. Instead of having a single, bloated program with conditions and checks, we will build three runners, each one carefully holding its sentence (don't forget `qjYwZaa3J` is **join**) :
+
+```elixir
+ # hashes to pgeqCPg/3
+terms = [arg(0), `bottle of beer on the wall`, arg(0), `bottle of beer.`, `Take one down and pass it around. No more bottles of beer on the wall.`]
+invoke(`qjYwZaa3J`, [map(\a -> to_string(a) end, terms), ` `])
+
+# hashes to QUl1z0wvi
+terms = [arg(0), `bottles of beer on the wall`, arg(0), `bottles of beer.`, `Take one down and pass it around`, subtract(arg(0), 1), `bottle of beer on the wall.`]
+invoke(`qjYwZaa3J`, [map(\a -> to_string(a) end, terms), ` `])
+
+# hashes to SLtzGVzyT
+terms = [arg(0), `bottles of beer on the wall`, arg(0), `bottles of beer.`, `Take one down and pass it around`, subtract(arg(0), 1), `bottles of beer on the wall.`]
+invoke(`qjYwZaa3J`, [map(\a -> to_string(a) end, terms), ` `])
+```
+
+The final program takes advantage of all this modularity, to build the song, verse by verse, remaining focused in its responsibilities : 
+
+```elixir
+n_bottles = subtract(100, rshake(`EWTiZxncF`))
+
+run = \n, out ->
+    verse = if greater_or_equals(n, 3) then
+        invoke(`SLtzGVzyT`, [n]) # more than two
+    else
+        if greater_or_equals(n, 2) then
+            invoke(`QUl1z0wvi`, [n]) # two bottles
+        else
+            invoke(`pgeqCPg/3`, [n]) # no more bottles
+        end
+    end
+
+    if equals(n, 0) then
+        out
+    else
+        nout = invoke(`qjYwZaa3J`, [[out, verse], ``]) # join
+        run(subtract(100, rshake(`EWTiZxncF`)), nout) # pop a value from the register
+    end
+end
+
+run(n_bottles, ` `)
+```
+
+Would it have been responsible to just recurse from 100 to 1 without the brave register ? Would it have been clean to have **join** in the same program instead of giving the hash `qjYwZaa3J` to friends, so they can too join strings ? To me, it's a clear no.
+<br/>
+### Running the system
+We first run `EWTiZxncF`, our brave register, one time, just to pre-heat it. Then, calling `5sxMB4BiC` with the argument `100` fills the result stack of `EWTiZxncF` with numbers from 100 to 1. Then, everything has been set, and running the final program generates the song lyrics.
+
+<video src="/pics/ovo_8/ovo_playground_6_c.mp4" poster="/pics/ovo_8/ovo_playground_6_c.jpg" controls autoplay muted loop>
+    <source src="/pics/ovo_8/ovo_playground_6_co.mp4"></source>
+    <source src="/pics/ovo_8/ovo_playground_6_c.webm"></source>
+</video>
+*In the video just above, we can see how an user can use the system to generate a song with their desired number of bottles.*
+
+### Conclusion
+
+~Are you running ovo in production ? I'd love to hear from you.~
+
+This was fun, from start to finish. Every stage has quirks, but the whole experience has allowed me to reinforce past projects of this style, and push it further. I had a kind of childhood dream about building a language that could be graphically interacted with - this isn't really usable since a lot of edge cases aren't handled, but a fun journey anyway.
+
+ ¯\\_(ツ)_/¯

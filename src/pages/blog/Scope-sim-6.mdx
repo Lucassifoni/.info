@@ -1,0 +1,42 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "The Elixir Telescope -- Part 6 : Three.js + websockets = a 3D moving telescope"
+description: "Sixth entry of my build log"
+pubDate: "Jan 8 2023"
+tags: ["optics", "elixir", "three.js"]
+---
+
+Entries up to this point : 
+
+- [Part 5 : Porting the depth of field simulation to Elixir + Rust](/blog/Scope-sim-5)
+- [Part 4 : Simulating image capture and focusing](/blog/Scope-sim-4)
+- [Part 3 : Raytracing a parabolic mirror from scratch](/blog/Scope-sim-3)
+- [Part 2 : Primary mirror design & calculation](/blog/Scope-sim-2)
+- [Part 1 : Simulating movement & state with Elixir](/blog/Scope-sim)
+
+This entry will be quite short. I managed to play with Three.js a bit over the weekend, and hooked the `Scope.TelescopeApi` module to handle events on a websocket.
+
+First, you don't know how the scope was shut down last time it was used. You need to home it, like a 3D printer homes itself when you start a print.  
+
+![](/pics/photoscope_6/01.png)
+
+Then, a viable scope state appears. We can see that the lower endstop is engaged, so you can't go down.
+
+![](/pics/photoscope_6/02.png)
+
+You can press directional buttons to move, the focuser in/out buttons to focus in or out, and the 3D scope updates live. The DOF simulation updates after you release the focus buttons.
+
+![](/pics/photoscope_6/03.png)
+
+This is a rough POC, but I've been really pleased with the beginner THREE.js experience, especially the ease with which you can load foreign 3D models from, for example, blender.
+
+Thanks to Phoenix, as usual, you get the ability to broadcast state to multiple clients for free. It would be trivial to discriminate authenticated users, so that only one user can move the scope, while other receive updates.
+
+Now is really time to finish the mirror and begin construction. What will happen to the code written up to this point ?
+
+- The source and receivers of events will be differentiated,  
+to have the ability to have physical/virtual publishers/listeners.
+- The project will be moved to Nerves to run on the MangoPI.
+- The MangoPI will talk over serial to an Arduino nano that will proxy the physical hardware.
+
+See you soon for further developments !

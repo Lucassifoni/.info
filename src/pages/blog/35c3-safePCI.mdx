@@ -1,0 +1,53 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "35c3 Leipzig notes - Safe and secure PCI device drivers in high-level languages"
+description: "Notes from the conferences at 35c3 Leipzig - Safe and secure PCI device drivers in high-level languages"
+pubDate: "Dec 30, 2018"
+tags: []
+---
+
+I had the pleasure to go to the 35th edition of the Chaos Communication Congress. Here are some notes of some talks.
+
+# Safe and secure PCI device drivers in high-level languages
+
+"C is inherently insecure". Writing low-level drivers with performance in mind in high level languages.
+
+Network drivers as a case study.
+Why would you write a driver in C ? -> Why wouldn't you ?
+
+Can everyone read C ? Can you read this macro ?
+Inheritance macro, container\_of(ptr, type, member) -> 15000 uses in the Kernel.
+
+*Cutler et al, the benefits and costs of writing a POSIX kernel in a high level language.*
+
+- 65% would have been avoidable with a different language.
+- 40 preventable bugs
+- 39 in drivers
+- 13 in the qualcomm wifi driver.
+
+Userspace drivers allow to be written in any language.
+Is a JIT compiler or a garbage collector okay in a driver ?
+
+Paul Emmerich - Writing network drivers in rust/go/java/c#/haskell/scala/ocaml/javascript/python/bash.
+
+## Talking to modern PCIe devices
+
+- Memory Mapped IO
+  (mmaping a magic file in userspace)
+
+- Direct memory access
+  r/w arbitrary memory locations
+  userspace : figure out the addresses, tell the device to write there
+
+- Interrupts
+  information about events
+  userspacce : vfio
+  a bit low-speed
+
+## Hardware : Intel ixgbe family (10gpbs pcie card)
+
+- Good datasheet
+- No black-box firmware
+- Common hardware
+
+

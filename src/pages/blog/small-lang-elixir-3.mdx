@@ -1,0 +1,251 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "Hosting a small language (Ovo2) from scratch in Elixir, pt 3 <br/>Parsing"
+description: ""
+pubDate: "May 26 2023"
+tags: ["elixir", "parsing", "explorations"]
+---
+
+*full code [hosted on github](https://github.com/lucassifoni/ovo)*
+
+- Part 1 : [gathering requirements from a previous experiment](/blog/small-lang-elixir)
+- Part 2 : [tokenization](/blog/small-lang-elixir-2)
+- [x] Part 3 : [parsing](/blog/small-lang-elixir-3)
+- Part 4 : [AST emission and print-parse-print loop](/blog/small-lang-elixir-4)
+- Part 5 : [evaluation](/blog/small-lang-elixir-5)
+- Part 6 : [basic recursion : environment as processes](/blog/small-lang-elixir-6)
+- Part 7 : [weird features, towards a global stateful machine](/blog/small-lang-elixir-7)
+- Part 8 : [a graphical environment with liveview](/blog/small-lang-elixir-8)
+
+After the last post, I took a bit of time to extend the tokenizer.
+The `defpat` macro has been quite useful. Numbers were tokenized with a strategy similar to the one I had for strings. A digit marks the start of a number, that can then contain either a digit or a dot, but no more than one dot. A regex could handle that just fine but I came to like the character-per-character recursion, avoiding peeking and backtracking. The clause matching on digits could be optimized by not looking into a list, but again, I liked the simplicity of using a single function clause here.
+
+```elixir
+def walk(["." | t], :number, out, buf) do
+  if has_dot?(buf) do
+    walk(["."|t], :undefined, out, buf)
+  else
+    walk(t, :number, out, buf <> ".")
+  end
+end
+def walk([a | rest], :number, out, buf) when a in @digits, do: walk(rest, :number, out, buf <> a)
+def walk(input, :number, out, buf), do: accumulate(input, :number, out, buf, :undefined)
+```
+
+After that, I'm able to have a complete stream of simple tokens for my reduced grammar.
+
+```elixir
+defmodule Ovo.Token do
+  @moduledoc """
+  An Ovo Token, a tuple carrying the token kind and optional string representation.
+  """
+  @type t_string :: {:string, String.t()}
+  @type t_symbol :: {:symbol, String.t()}
+  @type t_arrow :: {:arrow, nil}
+  @type t_if :: {:if, nil}
+  @type t_else :: {:else, nil}
+  @type t_then :: {:then, nil}
+  @type t_end :: {:end, nil}
+  @type t_number :: {:number, String.t()}
+  @type t_equals :: {:equals, nil}
+  @type t_comma :: {:comma, nil}
+  @type t_open_paren :: {:open_paren, nil}
+  @type t_open_bracket :: {:open_bracket, nil}
+  @type t_close_paren :: {:close_paren, nil}
+  @type t_close_bracket :: {:close_bracket, nil}
+  @type t_backslash :: {:backslash, nil}
+```
+
+To parse that stream of tokens to an abstract syntax tree, I took a bit of time to think of what it meant to execute an ovo2 program.
+
+The smallest ovo2 program possible is a single expression, like `add(5, 6)`. A complex ovo2 program can have multiple expressions evaluated one after the other. Since the last expression only is returned, this means all expressions before the last one can only modify the environment. This means the execution of an ovo2 program is only a reduction of a list of expressions to an updated environment until the production of a final value.
+
+Seen that way, a lambda in ovo2 that captures necessary variables from its outside environment can be seen as an autonomous subprogram with an altered initial environment.
+
+So, in pseudo-code :
+
+```
+Ast is a root ast with no nodes
+Until there are no more tokens or an error is encountered ;
+  parse_expression
+    if successful, add the relevant expression node to the ast 
+    otherwise, error
+```
+
+Where `parse_expression` is :
+
+```
+parse_expression is
+  parse_assignment
+  or parse_call
+  or parse_lambda
+  or parse_list
+  or parse_value
+  or parse_condition
+```
+
+and where :
+
+```
+parse_assignment is :
+  <symbol> and <equals> and <expression>
+
+parse_call is :
+  <symbol> and <open_paren> and many(<expression> and <comma (optional if trailing)>) until <close_paren>
+
+parse_list is :
+  <open_bracket> and many(<expression> and <comma (optional if trailing)>) until <close_bracket>
+
+parse_value is :
+  <symbol> or <number> or <string> or <lambda>
+
+parse_lambda is :
+  <backslash> and many(<symbol> and <comma (optional if trailing)>) and <arrow> and many(<expression>) until <end>
+
+parse_condition is :
+  <if> and <expression> and <then> and many(expression) and <else> and many(expression) and <end>
+```
+
+Since assignments done in an if/else block do not leak outside of it, we can also think of both branches as independent ovo2 programs being lists of expressions with access to a particular enclosing environment. This can be thought as slightly similar to a parameter-less lambda. I'll keep this interpretation in mind during the next steps, to decide if it is advantageous to think of it this way, or not.
+
+The way I wrote these pseudo-code specifications of various parsers is akin to traditional parser combinators.
+
+In the typescript implementation of the previous iteration of Ovo, this idea was defined in this way :
+
+```ts
+export interface ParserResult {
+    rest: string,
+    kind: 'result',
+    found: string,
+    tokens: Ovo2Node[],
+};
+
+export interface ParserError {
+    error: string,
+    rest: string,
+    found: string,
+    kind: 'error',
+};
+
+export type ParserOutput = ParserError | ParserResult
+
+export type Parser = (input: string) => ParserOutput;
+```
+
+A parser consumed a string, and could either : 
+- succeed and return a list of nodes, the matched string, the remaining string to parse
+- error and return an error, the matched string up to the error, and the remaining string to parse (since the parser errored, this was the input string)
+
+Combinators then looked like this : a combinator is a function taking a parser, some number of parsers, or many parsers, and returning a function that adheres to the Parser type.
+
+```ts
+export const either = (parserA: Parser, parserB: Parser): Parser => {
+    return (input: string) => {
+        const r = parserA(input);
+        if (!errored(r)) {
+            return r;
+        }
+        const r2 = parserB(input);
+        if (!errored(r2)) {
+            return r2;
+        }
+        return err('Either failed', input);
+    };
+};
+
+export const possibly = (a: Parser) => either(a, nothing);
+```
+
+It was then easy to combine parsers with combinators to create complex parsers from simple ones. 
+
+```ts
+export const between = (startParser: Parser, middleParser: Parser, endParser: Parser): Parser =>
+    all([startParser, middleParser, endParser]);
+
+export const trim = (p: Parser) =>
+    between(possibly(spaces), p, possibly(spaces));
+```
+
+The drawback of this approach, operating on the raw input string, was the complexity of having to think about whitespace and noise in the stream of meaningful characters. I hope to have an easier time by having already reduced the input string to a stream of tokens.
+
+I'll start with a draft of the first combinators to go from simple value parsers to complex expression parsers :
+
+```elixir
+defmodule Ovo.Combinators do
+  def either(a, b) do
+    fn tokens ->
+      case a.(tokens) do
+        {:ok, _, _} = res ->
+          res
+
+        _ ->
+          case b.(tokens) do
+            {:ok, _, _} = res -> res
+            _ -> {:error, nil, tokens}
+          end
+      end
+    end
+  end
+
+  def any(parsers) do
+    fn tokens ->
+      Enum.reduce(parsers, {:error, nil, tokens}, fn parser, out ->
+        case out do
+          {:ok, _, _} ->
+            out
+
+          _ ->
+            case parser.(tokens) do
+              {:ok, _, _} = res -> res
+              _ -> out
+            end
+        end
+      end)
+    end
+  end
+end
+```
+
+`any` could short-circuit traversing the list of parsers later. But that's enough to implement a `parse_value` parser that can discriminate between strings and numbers.
+
+```elixir
+defmodule Ovo.Parser do
+  alias Ovo.Ast
+  alias Ovo.Combinators, as: C
+
+  def err(tokens), do: {:error, nil, tokens}
+  def ok(result, rest), do: {:ok, result, rest}
+
+  def parse_number([{:number, val} | rest] = tokens) do
+    if String.contains?(val, ".") do
+      case Float.parse(val) do
+        {n, ""} -> ok(Ast.float(n), rest)
+        _ -> err(tokens)
+      end
+    else
+      case Integer.parse(val, 10) do
+        {n, ""} -> ok(Ast.integer(n), rest)
+        _ -> err(tokens)
+      end
+    end
+  end
+  def parse_number(a), do: err(a)
+
+  def parse_string([{:string, val}|rest]), do: ok(Ast.string(val), rest)
+  def parse_string(a), do: err(a)
+
+  def parse_value(tokens), do: C.either([&parse_number/1, &parse_string/1]).(tokens)
+end
+```
+
+With this small implementation, we can convert from tokens to ast nodes, consuming the flow of tokens, and "walk back" if a parser fails. Not having to think about whitespace is pleasant. But what about line delimiters ? I totally discarded them earlier. But I could use them to simplify deciding of the end of expression parsers. I'll think about it for a while before going to the next step.
+
+```elixir
+  iex> Ovo.Parser.parse_value([{:number, "5"}])
+  {:ok, %Ovo.Ast{kind: :integer, nodes: [], value: 5}, []}
+  iex> Ovo.Parser.parse_value([{:string, "foo"}])
+  {:ok, %Ovo.Ast{kind: :string, nodes: [], value: "foo"}, []}
+  iex> Ovo.Parser.parse_value([{:arrow, nil}])
+  {:error, nil, [{:arrow, nil}]}
+```
+

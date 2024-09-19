@@ -1,0 +1,259 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "Hosting a small language (Ovo2) from scratch in Elixir, pt 4<br/>Building an AST and a parse-print-parse feedback loop"
+description: ""
+pubDate: "May 30 2023"
+tags: ["elixir", "parsing", "explorations"]
+---
+
+*full code [hosted on github](https://github.com/lucassifoni/ovo)*
+
+- Part 1 : [gathering requirements from a previous experiment](/blog/small-lang-elixir)
+- Part 2 : [tokenization](/blog/small-lang-elixir-2)
+- Part 3 : [parsing](/blog/small-lang-elixir-3)
+- [x] Part 4 : [AST emission and print-parse-print loop](/blog/small-lang-elixir-4)
+- Part 5 : [evaluation](/blog/small-lang-elixir-5)
+- Part 6 : [basic recursion : environment as processes](/blog/small-lang-elixir-6)
+- Part 7 : [weird features, towards a global stateful machine](/blog/small-lang-elixir-7)
+- Part 8 : [a graphical environment with liveview](/blog/small-lang-elixir-8)
+
+From the last post, I advanced on the parser and AST node emission, fixing bugs in the tokenizer as I added complexity, and went to implement a simple printer. Last time I worked on this mini-language, I found that having a printer as early as possible was quite useful to check general soundness : if you can prove at any time that `parse(input)` equals `parse(print(parse(input)))`, this immensely helps for debugging.
+
+The printer output itself isn't that useful at this stage.
+
+First, I found a bug in the tokenizer when I went on to tokenize nested lists, or nested parenthesized expressions. My tokenizer concept was that it emitted a token at each state change. But two consecutive `]` tokens did not make for a state change.
+
+I then added an idea of "repeatable tokens" to my token producing function :
+
+```elixir
+  @repeatable_states [
+    :open_paren,
+    :close_paren,
+    :end,
+    :open_bracket,
+    :close_bracket
+  ]
+
+  @doc """
+  Goes to next state while accumulating a token if the buffer wasn't empty, mainly for deduplication purposes.
+  """
+  @spec accumulate(
+          [String.t()],
+          atom(),
+          list(Ovo.Token.t()),
+          binary() | nil,
+          atom(),
+          binary() | nil
+        ) :: list(Ovo.Token.t())
+  def accumulate(rest, prev_state, out, buf, next_state, next_buf \\ "") do
+    if prev_state != next_state or prev_state in @repeatable_states do
+      walk(rest, next_state, [{prev_state, buf} | out], next_buf)
+    else
+      walk(rest, next_state, out, next_buf)
+    end
+  end
+```
+
+After that, I could expand the complexity of my parser by implementing list parsing, function call parsing, expression parsing, with combinators :
+
+```elixir
+  # Parsing a program is parsing a list of expressions
+  def parse(tokens) do
+    case C.repeat(&parse_expression/1).(tokens) do
+      {:ok, ast, []} -> {:ok, Ast.root(ast), []}
+      b -> b
+    end
+  end
+
+  # Parsing an expression is any of the supported expressions :
+  def parse_expression(tokens) do
+    case C.any([
+           &parse_lambda/1,
+           &parse_if/1,
+           &parse_call/1,
+           &parse_parenthesized_expression/1,
+           &parse_value/1
+         ]).(tokens) do
+      {:ok, nodes, rest} -> {:ok, Ast.expr(nodes), rest}
+      b -> b
+    end
+  end
+```
+
+For lists, lambdas, and function heads, I split the parsers depending on arity / list length to de-clutter the code a bit :
+
+```elixir
+  def parse_lambda(tokens) do
+    case C.all([
+           C.match(:backslash),
+           C.any([
+             &parse_multiple_arity_lambda/1,
+             &parse_single_arity_lambda/1,
+             &parse_zero_arity_lambda/1
+           ]),
+           C.match(:arrow),
+           &parse_block/1,
+           &parse_end/1
+         ]).(tokens) do
+```
+
+I had made a mistake in the last session, because parser combinators emitted nil / an element / a list of elements, and standardized to emit lists, before expanding my Ast node collection. The Ast emission is quite straightforward as soon as the parsers produce the right nodes :
+
+```elixir
+  def parse_multiple_arg_call(tokens) do
+    case C.all([
+           &parse_symbol/1,
+           C.match(:open_paren),
+           C.repeat(C.then(&parse_expression/1, &parse_comma/1)),
+           &parse_expression/1,
+           C.match(:close_paren)
+         ]).(tokens) do
+      {:ok, [a | b], rest} -> {:ok, Ast.call(a, b), rest} # Here, we produce an Ast node for a function call.
+      b -> b
+    end
+  end
+```
+
+The `Ast` module is only a collection of helpers (that will also help me add `@spec` and `@type` annotations) :
+
+```elixir
+...
+  def expr(val), do: make(:expr, val, [])
+
+  def block(nodes), do: make(:block, nil, nodes)
+
+  def condition([a, b, c]), do: make(:condition, nil, [a, b, c])
+
+  def lambda(head, body), do: make(:lambda, head, body)
+
+  def call(val, children \\ []), do: make(:call, val, children)
+...
+```
+
+To this point, I wrote a few detailed tests to help me build those parsing and node generation steps to the expected outcome.
+
+```elixir
+  test "Parses a multi-arg function call" do
+    {:ok,
+     %Ovo.Ast{
+       kind: :root,
+       value: nil,
+       nodes: [
+         %Ovo.Ast{
+           kind: :expr,
+           value: %Ovo.Ast{
+             kind: :call,
+             nodes: [
+               %Ovo.Ast{kind: :expr, value: %Ovo.Ast{kind: :symbol}},
+               %Ovo.Ast{kind: :expr, value: %Ovo.Ast{kind: :symbol}}
+             ]
+           }
+         }
+       ]
+     }, []} = parse("foo(bar, baz)")
+  end
+```
+
+To debug my parser with more complex expressions, I switched to a test helper (that also previously emitted the text representation of the program) :
+
+```elixir
+  def parse_print_parse(input) do
+    {:ok, parsed, _} = input |> parse()
+    printed = parsed |> Ovo.Printer.print()
+    {:ok, reparsed, _} = printed |> parse()
+    assert parsed == reparsed
+  end
+
+  test "Print loop" do
+    parse_print_parse("foo(bar)")
+  end
+
+  test "Complex print loop" do
+    code = """
+    if (foo) then
+      ([5])
+    else
+      ([4, [5, 4, []], [[[]]], 6])
+      (baz)
+    end
+    """
+
+    parse_print_parse(code)
+  end
+```
+
+The printer is a collection of function heads to parse nodes and recurse through the tree structure :
+
+```elixir
+defmodule Ovo.Printer do
+  def print(%Ovo.Ast{} = ast) do
+    Enum.reduce(ast.nodes, "", fn node, output ->
+      output <> print_node(node) <> "\n"
+    end)
+  end
+
+  def print_node(%Ovo.Ast{kind: :expr, value: val}), do: print_node(val)
+
+  def print_node(%Ovo.Ast{kind: :call, value: val, nodes: children}) do
+    "#{val.value}(#{Enum.map_join(children, ", ", &print_node/1)})"
+  end
+
+  def print_node(%Ovo.Ast{kind: :symbol, value: val}) do
+    "#{val}"
+  end
+
+  def print_node(%Ovo.Ast{kind: :integer, value: val}) do
+    "#{val}"
+  end
+
+  def print_node(%Ovo.Ast{kind: :lambda, value: head, nodes: body}) do
+    """
+      \\#{Enum.map_join(head, ", ", &print_node/1)} ->
+        #{print_node(body)}
+      end
+    """
+  end
+...
+```
+
+For fun, and to help me go to the next step (evaluation), I also wrote a very quick Elixir printer since my language looks a lot like a watered-down Elixir syntax without everything that shines in Elixir.
+
+```elixir
+defmodule Ovo.ElixirPrinter do
+  def print_node(%Ovo.Ast{kind: :lambda, value: head, nodes: body}) do
+    """
+      fn (#{Enum.map_join(head, ", ", &print_node/1)}) ->
+        #{print_node(body)}
+      end
+    """
+  end
+end
+```
+
+This will allow me to have interpretation of `Ovo` via "compiling to Elixir", via interpretation from Elixir, and maybe via a third way.. we'll see later ;^\)
+
+```elixir
+  def run_as_elixir(input, bindings \\ []) do
+    tokens = Ovo.Tokenizer.tokenize(input)
+    {:ok, ast, _} = Ovo.Parser.parse(tokens)
+    code = Ovo.ElixirPrinter.print(ast)
+    Code.eval_string(code, bindings)
+  end
+
+  def demo() do
+    {res, _bindings} =
+      run_as_elixir(
+        """
+          if (foo) then
+            ([5])
+          else
+            ([4, [5, 4, []], [[[]]], 6])
+          end
+        """,
+        foo: false
+      )
+
+    res
+  end
+```
+

@@ -1,0 +1,508 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "Let's dive deep into Plug.Conn.send_file/5"
+description: "Going through layers of source code to see how exactly a file response gets sent."
+pubDate: "Nov 10 2023"
+tags: ["elixir", "erlang", "exploration"]
+---
+
+Let's dive into Plug.Conn.send_file/5, because we can find a lot of questioning online about this one.
+Is it efficient ? Does it use a linux syscall to send the file (yes) ?
+
+<div class="message">
+⚠️ This not a fun post, but a giant string of jumping from file to file, first in a Phoenix project, then in Plug's source, then in Cowboy, then in Ranch, then in Erlang's source, then in C NIFs in Erlang's source. Still it was interesting to encounter and read all of that code and see a bit more of the inner working of Erlang.
+</div>
+
+The call sites you'll most frequently encounter look like this :
+
+```elixir
+conn |> send_file(200, filename)
+```
+
+Digging into the source, we can see two optional parameters, `offset` (with the default value `0`) and `length` (with the default value `:all`).
+
+Our basic usage then looks like this with the defaults filled in :
+
+```elixir
+conn |> send_file(200, filename, 0, :all)
+```
+
+Before the concrete implementation, the source contains a few guards :
+
+[🔗 source elixir-plug/plug/lib/plug/conn.ex:473](https://github.com/elixir-plug/plug/blob/fef28b80a0a1c9365d5608b051120419c863292d/lib/plug/conn.ex#L473)
+
+```elixir
+def send_file(%Conn{state: state}, status, _file, _offset, _length)
+    when not (state in @unsent) do
+    _ = Plug.Conn.Status.code(status)
+    raise AlreadySentError
+end
+```
+
+If the `Plug.Conn` struct has been marked as `sent`, a `Plug.Conn.AlreadySentError` is raised. If the `Plug.Conn` struct has not been sent yet, we can move on to the next function head:
+
+[🔗 source elixir-plug/plug/lib/plug/conn.ex:479](https://github.com/elixir-plug/plug/blob/fef28b80a0a1c9365d5608b051120419c863292d/lib/plug/conn.ex#L479)
+```elixir
+def send_file(
+        %Conn{adapter: {adapter, payload}, owner: owner} = conn,
+        status,
+        file,
+        offset,
+        length
+      )
+      when is_binary(file)
+```
+
+A first check is made that the provided file name consists of a binary. The body then checks that the provided filename isn't a null byte, and raises an `ArgumentError` if that was the case.
+
+[🔗 source elixir-plug/plug/lib/plug/conn.ex:487](https://github.com/elixir-plug/plug/blob/fef28b80a0a1c9365d5608b051120419c863292d/lib/plug/conn.ex#L487)
+```elixir
+if file =~ "\0" do
+      raise ArgumentError, "cannot send_file/5 with null byte"
+    end
+```
+
+The next line updates the `Plug.Conn` struct by calling the private function `run_before_send/2` :
+
+[🔗 source elixir-plug/plug/lib/plug/conn.ex:491](https://github.com/elixir-plug/plug/blob/fef28b80a0a1c9365d5608b051120419c863292d/lib/plug/conn.ex#L491)
+```elixir
+ conn =
+      run_before_send(%{conn | status: Plug.Conn.Status.code(status), resp_body: nil}, :set_file)
+```
+
+This function reduces a list of functions taking and returning a `Plug.Conn`, accumulated into the `Plug.Conn` struct's `:before_send` key, over the `Plug.Conn` struct whose `:state` key has been updated to `:new`. In our case, the `:state` key has the value `:set_file`.
+
+[🔗 source elixir-plug/plug/lib/plug/conn.ex:1835](https://github.com/elixir-plug/plug/blob/fef28b80a0a1c9365d5608b051120419c863292d/lib/plug/conn.ex#L1835)
+```elixir
+defp run_before_send(%Conn{before_send: before_send} = conn, new) do
+
+    conn = Enum.reduce(before_send, %{conn | state: new}, & &1.(&2))
+
+    if conn.state != new do
+      raise ArgumentError, "cannot send/change response from run_before_send callback"
+    end
+    %{conn | resp_headers: merge_headers(conn.resp_headers, conn.resp_cookies)}
+  end
+```
+
+If the resulting `Plug.Conn` struct `:state` key has been changed by one of the `:before_send` callbacks, an `ArgumentError` is raised because those `:before_send` callbacks aren't allowed to perform this operation.
+
+The response headers are then updated via another private function, `merge_headers/2` which is out of scope for this post.
+
+Back to the implementation of `send_file/5` :
+
+[🔗 source elixir-plug/plug/lib/plug/conn.ex:494](https://github.com/elixir-plug/plug/blob/fef28b80a0a1c9365d5608b051120419c863292d/lib/plug/conn.ex#L494)
+```elixir
+{:ok, body, payload} =
+      adapter.send_file(payload, conn.status, conn.resp_headers, file, offset, length)
+```
+
+The actual implementation of `send_file/5` is delegated to the Plug.Conn's adapter's `send_file/6`, of which we find the signature in `Plug.Conn.Adapter` : 
+
+[🔗 source elixir-plug/plug/lib/plug/conn/adapter.ex:73](https://github.com/elixir-plug/plug/blob/fef28b80a0a1c9365d5608b051120419c863292d/lib/plug/conn/adapter.ex#L73)
+
+```elixir
+@doc """
+  Sends the given status, headers and file as a response
+  back to the client.
+
+  If the request has method `"HEAD"`, the adapter should
+  not send the response to the client.
+
+  Webservers are advised to return `nil` as the sent_body,
+  as the body can no longer be manipulated. However, the
+  test implementation returns the actual body so it can
+  be used during testing.
+  """
+  @callback send_file(
+              payload,
+              status :: Conn.status(),
+              headers :: Conn.headers(),
+              file :: binary,
+              offset :: integer,
+              length :: integer | :all
+            ) :: {:ok, sent_body :: binary | nil, payload}
+```
+
+In my case, Cowboy is used as a web server. We jump into `Plug.Cowboy.Conn` which implements the behaviour `Plug.Conn.Adapter`, and find the implementation of `send_file/6` :
+
+[🔗 source elixir-plug/plug_cowboy/lib/plug/cowboy/conn.ex:40](https://github.com/elixir-plug/plug_cowboy/blob/3960916cf06b94934d77f144a94dc1edc7a7801c/lib/plug/cowboy/conn.ex#L40)
+```elixir
+@impl true
+  def send_file(req, status, headers, path, offset, length) do
+    %File.Stat{type: :regular, size: size} = File.stat!(path)
+
+    length =
+      cond do
+        length == :all -> size
+        is_integer(length) -> length
+      end
+
+    body = {:sendfile, offset, length, path}
+    headers = to_headers_map(headers)
+    req = :cowboy_req.reply(status, headers, body, req)
+    {:ok, nil, req}
+  end
+```
+
+It is first checked that the file is a regular file (as opposed to a directory, a symlink..). The length of the file to actually send is either the size of the file in case we passed `:all` as the `length` parameter, or the supplied length after we checked it was an integer.
+
+:cowboy_req.reply is then called, the concrete call in the case of our response being sent with `send_file(conn, 200, filename)` becoming `:cowboy_req.reply("200", headers, {:sendfile, offset, length, path}, req)`
+
+We then follow this track to the `cowboy_req.erl` file defining the module `cowboy_req`, to find the `reply/4` function head :
+
+<div class="message">
+If you are not used to read Erlang, a few things can maybe be off-putting :<br/>
+Keeping in mind that **variables are Uppercased** and **atoms are lowercase** helps clear it up.
+Here, `Req` is a variable and `function_clause` is an atom.
+</div>
+
+[🔗 source ninenines/cowboy/src/cowboy_req.erl:793](https://github.com/ninenines/cowboy/blob/22adc4de517bf54661795f6e18b6b2e62aec4140/src/cowboy_req.erl#L793)
+```erlang
+-spec reply(cowboy:http_status(), cowboy:http_headers(), resp_body(), Req)
+    -> Req when Req::req().
+reply(_, _, _, #{has_sent_resp := _}) ->
+    error(function_clause); %% @todo Better error message.
+reply(Status, Headers, {sendfile, _, 0, _}, Req)
+        when is_integer(Status); is_binary(Status) ->
+    do_reply(Status, Headers#{
+        <<"content-length">> => <<"0">>
+    }, <<>>, Req);
+reply(Status, Headers, SendFile = {sendfile, _, Len, _}, Req)
+        when is_integer(Status); is_binary(Status) ->
+    do_reply(Status, Headers#{
+        <<"content-length">> => integer_to_binary(Len)
+    }, SendFile, Req);
+```
+
+Going through the clauses one by one :
+- if the response has already been sent, an error is raised
+- if the length of the file is 0, the "Content-Length" header is set to 0 before calling `do_reply/4`
+- finally, if the file has a non-zero length, do_reply/4 is called, setting the "Content-Length" header to the length of the file
+
+Following to `do_reply/4` : 
+
+[🔗 source ninenines/cowboy/src/cowboy_req.erl:832](https://github.com/ninenines/cowboy/blob/22adc4de517bf54661795f6e18b6b2e62aec4140/src/cowboy_req.erl#L832)
+```erlang
+do_reply(Status, Headers, Body, Req) ->
+    cast({response, Status, response_headers(Headers, Req), Body}, Req),
+    done_replying(Req, true).
+
+done_replying(Req, HasSentResp) ->
+    maps:without([resp_cookies, resp_headers, resp_body], Req#{has_sent_resp => HasSentResp}).
+```
+
+A message of `{response, "200", headers, {sendfile, Offset, Length, Path}}` is sent via `cast/2` to the `Pid` held in the Req argument :
+
+[🔗 source ninenines/cowboy/src/cowboy_req.erl:921](https://github.com/ninenines/cowboy/blob/22adc4de517bf54661795f6e18b6b2e62aec4140/src/cowboy_req.erl#L921)
+```erlang
+%% Stream handlers.
+
+-spec cast(any(), req()) -> ok.
+cast(Msg, #{pid := Pid, streamid := StreamID}) ->
+    Pid ! {{Pid, StreamID}, Msg},
+    ok.
+```
+
+Continuing my exploration, I find that this message is received by `cowboy_http` in a long `receive` block :
+
+[🔗 source ninenines/cowboy/src/cowboy_http.erl:255](https://github.com/ninenines/cowboy/blob/22adc4de517bf54661795f6e18b6b2e62aec4140/src/cowboy_http.erl#L255)
+```erlang
+%% ...
+%% Messages pertaining to a stream.
+		{{Pid, StreamID}, Msg} when Pid =:= self() ->
+			loop(info(State, StreamID, Msg));
+%% ...
+```
+
+Going to the definition of `info` in this module :
+
+[🔗 source ninenines/cowboy/src/cowboy_http.erl:934](https://github.com/ninenines/cowboy/blob/22adc4de517bf54661795f6e18b6b2e62aec4140/src/cowboy_http.erl#L934)
+```erlang
+info(State=#state{opts=Opts, streams=Streams0}, StreamID, Msg) ->
+	case lists:keyfind(StreamID, #stream.id, Streams0) of
+		Stream = #stream{state=StreamState0} ->
+			try cowboy_stream:info(StreamID, Msg, StreamState0) of
+				{Commands, StreamState} ->
+					Streams = lists:keyreplace(StreamID, #stream.id, Streams0,
+						Stream#stream{state=StreamState}),
+					commands(State#state{streams=Streams}, StreamID, Commands)
+			catch Class:Exception:Stacktrace ->
+				cowboy:log(cowboy_stream:make_error_log(info,
+					[StreamID, Msg, StreamState0],
+					Class, Exception, Stacktrace), Opts),
+				stream_terminate(State, StreamID, {internal_error, {Class, Exception},
+					'Unhandled exception in cowboy_stream:info/3.'})
+			end;
+		false ->
+			cowboy:log(warning, "Received message ~p for unknown stream ~p.~n",
+				[Msg, StreamID], Opts),
+			State
+	end.
+```
+
+We find a bit of error handling before delegating a call to `commands/3` in the same module. Two definitions of `commands/3` contain references to `sendfile` :
+
+[🔗 source ninenines/cowboy/src/cowboy_http.erl:1028](https://github.com/ninenines/cowboy/blob/22adc4de517bf54661795f6e18b6b2e62aec4140/src/cowboy_http.erl#L1028)
+```erlang
+%% Send a full response.
+%%
+%% @todo Kill the stream if it sent a response when one has already been sent.
+%% @todo Keep IsFin in the state.
+%% @todo Same two things above apply to DATA, possibly promise too.
+commands(State0=#state{socket=Socket, transport=Transport, out_state=wait, streams=Streams}, StreamID,
+		[{response, StatusCode, Headers0, Body}|Tail]) ->
+```
+
+and 
+
+[🔗 source ninenines/cowboy/src/cowboy_http.erl:1084](https://github.com/ninenines/cowboy/blob/22adc4de517bf54661795f6e18b6b2e62aec4140/src/cowboy_http.erl#L1084)
+```erlang
+%% Send a response body chunk.
+%% @todo We need to kill the stream if it tries to send data before headers.
+commands(State0=#state{socket=Socket, transport=Transport, streams=Streams0, out_state=OutState},
+		StreamID, [{data, IsFin, Data}|Tail]) ->
+```
+
+In both cases, a call to `sendfile/2` in the same module is issued :
+
+[🔗 source ninenines/cowboy/src/cowboy_http.erl:1237](https://github.com/ninenines/cowboy/blob/22adc4de517bf54661795f6e18b6b2e62aec4140/src/cowboy_http.erl#L1237)
+```erlang
+%% We wrap the sendfile call into a try/catch because on OTP-20
+%% and earlier a few different crashes could occur for sockets
+%% that were closing or closed. For example a badarg in
+%% erlang:port_get_data(#Port<...>) or a badmatch like
+%% {{badmatch,{error,einval}},[{prim_file,sendfile,8,[]}...
+%%
+%% OTP-21 uses a NIF instead of a port so the implementation
+%% and behavior has dramatically changed and it is unclear
+%% whether it will be necessary in the future.
+%%
+%% This try/catch prevents some noisy logs to be written
+%% when these errors occur.
+sendfile(State=#state{socket=Socket, transport=Transport, opts=Opts},
+		{sendfile, Offset, Bytes, Path}) ->
+	try
+		%% When sendfile is disabled we explicitly use the fallback.
+		_ = case maps:get(sendfile, Opts, true) of
+			true -> Transport:sendfile(Socket, Path, Offset, Bytes);
+			false -> ranch_transport:sendfile(Transport, Socket, Path, Offset, Bytes, [])
+		end,
+		ok
+	catch _:_ ->
+		terminate(State, {socket_error, sendfile_crash,
+			'An error occurred when using the sendfile function.'})
+	end.
+```
+
+It eithers delegates the sending of the file to a transport-specific `sendfile/4`, or, if the ability to use the `sendfile` syscall isn't available, delegates to `ranch_transport:sendfile/6`.
+
+In `ranch_transport`'s documentation [found here](https://ninenines.eu/docs/en/ranch/2.1/manual/ranch_transport/) we can read :
+
+<div class="message">
+> Transports that manipulate TCP directly may use the file:sendfile/2,4,5 function, which calls the sendfile syscall where applicable (on Linux, for example). Other transports can use the sendfile/6 function exported from this module.
+</div>
+
+Let's then follow to erlang's `file` module, where we find two functions exported :
+
+[erlang/otp/lib/kernel/src/file.erl:60](https://github.com/erlang/otp/blob/ed310cb0fb1efe9db3b43eff8de6dd59da3dc739/lib/kernel/src/file.erl#L60)
+```erlang
+%% Sendfile functions
+-export([sendfile/2,sendfile/5]).
+```
+
+The first sends a whole file on a socket, and the second sends a chunk of a file.
+
+From `otp/lib/kernel/src/file.erl`, we can see that the actual sending then goes through `socket:sendfile/5`, in a private `sendfile/8` function defined in `file` :
+
+[🔗 source erlang/otp/lib/kernel/src/file.erl:1332](https://github.com/erlang/otp/blob/928b323d91386e56d94eb8a6b556dc475a949798/lib/kernel/src/file.erl#L1332)
+```erlang
+%% Internal sendfile functions
+sendfile(#file_descriptor{ module = Mod } = Fd, Sock, Offset, Bytes,
+	 ChunkSize, Headers, Trailers, Opts)
+  when is_integer(Offset), is_integer(Bytes) ->
+    case Sock of
+        ?socket(_) when Headers =:= [], Trailers =:= [] ->
+            try socket:sendfile(Sock, Fd, Offset, Bytes, infinity)
+            catch error : notsup ->
+                    sendfile_fallback(
+                      Fd, socket_send(Sock), Offset, Bytes, ChunkSize,
+                      Headers, Trailers)
+            end;
+        ?socket(_) ->
+            sendfile_fallback(
+              Fd, socket_send(Sock), Offset, Bytes, ChunkSize,
+              Headers, Trailers);
+```
+
+Following to the socket module, we find `sendfile/5`, and learn that it handles sending the file via a NIF :
+
+[🔗 source erlang/otp/lib/kernel/src/socket.erl:3064](https://github.com/erlang/otp/blob/928b323d91386e56d94eb8a6b556dc475a949798/lib/kernel/src/socket.erl#L3064)
+```erlang
+
+sendfile(
+  ?socket(SockRef) = Socket, FileHandle_Cont, Offset, Count, Timeout)
+  when is_integer(Offset), is_integer(Count), 0 =< Count ->
+    %%
+    case FileHandle_Cont of
+        #file_descriptor{module = Module} = FileHandle ->
+            GetFRef = internal_get_nif_resource,
+            try Module:GetFRef(FileHandle) of
+                FRef ->
+                    State = {FRef, Offset, Count},
+                    sendfile_int(SockRef, State, Timeout)
+            catch
+                %% We could just crash here, since the caller
+                %% maybe broke the API and did not provide
+                %% a raw file as FileHandle, i.e GetFRef
+                %% is not implemented in Module;
+                %% but instead handle that nicely
+```
+
+After following a few calls in this function in `socket.erl`, we land on `otp/erts/preloaded/src/prim_socket.erl` and find further evidence of the use of a NIF :
+
+[🔗 source erlang/otp/erts/preloaded/src/prim_socket.erl:691](https://github.com/erlang/otp/blob/928b323d91386e56d94eb8a6b556dc475a949798/erts/preloaded/src/prim_socket.erl#L691)
+```erlang
+sendfile(SockRef, Offset, Count, SendRef) ->
+    nif_sendfile(SockRef, SendRef, Offset, Count).
+
+sendfile(SockRef, FileRef, Offset, Count, SendRef) ->
+    nif_sendfile(SockRef, SendRef, Offset, Count, FileRef).
+
+sendfile_deferred_close(SockRef) ->
+    nif_sendfile(SockRef).
+```
+
+That leads us to the file `otp/erts/emulator/nifs/common/prim_socket_nif.c`, that contains the definitions of `nif_sendfile/1,4,5` :
+
+[🔗 source erlang/otp/erts/emulator/nifs/common/prim_socket_nif.c:5841](https://github.com/erlang/otp/blob/928b323d91386e56d94eb8a6b556dc475a949798/erts/emulator/nifs/common/prim_socket_nif.c#L5841)
+```c
+/* ----------------------------------------------------------------------
+ * nif_sendfile/1,4,5
+ *
+ * Description:
+ * Send a file on a socket
+ *
+ * Arguments:
+ * Socket (ref) - Points to the socket descriptor.
+ *
+ * SendRef      - A unique id reference() for this (send) request.
+ *
+ * Offset       - File offset to start from.
+ * Count        - The number of bytes to send.
+ *
+ * InFileRef    - A file NIF resource.
+ */
+```
+
+Following a bit in the source, we can find these three macros :
+
+[🔗 source erlang/otp/erts/emulator/nifs/common/prim_socket_nif.c:5939](https://github.com/erlang/otp/blob/928b323d91386e56d94eb8a6b556dc475a949798/erts/emulator/nifs/common/prim_socket_nif.c#L5939)
+```c
+res = ESOCK_IO_SENDFILE_DC(env, descP);
+// and
+res = ESOCK_IO_SENDFILE_CONT(env, descP,
+                                         sockRef, sendRef,
+                                         offset, count);
+// and
+res = ESOCK_IO_SENDFILE_START(env, descP,
+                                          sockRef, sendRef,
+                                          offset, count, fRef);
+```
+
+they get rewritten as follows :
+
+[🔗 source erlang/otp/erts/emulator/nifs/common/prim_socket_nif.c:2581](https://github.com/erlang/otp/blob/928b323d91386e56d94eb8a6b556dc475a949798/erts/emulator/nifs/common/prim_socket_nif.c#L2581)
+```c
+#define ESOCK_IO_SENDFILE_START(ENV, D,                         \
+                                SOR, SNR,                       \
+                                O, CN, FR)                      \
+    ((io_backend.sendfile_start != NULL) ?                      \
+     io_backend.sendfile_start((ENV), (D),                      \
+                               (SOR), (SNR),                    \
+                               (O), (CN), (FR)) :               \
+     enif_raise_exception((ENV), MKA((ENV), "notsup")))
+#define ESOCK_IO_SENDFILE_CONT(ENV, D,                          \
+                               SOR, SNR,                        \
+                               O, CP)                           \
+    ((io_backend.sendfile_cont != NULL) ?                       \
+     io_backend.sendfile_cont((ENV), (D),                       \
+                              (SOR), (SNR),                     \
+                              (O), (CP)) :                      \
+     enif_raise_exception((ENV), MKA((ENV), "notsup")))
+#define ESOCK_IO_SENDFILE_DC(ENV, D)                            \
+    ((io_backend.sendfile_dc != NULL) ?                         \
+     io_backend.sendfile_dc((ENV), (D)) :                       \
+     enif_raise_exception((ENV), MKA((ENV), "notsup")))
+```
+
+Looking into erlang's source for `sendfile_start` brings us to `otp/erts/emulator/nifs/unix/unix_socket_syncio.c` :
+
+[🔗 source erlang/otp/erts/emulator/nifs/unix/unix_socket_syncio.c:2286](https://github.com/erlang/otp/blob/928b323d91386e56d94eb8a6b556dc475a949798/erts/emulator/nifs/unix/unix_socket_syncio.c#L2286)
+```c
+/* ========================================================================
+ * Start a sendfile() operation
+ */
+extern
+ERL_NIF_TERM essio_sendfile_start(ErlNifEnv*       env,
+                                  ESockDescriptor* descP,
+                                  ERL_NIF_TERM     sockRef,
+                                  ERL_NIF_TERM     sendRef,
+                                  off_t            offset,
+                                  size_t           count,
+                                  ERL_NIF_TERM     fRef)
+{
+```
+
+This points us to `essio_sendfile` in this same file : 
+
+[🔗 source erlang/otp/erts/emulator/nifs/unix/unix_socket_syncio.c:6103](https://github.com/erlang/otp/blob/928b323d91386e56d94eb8a6b556dc475a949798/erts/emulator/nifs/unix/unix_socket_syncio.c#L6103)
+```c
+/* *** Sendfile utility functions *** */
+
+/* Platform independent sendfile() function
+ *
+ * Return < 0  for terminal error
+ *        0    for done
+ *        > 0  for retry with select
+ */
+#if defined(HAVE_SENDFILE)
+static
+int essio_sendfile(ErlNifEnv*       env,
+                   ESockDescriptor* descP,
+                   ERL_NIF_TERM     sockRef,
+                   off_t            offset,
+                   size_t*          countP,
+                   int*             errP)
+{
+```
+
+We finally find a call to `sendfile` as defined in `sys/sendfile.h` :
+
+[🔗 source erlang/otp/erts/emulator/nifs/unix/unix_socket_syncio.c:6144](https://github.com/erlang/otp/blob/928b323d91386e56d94eb8a6b556dc475a949798/erts/emulator/nifs/unix/unix_socket_syncio.c#L6144)
+```c
+#if defined (__linux__)
+
+            off_t prev_offset;
+
+            prev_offset = offset;
+            res =
+                sendfile(descP->sock, descP->sendfileHandle,
+                         &offset, chunk_size);
+            error = (res < 0) ? sock_errno() : 0;
+```
+
+Sendfile is documented here : https://man7.org/linux/man-pages/man2/sendfile.2.html
+To quote this page : 
+
+<div class="message">
+>        sendfile() copies data between one file descriptor and another.
+       Because this copying is done within the kernel, sendfile() is
+       more efficient than the combination of read(2) and write(2),
+       which would require transferring data to and from user space.
+</div>
+
+So.. **yeah, sending a file with Plug.Conn.send_file is pretty efficient** provided you're running linux.
+
+Sometimes it's about the journey, even if the destination is well-known ;-) .
+

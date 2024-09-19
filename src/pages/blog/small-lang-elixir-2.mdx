@@ -1,0 +1,279 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "Hosting a small language (Ovo2) from scratch in Elixir, pt 2 <br/>Tokenization"
+description: ""
+pubDate: "May 23 2023"
+tags: ["elixir", "parsing", "explorations"]
+---
+
+*full code [hosted on github](https://github.com/lucassifoni/ovo)*
+
+- Part 1 : [gathering requirements from a previous experiment](/blog/small-lang-elixir)
+- [x] Part 2 : [tokenization](/blog/small-lang-elixir-2)
+- Part 3 : [parsing](/blog/small-lang-elixir-3)
+- Part 4 : [AST emission and print-parse-print loop](/blog/small-lang-elixir-4)
+- Part 5 : [evaluation](/blog/small-lang-elixir-5)
+- Part 6 : [basic recursion : environment as processes](/blog/small-lang-elixir-6)
+- Part 7 : [weird features, towards a global stateful machine](/blog/small-lang-elixir-7)
+- Part 8 : [a graphical environment with liveview](/blog/small-lang-elixir-8)
+
+To parse our language, we will first define a rough map of the syntax.
+
+```
+A program is made of a list of expressions
+
+An expression is either :
+  - an assignment (returns the assigned value)
+  - a function call
+  - a lambda / function declaration (since we don't have a real distinction between the two in ovo)
+  - a primitive value  (number, string, list)
+  - a symbol
+```
+
+We can note that there's no syntax for maps in this list. One of my goals is to encourage myself to use ovo2 to reduce complex data to strings, and avoid using it to produce other data shapes. The final goal stays sandboxed data reduction for printable templates.
+
+I did not mention infix operators either in this list. In my last Typescript prototype, I had infix operators, but that seemed clunky when I build the prototypal visual editor, and I now prefer having arithmetic as functions. String concatenation as an infix operator will also be removed, to have functions operating on strings instead. The access operator will also be removed.
+
+Maps are normalized to be stringly typed.
+
+So a sample of the complete (updated) syntax could be :
+
+```elixir
+# Ovo2 program, having as input %{"name" => "Martin", "age" => 44}
+foo = 5
+bar = 6
+age = add(access(data, `age`), bar)
+
+say_hi = \name, age ->
+  join([name, `has the age`, to_string(age)], ``)
+end
+
+say_hi(access(data, `name`), age)
+
+fibs = \a -> 
+    if greater_or_equals(a, 2) then
+        add(fibs(subtract(a, 1)), fibs(subtract(a, 2)))
+    else 
+        1
+    end
+end
+
+fibs(10)
+```
+
+To me, there's something fishy, (or.. lispy maybe), slowly creeping into scope.
+
+In the previous typescript iteration of ovo2, we were closer to Elixir's syntax (see below), but as I'm writing, it seems interesting to reduce the syntax footprint and go towards a better-fitting visual and text editing experience... slowly deprecating text out of ovo2.
+
+```elixir
+fn = data°first_name
+ln = data°last_name
+
+join2 = \strs, spacer ->
+ list~reduce(strs, \out, s ->
+    spaced = out <> spacer
+    spaced <> s
+ end)
+end
+
+join2([fn, ln], \` \`)
+```
+
+That's the beauty of the exercise of those posts : writing the post is the creation of what the post is about.
+
+For the sake of simplicity, I'll start by tokenizing the input, and only discriminate strings and non-strings. Non-strings will be parsed and determined in-context afterwards. We can see that I'm going for <code>\`</code> as a string delimiter, and `\` as an escape character. We swallow whitespace outside strings.
+
+```elixir
+test "Tokenizes input, discriminating strings and non-strings" do
+  for {program, tokens} <- [
+        {
+          """
+          foo = 5
+          bar = `stringy\\` value`
+          baz(a, b, c, d)
+
+          """,
+          [
+            {:nonstring, "foo"},
+            {:nonstring, "="},
+            {:nonstring, "5"},
+            {:nonstring, "bar"},
+            {:nonstring, "="},
+            {:string, "stringy` value"},
+            {:nonstring, "baz(a,b,c,d)"}
+          ]
+        }
+      ] do
+    assert Ovo.tokenize(program) == tokens
+  end
+end
+```
+
+We'll start by splitting the string to graphemes, and walk them :
+
+```elixir
+defmodule Ovo do
+  def tokenize(input) do
+    input
+    |> String.graphemes()
+    |> walk()
+  end
+
+```
+
+Then, walking characters, we change the state of our tokenizer, from `undefined` to `string` and `nonstring` :
+
+```elixir
+defmodule Ovo do
+  def tokenize(input) do
+    input
+    |> String.graphemes()
+    |> walk()
+  end
+
+  defp is_whitespace?(a), do: Regex.match?(~r/\s/, a)
+
+  def accumulate(rest, state, out, buf, next_state) do
+    if buf != "" do
+      walk(rest, next_state, [{state, buf} | out], "")
+    else
+      walk(rest, next_state, out, "")
+    end
+  end
+
+  def walk(graphemes), do: walk(graphemes, :undefined, [], "")
+  def walk(["\\" | ["`" | rest]], :string, out, buf), do: walk(rest, :string, out, buf <> "`")
+  def walk(["`" | rest], :string, out, buf), do: accumulate(rest, :string, out, buf, :undefined)
+  def walk([a | rest], :string, out, buf), do: walk(rest, :string, out, buf <> a)
+  def walk(["`" | rest], state, out, buf), do: accumulate(rest, state, out, buf, :string)
+
+  def walk([a | rest], state, out, buf) do
+    if is_whitespace?(a) do
+      accumulate(rest, state, out, buf, :undefined)
+    else
+      walk(rest, :nonstring, out, buf <> a)
+    end
+  end
+
+  def walk([], state, out, buf), do: (if buf != "", do: [{state, buf} | out], else: out) |> Enum.reverse()
+end
+```
+
+We get a list of tokens, without whitespace, in two categories : strings, and non-strings. String delimiter escaping and whitespace in strings is handled. But a few shortcomings are present :
+
+```elixir
+{:nonstring, "foo"},
+{:nonstring, "="},
+{:nonstring, "5"},
+{:nonstring, "bar"},
+{:nonstring, "="},
+{:string, "stringy` value"},
+{:nonstring, "baz(a,b,c,d)"}
+```
+
+At this point, if we change `baz(a,b,c,d)` to be `baz(a, b, c, d)`, we will get this output :
+
+```elixir
+{:nonstring, "baz(a,"}
+{:nonstring, "b,"},
+{:nonstring, "c,"},
+{:nonstring, "d)"}
+```
+
+Before that, I wanted to explore the use of macros to write list matching operations.
+
+```
+iex(1)> quote do
+...(1)> ["a" | rest]
+...(1)> end
+[{:|, [], ["a", {:rest, [], Elixir}]}]
+```
+
+We can see that `[a|b]` is represented as the operator `:|` applied to `a` and `b` in the resulting AST.
+
+```elixir
+def binary_to_pattern(bin) do
+  [first | rest] = String.graphemes(bin) |> Enum.reverse()
+
+  base = [{:|, [], [first, {:tail, [], nil}]}]
+
+  Enum.reduce(rest, base, fn element, out ->
+    [
+      {:|, [],
+        [
+          element,
+          out
+        ]}
+    ]
+  end)
+end
+
+defmacro defpat(pattern) do
+  binary_to_pattern(pattern)
+end
+```
+
+We can then use `defpat("abcd")` to generate `["a" | ["b", | ["c" | ["d", | tail]]]]`, or in shorter form, `["a", "b", "c", "d" | tail]`.
+
+The pattern matching on a backtick inside a string can then be rewritten from: 
+
+```elixir
+def walk(["\\" | ["`" | rest]], :string, out, buf), do: walk(rest, :string, out, buf <> "`")
+```
+
+to:
+
+```elixir
+def walk(defpat("\\`"), :string, out, buf), do: walk(tail, :string, out, buf <> "`")
+```
+
+I'm not sure that I like `tail` leaking from no visible spot though. That said, at this stage, it allows me to extend the syntax quite easily :
+
+Updating `accumulate` to handle a "next buffer" as tokens are flushed at the next token change : 
+
+```elixir
+def accumulate(rest, state, out, buf, next_state, next_buf \\ "") do
+  if buf != "" do
+    walk(rest, next_state, [{state, buf} | out], next_buf)
+  else
+    walk(rest, next_state, out, next_buf)
+  end
+end
+```
+
+We then allow `buf` to be `nil` since we were already testing for `<empty string>`.
+
+```elixir
+def walk(defpat("->"), state, out, buf), do: accumulate(tail, state, out, buf, :arrow, nil)
+def walk(defpat("if"), state, out, buf), do: accumulate(tail, state, out, buf, :if, nil)
+def walk(defpat("else"), state, out, buf), do: accumulate(tail, state, out, buf, :else, nil)
+def walk(defpat("then"), state, out, buf), do: accumulate(tail, state, out, buf, :then, nil)
+def walk(defpat("end"), state, out, buf), do: accumulate(tail, state, out, buf, :end, nil)
+```
+
+And update the tests to reflect those new tokens :
+
+```elixir
+test "Tokenizes arrows and if/then/else/end" do
+  program = """
+  bar -> baz
+  if bar do 5 else end
+  """
+
+  tokens = [
+    {:nonstring, "bar"},
+    {:arrow, nil},
+    {:nonstring, "baz"},
+    {:if, nil},
+    {:nonstring, "bar"},
+    {:then, nil},
+    {:nonstring, "5"},
+    {:else, nil},
+    {:end, nil}
+  ]
+
+  assert Ovo.tokenize(program) == tokens
+end
+```
+
+I switched my preference to `then` instead of `do` for `if expressions`, simply as a matter of taste.

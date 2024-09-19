@@ -1,0 +1,143 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "The Elixir Telescope -- Part 5 : Porting the depth of field simulation to Elixir + Rust"
+description: "Fifth entry of my build log"
+pubDate: "Jan 5 2023"
+tags: ["optics", "elixir", "rust", "rustler", "graphics"]
+---
+
+Entries up to this point : 
+
+- [Part 4 : Simulating image capture and focusing](/blog/Scope-sim-4)
+- [Part 3 : Raytracing a parabolic mirror from scratch](/blog/Scope-sim-3)
+- [Part 2 : Primary mirror design & calculation](/blog/Scope-sim-2)
+- [Part 1 : Simulating movement & state with Elixir](/blog/Scope-sim)
+
+In [the last entry](/blog/Scope-sim-4), I finished with a plausible depth of field simulation. What counts for me isn't the physical reality of the values obtained, but the plausibility of the effect of depth of field with a quite-open objective (f/3.51) and short or long object distances.
+
+Since this simulation must run server-side, I ported it to Elixir with Rust and Rustler to speed up the image processing.
+
+First, to avoid loading an image for each simulation request, I created an `Agent` whose task is to hold a reference to `Rust` memory.
+
+```elixir
+defmodule Optics.SceneHolder do
+  use Agent
+
+  def get_path() do
+    Path.join(:code.priv_dir(:scope), "resource/img_n_depth.png")
+  end
+
+  defp initial_state() do
+    {:ok, ref} = Optics.RxopticsNif.load_image(get_path())
+    ref
+  end
+
+  def start_link(_) do
+    Agent.start_link(fn () -> initial_state() end, name: __MODULE__)
+  end
+
+  def get_scene() do
+    Agent.get(__MODULE__, fn a -> a end)
+  end
+end
+```
+
+Quite straightforward. The work happens in `Optics.RxopticsNif.load_image/1`, calling a NIF function.
+
+```
+iex(8)> Optics.SceneHolder.get_scene
+#Reference<0.2612143773.3884056582.52554>
+```
+
+From the Rust side, we return a reference-counted `ResourceArc` (see [rustler::resource::ResourceArc](https://docs.rs/rustler/0.15.1/rustler/resource/struct.ResourceArc.html) )
+
+```rs
+#[rustler::nif]
+pub fn load_image(path: String) -> Result<ResourceArc<DepthAndColorMap>, ImageHandlingError> {
+    match dof::load_image(path) {
+        Ok(a) => Ok(ResourceArc::new(a)),
+        Err(_) => Err(ImageHandlingError {
+            msg: "Failed to load image".to_string(),
+        }),
+    }
+}
+```
+
+The `DepthAndColorMap` is a representation of an image where the alpha channel represents depth.
+
+```rs
+#[derive(Clone, Copy)]
+pub struct DepthAndColorPx {
+    x: u32,
+    y: u32,
+    d: u8,
+    rgba: [u8; 4],
+}
+
+#[derive(Clone)]
+pub struct DepthAndColorMap {
+    width: u32,
+    height: u32,
+    values: Vec<DepthAndColorPx>,
+}
+```
+
+An image is simply loaded, its rgb and alpha values taken separately, and the resulting vector is sorted from back (furthest from the observer) to front.
+
+```rs
+fn to_depth_and_color_map(a: DynamicImage) -> DepthAndColorMap {
+    let w = GenericImageView::width(&a);
+    let h = GenericImageView::height(&a);
+
+    let mut depth_and_color_vec = DepthAndColorMap {
+        width: w,
+        height: h,
+        values: vec![],
+    };
+
+    for (x, y, rgba) in a.pixels().into_iter() {
+        let [r, g, b, a] = rgba.0;
+        depth_and_color_vec.values.push(DepthAndColorPx {
+            y,
+            x,
+            d: a,
+            rgba: [r, g, b, 255],
+        });
+    }
+
+    depth_and_color_vec.values.sort_by(|a, b| a.d.cmp(&b.d));
+    depth_and_color_vec
+}
+```
+
+Then, when requested, the blurred image is computed by passing this reference back to rust.
+
+```rs
+pub fn blur(
+    res: rustler::ResourceArc<DepthAndColorMap>,
+    scene_distance: f64,
+    sensor_distance: f64,
+    pxsize: f64,
+    radius: f64,
+    base_fl: f64,
+) -> Result<Vec<u8>, ImageError> {}
+```
+
+The implementation can be found [on GitHub](https://github.com/Lucassifoni/oiseaux/blob/15393d6bd539e067f2eccb707618aeffeed44438/native/rxopticsnif/src/dof.rs) but it's quite simple.
+
+- Iterate on pixels from the depth and color map
+- For each depth value, calculate the real-world distance it represents
+- Calculate the resulting blur radius, truncated to 2 decimal places
+- Did the blur value change from the previous one ?
+    - If so: 
+        - Paint the drawing canvas on the blurring canvas
+        - Blur the blurring canvas
+        - Paint the blurring canvas on the output canvas
+    - Else:
+        - Draw a pixel of the right color on the drawing canvas
+- After iteration, blur & paint the remaining drawing canvas on the output canvas
+
+![](/pics/photoscope_5/cap.png)
+
+Nice ! All the pieces are coming together.
+    
