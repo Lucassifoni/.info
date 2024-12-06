@@ -5,97 +5,96 @@ import Footer from "../components/Footer.astro";
 import Navigation from "../components/Navigation.astro";
 
 export interface Props {
-	content: {
-		title: string;
-		description: string;
-		pubDate?: string;
-		updatedDate?: string;
-		heroImage?: string;
-		tags?: string[];
-	};
+    content: {
+        title: string;
+        description: string;
+        pubDate?: string;
+        updatedDate?: string;
+        heroImage?: string;
+        tags?: string[];
+    };
 }
 
 const {
-	content: { url, title, description, pubDate, updatedDate, heroImage, tags },
+    content: { url, title, description, pubDate, updatedDate, heroImage, tags },
 } = Astro.props;
 ---
 
 <html lang="en">
-	<head>
-		<BaseHead title={title} description={description} />
-		<style>
-			.title {
-				font-size: 1.4em;
-				margin: 0.5em 0;
-			}
-			hr {
-				margin: 1rem 0;
-			}
-			.footer_additions ul,
-			li {
-				display: inline;
-				margin: 0;
-				padding: 0;
-			}
-			.footer_additions li::after {
-				content: " / ";
-			}
-			.footer_additions li.noslash::after {
-				content: "";
-			}
-			.footer_additions li:last-child::after {
-				content: "";
-			}
-		</style>
-	</head>
+    <head>
+        <BaseHead title={title} description={description} />
+        <style>
+            .title {
+                font-size: 1.4em;
+                margin: 0.5em 0;
+            }
+            hr {
+                margin: 1rem 0;
+            }
+            .footer_additions ul,
+            li {
+                display: inline;
+                margin: 0;
+                padding: 0;
+            }
+            .footer_additions li::after {
+                content: " / ";
+            }
+            .footer_additions li.noslash::after {
+                content: "";
+            }
+            .footer_additions li:last-child::after {
+                content: "";
+            }
+        </style>
+    </head>
 
-	<body>
-		<Header have_langs={false}/>
-		<main>
-			<article>
-				{
-					heroImage && (
-						<img
-							width={720}
-							height={360}
-							style="width:100%;height:auto;"
-							src={heroImage}
-							alt=""
-						/>
-					)
-				}
-				<h1 class="title" set:html="title.replace('--', '<br/>')" />
-				{
-					(tags||[]).length && (
-				<div class="tags-container" style="margin-bottom: .75em;">
-					<div class="tags">
-						{(tags || []).map(
-							(t) => (
-								<span class={"tag " + t}>
-									{t}
-								</span>
-							)
-						)}
-					</div>
-				</div>
-					)
-				}
-				{pubDate && <time>{pubDate}</time>}
-				
-				{
-					updatedDate && (
-						<div>
-							Last updated on <time>{updatedDate}</time>
-						</div>
-					)
-				}
-				<Navigation me={url}></Navigation>
-				<hr/>
-				<slot />
-			</article>
+    <body>
+        <Header have_langs={false} />
+        <main>
+            <article>
+                {
+                    heroImage && (
+                        <img
+                            width={720}
+                            height={360}
+                            style="width:100%;height:auto;"
+                            src={heroImage}
+                            alt=""
+                        />
+                    )
+                }
+                <h1 class="title" set:html={title.replace("--", "<br/>")} />
+                {
+                    (tags || []).length && (
+                        <div
+                            class="tags-container"
+                            style="margin-bottom: .75em;"
+                        >
+                            <div class="tags">
+                                {(tags || []).map((t) => (
+                                    <span class={"tag " + t}>{t}</span>
+                                ))}
+                            </div>
+                        </div>
+                    )
+                }
+                {pubDate && <time>{pubDate}</time>}
 
-			<Navigation me={url}></Navigation>
-		</main>
-		<Footer></Footer>
-	</body>
+                {
+                    updatedDate && (
+                        <div>
+                            Last updated on <time>{updatedDate}</time>
+                        </div>
+                    )
+                }
+                <Navigation me={url} />
+                <hr />
+                <slot />
+            </article>
+
+            <Navigation me={url} />
+        </main>
+        <Footer />
+    </body>
 </html>

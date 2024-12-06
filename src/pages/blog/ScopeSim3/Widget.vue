@@ -1,7 +1,15 @@
 <script lang="ts" setup>
-import { computed, onMounted, Ref, ref, watch } from 'vue';
-import { parabola_coords, parallel_rayfan_coords, reflection_coords, non_parallel_rayfan_coords, normal_coords, tangent_coords } from "./functions";
-import type { Point, Segment } from './types';
+import { computed, onMounted, ref, watch } from "vue";
+import { type Ref } from "vue";
+import {
+    parabola_coords,
+    parallel_rayfan_coords,
+    reflection_coords,
+    non_parallel_rayfan_coords,
+    normal_coords,
+    tangent_coords,
+} from "./functions";
+import type { Point, Segment } from "./types";
 
 const canvasRef: Ref<HTMLCanvasElement | null> = ref(null);
 const focus = ref(400);
@@ -35,7 +43,8 @@ const draw = () => {
 
     const lineTo = (x: number, y: number) => ctx.lineTo(to_x(x), to_y(y));
     const moveTo = (x: number, y: number) => ctx.moveTo(to_x(x), to_y(y));
-    const arc = (x: number, y: number, r: number, a: number) => ctx.arc(to_x(x), to_y(y), r, 0, a);
+    const arc = (x: number, y: number, r: number, a: number) =>
+        ctx.arc(to_x(x), to_y(y), r, 0, a);
 
     const draw_segment = (s: Segment) => {
         ctx.beginPath();
@@ -43,7 +52,6 @@ const draw = () => {
         lineTo(s.b.x, s.b.y);
         ctx.stroke();
     };
-
 
     const axis = () => {
         ctx.beginPath();
@@ -62,7 +70,7 @@ const draw = () => {
 
     const parabola = () => {
         ctx.beginPath();
-        parabola_coords(max_y_mm, focus.value).forEach(p => {
+        parabola_coords(max_y_mm, focus.value).forEach((p) => {
             lineTo(p.x, p.y);
         });
         ctx.stroke();
@@ -70,17 +78,22 @@ const draw = () => {
 
     const rayfan = () => {
         ctx.strokeStyle = "green";
-        parallel_rayfan_coords(max_y_mm, f, rays.value).forEach(s => {
+        parallel_rayfan_coords(max_y_mm, f, rays.value).forEach((s) => {
             draw_segment(s);
         });
     };
 
     const nonparallelrayfan = () => {
         ctx.strokeStyle = "orange";
-        const segments = non_parallel_rayfan_coords(f, max_y_mm, dist.value, rays.value);
+        const segments = non_parallel_rayfan_coords(
+            f,
+            max_y_mm,
+            dist.value,
+            rays.value,
+        );
         ctx.fillStyle = "blue";
         arc(dist.value, 0, 5, Math.PI * 2);
-        segments.forEach(s => {
+        segments.forEach((s) => {
             draw_segment(s);
             if (draw_normals.value) {
                 normal(s.a.y);
@@ -126,7 +139,7 @@ const params = computed(() => {
         f: draw_normals.value,
         g: draw_tangents.value,
         i: draw_infinity.value,
-        z: zoom.value
+        z: zoom.value,
     });
 });
 watch(params, () => {
@@ -135,52 +148,96 @@ watch(params, () => {
 </script>
 
 <template>
-    <div style="background: lightgray;
-        padding: 1em;
-        margin-bottom: 1em;
-        border-radius: 3px;
-        font-family: sans-serif;
-        overflow: hidden;">
+    <div
+        style="
+            background: lightgray;
+            padding: 1em;
+            margin-bottom: 1em;
+            border-radius: 3px;
+            font-family: sans-serif;
+            overflow: hidden;
+        "
+    >
         <div>
-            <label style="margin: 4px; display:block" for="">Mirror radius (mm) <input type="number" v-model="radius"></label>
+            <label style="margin: 4px; display: block" for=""
+                >Mirror radius (mm) <input type="number" v-model="radius"
+            /></label>
         </div>
         <div>
-            <label style="margin: 4px; display:block" for="">Draw tangents ? <input type="checkbox" v-model="draw_tangents"></label>
+            <label style="margin: 4px; display: block" for=""
+                >Draw tangents ? <input type="checkbox" v-model="draw_tangents"
+            /></label>
         </div>
         <div>
-            <label style="margin: 4px; display:block" for="">Draw normals ? <input type="checkbox" v-model="draw_normals"></label>
+            <label style="margin: 4px; display: block" for=""
+                >Draw normals ? <input type="checkbox" v-model="draw_normals"
+            /></label>
         </div>
         <div>
-            <label style="margin: 4px; display:block" for="">Draw infinity ray fan ? <input type="checkbox" v-model="draw_infinity"></label>
+            <label style="margin: 4px; display: block" for=""
+                >Draw infinity ray fan ?
+                <input type="checkbox" v-model="draw_infinity"
+            /></label>
         </div>
         <div>
-            <label style="margin: 4px; display:block" for="">Zoom <input type="number" v-model="zoom"></label>
+            <label style="margin: 4px; display: block" for=""
+                >Zoom <input type="number" v-model="zoom"
+            /></label>
         </div>
         <div>
-            <label style="margin: 4px; display:block" for="">Mirror focal length (mm) <input type="number" v-model="focus"></label>
+            <label style="margin: 4px; display: block" for=""
+                >Mirror focal length (mm) <input type="number" v-model="focus"
+            /></label>
         </div>
         <div>
-            <label style="margin: 4px; display:block" for="">Rays (min 2) <input type="number" min="2" step="1" v-model="rays"></label>
+            <label style="margin: 4px; display: block" for=""
+                >Rays (min 2)
+                <input type="number" min="2" step="1" v-model="rays"
+            /></label>
         </div>
         <div>
-            <label style="margin: 4px; display:block" for="">Source distance <input type="number" :min="focus + 1" step="1" v-model="dist"></label>
+            <label style="margin: 4px; display: block" for=""
+                >Source distance
+                <input type="number" :min="focus + 1" step="1" v-model="dist"
+            /></label>
         </div>
         <div style="margin-top: 1em">
             <h4>Calculation results :</h4>
-            <ul style="padding: 0; list-style: none;">
-                <li>1mm - radius focal point : {{ reflection_coords(focus, 1, dist).b.x.toFixed(2) }}mm</li>
+            <ul style="padding: 0; list-style: none">
                 <li>
-                    {{ radius }}mm - radius focal point : {{ reflection_coords(focus, radius, dist).b.x.toFixed(2) }}mm
+                    1mm - radius focal point :
+                    {{ reflection_coords(focus, 1, dist).b.x.toFixed(2) }}mm
                 </li>
-                <li>Longitudinal aberration : {{ (reflection_coords(focus, radius, dist).b.x -
-        reflection_coords(focus, 1, dist).b.x).toFixed(2)
-}}mm</li>
-                <li>Outward focal plane push : {{ (reflection_coords(focus, radius, dist).b.x - focus).toFixed(2) }}mm
+                <li>
+                    {{ radius }}mm - radius focal point :
+                    {{
+                        reflection_coords(focus, radius, dist).b.x.toFixed(2)
+                    }}mm
+                </li>
+                <li>
+                    Longitudinal aberration :
+                    {{
+                        (
+                            reflection_coords(focus, radius, dist).b.x -
+                            reflection_coords(focus, 1, dist).b.x
+                        ).toFixed(2)
+                    }}mm
+                </li>
+                <li>
+                    Outward focal plane push :
+                    {{
+                        (
+                            reflection_coords(focus, radius, dist).b.x - focus
+                        ).toFixed(2)
+                    }}mm
                 </li>
             </ul>
         </div>
-        <div style="width: 100%; padding-bottom: 32px; overflow-x: scroll;">
-            <canvas style="border: 1px solid lightcoral; border-radius: 3px" ref="canvasRef"></canvas>
+        <div style="width: 100%; padding-bottom: 32px; overflow-x: scroll">
+            <canvas
+                style="border: 1px solid lightcoral; border-radius: 3px"
+                ref="canvasRef"
+            ></canvas>
         </div>
     </div>
 </template>

@@ -1,57 +1,55 @@
 ---
 const today = new Date();
 const active_lang = Astro.url.toString().includes("/fr/") ? "fr" : "en";
-const fren = (a: string, b: string) => active_lang === 'fr' ? a : b;
+const fren = (a: string, b: string) => (active_lang === "fr" ? a : b);
 ---
 
 <footer>
-	<p>
-		<span class="noprint">2022 - </span> {today.getFullYear()} Lucas Sifoni / Turing-Express, 32490 Castillon-Savès, Gers<br />
-		Entreprise Individuelle — SIREN 799 377 452<br
-		/>contact@turing-express.fr
-	</p>
-	<ul class="noprint">
-		<li class="noslash">{fren('liens', 'links')} :</li>
-		<li><a href="https://instagram.com/chantepierre_">instagram</a></li>
-		<li><a href="mailto:contact@lucassifoni.info">email</a></li>
-		<li><a href="https://www.linkedin.com/in/lucas-sifoni/">linkedin</a></li>
-	</ul>
-
-	<ul class="noprint">
-		<li class="noslash">{fren('nouveaux posts :', 'get new posts :')}</li>
-		<li><a href="/rss.xml">RSS Feed</a></li>
-	</ul>
-	<slot />
+    <p>
+        <span class="noprint">2022 - </span>
+        {today.getFullYear()} Lucas Sifoni / Turing-Express, 32490 Castillon-Savès,
+        Gers<br />
+        Entreprise Individuelle — SIREN 799 377 452<br
+        />contact@turing-express.fr
+    </p>
+    <ul class="noprint">
+        <li class="noslash">{fren("liens", "links")} :</li>
+        <li><a href="mailto:contact@lucassifoni.info">email</a></li>
+        <li>
+            <a href="https://www.linkedin.com/in/lucas-sifoni/">linkedin</a>
+        </li>
+    </ul>
+    <slot />
 </footer>
 
 <style>
-	footer {
-		font-size: 0.765rem;
-		margin-top: 2em;
-		padding-top: 1.5em;
-		padding-bottom: 3em;
-		border-top: 1px dotted black;
-	}
+    footer {
+        font-size: 0.765rem;
+        margin-top: 2em;
+        padding-top: 1.5em;
+        padding-bottom: 3em;
+        border-top: 1px dotted black;
+    }
 
-	ul {
-		display: block;
-		margin: 0;
-		padding: 0;
-		margin-top: 1em;
-	}
+    ul {
+        display: block;
+        margin: 0;
+        padding: 0;
+        margin-top: 1em;
+    }
 
-	li {
-		display: inline;
-		margin: 0;
-		padding: 0;
-	}
-	li::after {
-		content: " / ";
-	}
-	li.noslash::after {
-		content: "";
-	}
-	li:last-child::after {
-		content: "";
-	}
+    li {
+        display: inline;
+        margin: 0;
+        padding: 0;
+    }
+    li::after {
+        content: " / ";
+    }
+    li.noslash::after {
+        content: "";
+    }
+    li:last-child::after {
+        content: "";
+    }
 </style>

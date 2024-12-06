@@ -4,133 +4,142 @@ import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import { SITE_TITLE, SITE_DESCRIPTION } from "../config";
 
-// Use Astro.glob() to fetch all posts, and then sort them by date.
-const posts = (await Astro.glob("./blog/*.{md,mdx}")).sort(
-  (a, b) =>
-    new Date(b.frontmatter.pubDate).valueOf() -
-    new Date(a.frontmatter.pubDate).valueOf()
+const posts = Object.values(
+    import.meta.glob("./blog/*.{md,mdx}", { eager: true }),
+).sort(
+    (a, b) =>
+        new Date(b.frontmatter?.pubDate).valueOf() -
+        new Date(a.frontmatter?.pubDate).valueOf(),
 );
 ---
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-  <head>
-    <BaseHead title={SITE_TITLE + ""} description={SITE_DESCRIPTION} />
-    <style scoped>
-      ul {
-        list-style-type: none;
-        padding: unset;
-      }
+    <head>
+        <BaseHead title={SITE_TITLE + ""} description={SITE_DESCRIPTION} />
+        <style scoped>
+            ul {
+                list-style-type: none;
+                padding: unset;
+            }
 
-      ul li {
-        display: flex;
-        align-items: baseline;
-        margin-bottom: 0.75em;
-        padding-top: 0.75em;
-        flex-wrap: wrap;
-        border-top: 1px dotted lightgray;
-      }
+            ul li {
+                display: flex;
+                align-items: baseline;
+                margin-bottom: 0.75em;
+                padding-top: 0.75em;
+                flex-wrap: wrap;
+                border-top: 1px dotted lightgray;
+            }
 
-      ul.posts-list {
-        padding-left: 0;
-      }
+            ul.posts-list {
+                padding-left: 0;
+            }
 
-      .tags-container {
-        flex: 0 0 100%;
-        padding-left: 10.5ch;
-      }
+            .tags-container {
+                flex: 0 0 100%;
+                padding-left: 10.5ch;
+            }
 
-      ul li time {
-        flex: 0 0 13ch;
-        font-style: italic;
-        color: #000000;
-        font-size: 0.85em;
-      }
+            ul li time {
+                flex: 0 0 13ch;
+                font-style: italic;
+                color: #000000;
+                font-size: 0.85em;
+            }
 
-      ul li a {
-        color: black;
-        text-decoration: none;
-      }
-      ul li a:hover {
-        text-decoration: underline;
-      }
+            ul li a {
+                color: black;
+                text-decoration: none;
+            }
+            ul li a:hover {
+                text-decoration: underline;
+            }
 
-      ul li a:visited {
-        color: black;
-      }
+            ul li a:visited {
+                color: black;
+            }
 
-      @media screen and (max-width: 767px) {
-        ul li time {
-          flex: 0 0 100%;
-        }
+            @media screen and (max-width: 767px) {
+                ul li time {
+                    flex: 0 0 100%;
+                }
 
-        .tags-container {
-          padding-left: 0;
-          margin-left: -0.25em;
-        }
-        ul li {
-          flex-wrap: wrap;
-          margin-bottom: 1em;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <Header have_langs={false} />
-    <main>
-      <h3>Hi 👋</h3>
-      <p>
-        Independent developer since 2015, based in southwest France near
-        Toulouse.<br />I specialize in Elixir and the BEAM/OTP.<br /><br />
-        My software studio <a
-          style="border-bottom:1px solid black; text-decoration: none;"
-          href="https://turing-express.fr">Turing-Express</a
-        > runs <a
-          href="https://alzo.archi"
-          title="alzo"
-          style="border-bottom:1px solid black;"
-          ><svg
-            style="width: auto; height: 0.9em; position:relative; top:.025em"
-            viewBox="0 0 1206 444"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M914.091 341.754C926.092 399.583 977.697 443.85 1039.67 443.85C1135.83 443.85 1206 354.053 1206 269.55C1206 201.767 1158.54 133.382 1075.49 133.382C1066.97 133.382 1060.47 133.983 1054.66 134.825C1032.41 137.983 1015.76 156.568 1015.76 179.272C1015.76 203.451 1035.47 224.02 1060.74 224.02C1075.25 224.02 1086.92 217.104 1094.24 209.074C1101.31 201.285 1114.55 201.767 1121.14 212.202C1127.58 222.396 1132.36 237.222 1132.36 254.844C1132.36 306.78 1087.98 354.354 1049.68 354.354C1024.43 354.354 1005.09 334.747 1005.09 312.584C1005.09 302.87 1009.17 293.578 1016.51 285.789C1023.86 278 1030.66 267.144 1030.66 252.048C1030.66 226.546 1008.74 202.248 976.91 202.248C962.974 202.248 941.208 207.541 928.934 229.794L883.013 312.794C871.254 333.875 849.85 341.333 831.288 341.333C801.058 341.333 784.249 323.319 777.719 308.434C872.342 199.992 923.704 202.669 923.704 162.672C923.704 148.719 911.854 133.562 892.264 133.562C880.897 133.562 861.58 142.073 812.757 142.073C763.934 142.073 748.244 133.502 728.231 133.502C647.878 133.502 617.254 213.074 584.816 282.932C581.581 289.909 558.999 332.191 558.999 332.191C552.53 343.648 540.83 348.58 531.428 348.58C508.12 348.58 490.707 324.191 504.16 299.983C523.024 265.971 650.78 34.8345 661.905 14.7762C665.895 7.61899 659.275 -1.13209 649.238 0.762477C621.305 5.99508 581.128 5.30341 566.133 0.521897C561.145 -1.07194 555.855 1.03313 553.104 6.17551C536.568 37.2704 390.22 300.524 360.05 355.497C353.792 366.924 342.939 372.067 332.479 372.067C311.136 372.067 291.123 349.031 305.06 323.861C315.973 304.133 318.15 300.073 327.612 283.293C337.195 265.761 316.789 247.567 291.939 247.567C222.922 247.567 193.991 341.423 140.846 341.423C125.76 341.423 112.761 329.063 112.761 313.486C112.761 270.272 151.88 204.293 231.841 204.293C243.328 204.293 254.786 206.999 263.009 209.555C269.206 211.48 274.919 214.938 278.97 219.991C286.256 229.012 300.555 238.605 319.903 238.605C346.718 238.605 370.237 221.735 370.237 195.812C370.237 154.613 295.386 133.532 240.154 133.532C102.09 133.472 0 230.035 0 343.257C0 405.146 42.9883 444 80.7467 444C113.063 444 142.236 432.933 201.972 377.269C200.098 381.239 197.921 386.892 197.921 395.553C197.921 420.183 221.441 443.88 254.09 443.88C328.096 443.88 332.509 397.658 356.331 397.658C359.626 397.658 365.642 399.222 369.421 405.237C382.874 426.738 412.893 443.97 448.535 443.97C518.852 443.97 552.62 413.086 588.293 348.249L605.403 317.275C613.898 301.818 625.235 283.534 633.427 273.489C650.931 252.018 681.283 240.861 704.651 240.861C738.389 240.861 758.372 259.175 758.372 259.175C728.866 299.833 712.088 307.201 673.937 338.596C622.302 381.058 599.418 394.471 599.418 414.679C599.418 432.061 615.289 443.85 630.858 443.85C644.915 443.85 655.375 435.249 716.32 435.249C758.734 435.249 779.019 443.729 799.244 443.729C855.685 443.729 879.718 403.853 914.06 341.724L914.091 341.754Z"
-              fill="#E84E0F"></path>
-          </svg>
-        </a>, a database, communication & publishing tool for architects and
-        technical offices, saving hours of precious time.<br />
-      </p>
-      <h3>Articles</h3>
-      <section>
-        <ul class="posts-list">
-          {
-            posts
-              .filter((post) => !post.frontmatter.draft)
-              .map((post) => (
-                <li>
-                  <time datetime={post.frontmatter.pubDate}>
-                    {post.frontmatter.pubDate}
-                  </time>
+                .tags-container {
+                    padding-left: 0;
+                    margin-left: -0.25em;
+                }
+                ul li {
+                    flex-wrap: wrap;
+                    margin-bottom: 1em;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <Header have_langs={false} />
+        <main>
+            <h3>Hi 👋</h3>
+            <p>
+                Independent developer since 2015, based in southwest France near
+                Toulouse.<br />I specialize in Elixir and the BEAM/OTP.<br /><br
+                />
+                My software studio <a
+                    style="border-bottom:1px solid black; text-decoration: none;"
+                    href="https://turing-express.fr">Turing-Express</a
+                > runs <a
+                    href="https://alzo.archi"
+                    title="alzo"
+                    style="border-bottom:1px solid black;"
+                    ><svg
+                        style="width: auto; height: 0.9em; position:relative; top:.025em"
+                        viewBox="0 0 1206 444"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                    >
+                        <path
+                            d="M914.091 341.754C926.092 399.583 977.697 443.85 1039.67 443.85C1135.83 443.85 1206 354.053 1206 269.55C1206 201.767 1158.54 133.382 1075.49 133.382C1066.97 133.382 1060.47 133.983 1054.66 134.825C1032.41 137.983 1015.76 156.568 1015.76 179.272C1015.76 203.451 1035.47 224.02 1060.74 224.02C1075.25 224.02 1086.92 217.104 1094.24 209.074C1101.31 201.285 1114.55 201.767 1121.14 212.202C1127.58 222.396 1132.36 237.222 1132.36 254.844C1132.36 306.78 1087.98 354.354 1049.68 354.354C1024.43 354.354 1005.09 334.747 1005.09 312.584C1005.09 302.87 1009.17 293.578 1016.51 285.789C1023.86 278 1030.66 267.144 1030.66 252.048C1030.66 226.546 1008.74 202.248 976.91 202.248C962.974 202.248 941.208 207.541 928.934 229.794L883.013 312.794C871.254 333.875 849.85 341.333 831.288 341.333C801.058 341.333 784.249 323.319 777.719 308.434C872.342 199.992 923.704 202.669 923.704 162.672C923.704 148.719 911.854 133.562 892.264 133.562C880.897 133.562 861.58 142.073 812.757 142.073C763.934 142.073 748.244 133.502 728.231 133.502C647.878 133.502 617.254 213.074 584.816 282.932C581.581 289.909 558.999 332.191 558.999 332.191C552.53 343.648 540.83 348.58 531.428 348.58C508.12 348.58 490.707 324.191 504.16 299.983C523.024 265.971 650.78 34.8345 661.905 14.7762C665.895 7.61899 659.275 -1.13209 649.238 0.762477C621.305 5.99508 581.128 5.30341 566.133 0.521897C561.145 -1.07194 555.855 1.03313 553.104 6.17551C536.568 37.2704 390.22 300.524 360.05 355.497C353.792 366.924 342.939 372.067 332.479 372.067C311.136 372.067 291.123 349.031 305.06 323.861C315.973 304.133 318.15 300.073 327.612 283.293C337.195 265.761 316.789 247.567 291.939 247.567C222.922 247.567 193.991 341.423 140.846 341.423C125.76 341.423 112.761 329.063 112.761 313.486C112.761 270.272 151.88 204.293 231.841 204.293C243.328 204.293 254.786 206.999 263.009 209.555C269.206 211.48 274.919 214.938 278.97 219.991C286.256 229.012 300.555 238.605 319.903 238.605C346.718 238.605 370.237 221.735 370.237 195.812C370.237 154.613 295.386 133.532 240.154 133.532C102.09 133.472 0 230.035 0 343.257C0 405.146 42.9883 444 80.7467 444C113.063 444 142.236 432.933 201.972 377.269C200.098 381.239 197.921 386.892 197.921 395.553C197.921 420.183 221.441 443.88 254.09 443.88C328.096 443.88 332.509 397.658 356.331 397.658C359.626 397.658 365.642 399.222 369.421 405.237C382.874 426.738 412.893 443.97 448.535 443.97C518.852 443.97 552.62 413.086 588.293 348.249L605.403 317.275C613.898 301.818 625.235 283.534 633.427 273.489C650.931 252.018 681.283 240.861 704.651 240.861C738.389 240.861 758.372 259.175 758.372 259.175C728.866 299.833 712.088 307.201 673.937 338.596C622.302 381.058 599.418 394.471 599.418 414.679C599.418 432.061 615.289 443.85 630.858 443.85C644.915 443.85 655.375 435.249 716.32 435.249C758.734 435.249 779.019 443.729 799.244 443.729C855.685 443.729 879.718 403.853 914.06 341.724L914.091 341.754Z"
+                            fill="#E84E0F"></path>
+                    </svg>
+                </a>, a database, communication & publishing tool for architects
+                and technical offices, saving hours of precious time.<br />
+            </p>
+            <h3>Articles</h3>
+            <section>
+                <ul class="posts-list">
+                    {
+                        posts
+                            .filter((post) => !post.frontmatter.draft)
+                            .map((post) => (
+                                <li>
+                                    <time datetime={post.frontmatter.pubDate}>
+                                        {post.frontmatter.pubDate}
+                                    </time>
 
-                  <a
-                    href={post.url}
-                    set:html="post.frontmatter.title.replace('--', '<br/>')"
-                  />
-                  <div class="tags-container">
-                    <div class="tags">
-                      {(post.frontmatter.tags || []).map((t) => (
-                        <span class={"tag " + t}>{t}</span>
-                      ))}
-                    </div>
-                  </div>
-                </li>
-              ))
-          }
-        </ul>
-      </section>
-    </main>
-    <Footer />
-  </body>
+                                    <a
+                                        href={post.url}
+                                        set:html={post.frontmatter.title.replace(
+                                            "--",
+                                            "<br/>",
+                                        )}
+                                    />
+                                    <div class="tags-container">
+                                        <div class="tags">
+                                            {(post.frontmatter.tags || []).map(
+                                                (t) => (
+                                                    <span class={"tag " + t}>
+                                                        {t}
+                                                    </span>
+                                                ),
+                                            )}
+                                        </div>
+                                    </div>
+                                </li>
+                            ))
+                    }
+                </ul>
+            </section>
+        </main>
+        <Footer />
+    </body>
 </html>
