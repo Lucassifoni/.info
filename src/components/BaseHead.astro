@@ -1,13 +1,13 @@
 ---
 // Import the global.css file here so that it is included on
 // all pages through the use of the <BaseHead /> component.
-import '../styles/global.scss';
+import "../styles/global.scss";
 
 export interface Props {
-	title: string;
-	description: string;
-	image?: string;
-	canonical?: string;
+    title: string;
+    description: string;
+    image?: string;
+    canonical?: string;
 }
 
 const { title, description } = Astro.props;
@@ -20,8 +20,8 @@ const { title, description } = Astro.props;
 <meta name="generator" content={Astro.generator} />
 
 <!-- Primary Meta Tags -->
-<title>{title.replace('<br/>', '')}</title>
-<meta name="title" content={title.replace('<br/>', '')} />
+<title>{title.replace("<br/>", "")}</title>
+<meta name="title" content={(title || "").replace("<br/>", "")} />
 <meta name="description" content={description} />
 
 <!-- Open Graph / Facebook -->
@@ -35,4 +35,8 @@ const { title, description } = Astro.props;
 <meta property="twitter:url" content={Astro.url} />
 <meta property="twitter:title" content={title} />
 <meta property="twitter:description" content={description} />
-<script async defer data-domain="lucassifoni.info" src="https://stats.documents.design/js/plausible.js"></script>
+<script
+    async
+    defer
+    data-domain="lucassifoni.info"
+    src="https://stats.documents.design/js/plausible.js"></script>
