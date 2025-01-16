@@ -222,6 +222,22 @@ sigil_NODE(
 
 My point with this section is that this pattern is very useful to me. If you are considering it, please **make it opt-in** (provide another way to achieve the outcome) and **explicit** (require manual handling of the final side effects).
 
+#### Bonus : Syntax highlighting in the sigils
+
+Syntax highlighting was on my plans, but I did not get to it yet. This discussion on ElixirForum made me lookup how to create a VSCode / Zed plugin to highlight foreign languages in sigils.
+
+https://elixirforum.com/t/script-tags-in-heex-and-app-js/
+
+![](/pics/langfromx/highlighting.png)
+
+The general, non-editor-specific way is to create a tree-sitter grammar that will match the opening and closing forms of the sigils, then delegate to an existing language. This is easier to do than, for example, a complete grammar for HEEX, that looks like HTML but is not HTML. If you like to write lexers and parsers you should feel right at home :-).
+
+I've put up a repo with the scaffolded VSCode extension and still have to do the same for Zed which is my daily driver.
+
+https://github.com/alzo-archi/vscode-sigil-js-highlighting-sample
+
+Frank Dugan also shows in this thread that this is doable with a lot less ceremony in NeoVim : https://elixirforum.com/t/script-tags-in-heex-and-app-js/67992/19
+
 ### Third Form : writing Elixir code that generates instructions for &lt;language&gt;
 
 I particularly like this one. It is similar to the first one (writing elixir code that generates &lt;language&gt; code) but shifts the responsibility of the instructions interpreter to the target language.
