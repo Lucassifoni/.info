@@ -1,0 +1,127 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "Liveview can be super boring"
+description: "Peace in the midst of frontend hardships"
+pubDate: "Feb 13 2025"
+tags: ["programming", "elixir"]
+---
+
+Liveview can be super boring...<br/>
+... and that's a very good thing.
+
+I'm transitioning [Alzo](https://alzo.archi/) from being a Vue SPA to a Liveview app. Being solo, this takes time and must be done while adding new features and improving existing features with client feedback.
+
+Eliminating Vue allows me to remove a lot of plumbing.
+
+**The typical Vue feature** at the start of the project implied :
+- One or more backend entities
+- One or more REST resource controllers (one for each entity)
+- One or more Piñia stores
+- One or more API sub-clients
+- A few Vue components
+
+As **user workshops** followed and my view of the project became clearer and clearer, I started to leave resource-oriented APIs behind for use-case oriented architecture. You don't need a full CRUD API for all entities if a lot of entities depend of user-facing entities. And for those user-facing entities, CRUD is often not the right paradigm. Workflows have more steps and subtleties than CRUD.
+
+The typical new Vue feature then became :
+- A few backend entities
+- An use-case oriented controller
+- An use-case oriented Piñia store
+- Use-case oriented API routes
+- And always a few Vue components
+
+That brought a nice shrinking in code size and complexity for features developed this way. *That said, I still believe that starting full CRUD can be a good starting point when you're in a domain modeling phase of the project.* Access to users allows to define and refine workflows, but having data and UIs to discuss this is often better than a blank page. If you are not part of the domain itself, it still is useful to treat a pre-MVP as a collection of entities to fill and edit. You have something to show and play with. If you are part of the domain and can develop, well... stop reading this blog and go build the killer app your coworkers are missing !
+
+As my forays into liveview accumulated, I started to see the benefits and stopped all new Vue development. I still add sub-features and improvements to some Vue parts because rewriting them is a multi-day effort, but this is okay. As a Vue part is refined and improved in close collaboration with users, its Liveview reimplementation plan can only become clearer and clearer :-) .
+
+What I can say after building a few "complex" features with liveview over the last 9 months is that it's super boring. If LOC were a valid metric, I could say I'm still quicker with Vue. But my LOC count at equal complexity is now lower than ever.
+
+Development fatigue also reduced.
+
+As an example, I'm building a data importer for super-admins (well, for me).
+
+The super admin can :
+- create import jobs
+- mark import jobs as completed or in progress
+- upload input data to an import job
+- analyze input data in an import job
+- map input data columns to target parsers
+- generate a ZIP containing a skeleton folder tree to fill it with assets and then re-upload it
+
+And they'll soon be able to :
+- add input URLs to scrape web pages
+- analyze input URLs
+- etc...
+
+Not super complex but not trivial either.
+Staying with the SPA frontend/backend separation, I would have had to :
+- Create API routes for those use cases
+- Create a piñia store
+- Create an api sub-client for those routes
+
+And only then I would have been allowed to build my UI. Or I would have built it then deduced the rest. It's often more efficient that way. Anyway.
+
+Here's what the Liveview part of the frontend/backend divide looks (with a lot of event handlers, and authorization removed) :
+
+```elixir
+defp update_state(socket, fun) do
+  state = socket.assigns[:importer_state]
+  assign(socket, :importer_state, fun.(state))
+end
+
+def handle_info({:zip_ready, zip_id}, socket) do
+  {:noreply, socket |> push_event("download_zip", %{payload: ImporterLiveState.prepare_zip_payload(zip_id)})}
+end
+
+def handle_event("generate_zip_skeleton", _, socket) do
+  {:noreply, socket |> update_state(&ImporterLiveState.prepare_zip/1)}
+end
+
+def handle_event("init_import_job", %{"name" => name}, socket) do
+  {:noreply, socket |> update_state(&ImporterLiveState.init_import_job(&1, name))}
+end
+
+def handle_event("toggle_job_status", %{"id" => id}, socket) do
+  {:noreply, socket |> update_state(&ImporterLiveState.toggle_job_status(&1, id))}
+end
+
+def handle_event("save_upload", _params, socket) do
+  [h|_] =
+    consume_uploaded_entries(socket, :file, fn f, entry ->
+      {:ok, ImporterLiveState.prepare_file_entry(f, entry)}
+    end)
+
+  {:noreply, socket |> update_state(&ImporterLiveState.add_file(&1, h))}
+end
+
+def handle_event("analyze_file", %{"job-id" => job_id, "file-id" => file_id}, socket) do
+  {:noreply, socket |> update_state(&ImporterLiveState.analyze_file(&1, job_id, file_id))}
+end
+```
+
+My pattern is simple. A `FeatureLive` module hosts the UI. A `FeatureLiveState` provides an initializer for this liveview's feature state. `handle_event` clauses orchestrate how `FeatureLiveState` functions are used to update the feature state. `FeatureLiveState` is 100% free of liveview code and thus super-easy to test like any other Elixir module. Because it's just that. It is standalone and does not need an user nor a browser to run.
+
+We can see that a few handlers are more complex than "just pipe params to `FeatureLiveState`, like this one :
+
+```elixir
+def handle_event("save_upload", _params, socket) do
+  uploaded_files =
+    consume_uploaded_entries(socket, :file, fn f, entry ->
+      {:ok, ImporterLiveState.prepare_file_entry(f, entry)}
+    end)
+
+  {:noreply, socket |> update_state(&ImporterLiveState.add_file(&1, List.first(uploaded_files)))}
+end
+```
+
+In this snippet, I allowed myself to put a feature-specific helper (how a file entry must be prepared) in `FeatureLiveState`. It takes liveview concepts as input, but is free of liveview code. Maybe it could be namespaced to `FeatureLiveState.Helpers`. It will, when the number of helpers grows.
+
+We can also guess that there is some background work happening. As `FeatureLiveState` is called by the liveview process, it is easy to make async side-effects happen and avoid blocking in the liveview process. When work is done, notify the liveview process. Blocking would not be a problem in the Vue app, since that background work also would take place server-side, but that would have been yet another case of checking for completion, or subscribing to a channel to get notifications, and yet more code.
+
+The usual critic of this kind of liveview is the lack of optimistic UI, or the latency.
+Well. I understand it but think that it is very context-dependent. I am in the context of an internal tool here.
+
+But some of the user-facing parts of my app are also built this way, notably the main search component that has become very feature-rich today. The way I do search is indeed problematic because results are too instant and would benefit from giving an impression of work. Instant swaps are problematic from an user's perspective and a bit of latency would be great.
+
+Performance should be measured across the stack, and adding network liveview-related latency to a button click event handler isn't a problem to me if the feature behind it is thought for speed. It is always possible to add spinners and visual cues. Maybe Liveview asks for a bit more effort on that front but to me the clearer mind I get from the reduced number of moving parts makes this tradeoff worth it.
+
+I still use and have a very friendly feeling for Vue, which I started using in 2015. But in contexts where Liveview is available, I will first reach for it. There's a balance to be found though. In the middle of this rewrite, this means I have some Liveviews embedding complex and very interactive Vue components, needing low latency, that I already developed. New components of this kind are liveview + vanilla JS (notifying the server when idle) for the low latency parts. That way, I get fluid interaction and deterministic re-renders.
