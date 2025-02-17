@@ -1,0 +1,39 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "Git Igor"
+description: "A nice hot sauce recipe"
+pubDate: "Feb 17 2025"
+tags: ["programming"]
+---
+
+I committed by mistake a .gitigore file, failing to type the "n" in "ignore". After this, I of course committed the files that I wanted to ignore, but thankfully realized that before pushing.
+
+This made me think that other users could have made the same kind of mistakes.
+
+I generated a few cases of mistypings, both missing keys and QWERTY typos, and searched for a few of those mistakes on github. A few permutations have a lot of public results. I generated about 60 permutations but did not test them all :
+
+```
+https://github.com/search?q=path%3A%28%5E%7C%5C%29%5C.<name>%24&type=code
+
+{
+    "https://github.com/search?q=path%3A.gitigore": 322,
+    "https://github.com/search?q=path%3A.bitignore": 3,
+    "https://github.com/search?q=path%3A.fitignore": 3,
+    "https://github.com/search?q=path%3A.g8tignore": 0,
+    "https://github.com/search?q=path%3A.g9tignore": 0,
+    "https://github.com/search?q=path%3A.gi5ignore": 1,
+    "https://github.com/search?q=path%3A.gi6ignore": 1,
+    "https://github.com/search?q=path%3A.gifignore": 1,
+    "https://github.com/search?q=path%3A.gigignore": 29,
+    "https://github.com/search?q=path%3A.giignore": 43,
+    "https://github.com/search?q=path%3A.girignore": 36,
+    "https://github.com/search?q=path%3A.git8gnore": 1,
+    "https://github.com/search?q=path%3A.git9gnore": 1,
+    "https://github.com/search?q=path%3A.gitgnore": 1600,
+    "https://github.com/search?q=path%3A.gitibnore": 4,
+    "https://github.com/search?q=path%3A.gitifnore": 7,
+    "https://github.com/search?q=path%3A.gitigbore": 2,
+    ...
+```
+
+Maybe a nice feature for Github would be the detection of those files, followed by a subtle warning ?
