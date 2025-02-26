@@ -26,7 +26,7 @@ NIFs also do not play well with preemptive scheduling, as the emulator cannot ti
 
 This feature is so central to the Elixir and Erlang ecosystem I even designed myself a cursed t-shirt about it :
 
-![](/pics/langfromx/elixir_shirt.webp)
+![](/pics/langfromx/elixir_shirt.png)
 
 So, NIFs cannot run for more than 1 millisecond without getting the scheduler into trouble. To circumvent that, dirty schedulers were introduced. [See erlang's doc about schedulers](https://www.erlang.org/doc/apps/runtime_tools/scheduler.html). There are two kinds of dirty schedulers, dirty CPU and dirty IO, to schedule NIFs that are CPU-bound or IO-bound on the right kind of scheduler, avoiding interfering with the rest of the runtime.
 
