@@ -12,7 +12,7 @@ After my post ["Variations on the "leverage language from elixir" pattern."](/bl
 
 I think this is partly explained because of a difference in context with regards to Erlang systems. Erlang systems, from what I gathered online and in books like [Erlang Programming](https://www.oreilly.com/library/view/erlang-programming/9780596803940/) and [Designing for scalability with Erlang/OTP](https://www.oreilly.com/library/view/designing-for-scalability/9781449361556/) and [Ferd's blog](https://ferd.ca/), embraced the dynamic nature of the runtime and the advantages that distributed statefulness give, whereas Elixir grows in cloud-era, where stateless throwaway containers reign, so long companion processes and runtime alterations are less common in the Elixir world.
 
-With that in mind, seeing core maintainers promoting such an approach was very nice to read. Keeping an eye on what everyone (who publicly publishes progress) is up to, it feels like there's a very creative boil happening in the Elixir community. People on the forum also advocate for non-cloud again. People integrate other runtimes in Elixir, even via NIFs ! (See [Pythonx](https://hexdocs.pm/pythonx/Pythonx.html) and [DenoRider](https://hexdocs.pm/deno_rider/readme.html) that fully embed a runtime).
+With that in mind, seeing core maintainers promoting such an approach was very nice to read. Keeping an eye on everyone who publicly shares their progress, it feels like there's a very creative boil happening in the Elixir community. People on the forum also advocate for non-cloud again. People integrate other runtimes in Elixir, even via NIFs ! (See [Pythonx](https://hexdocs.pm/pythonx/Pythonx.html) and [DenoRider](https://hexdocs.pm/deno_rider/readme.html) that fully embed a runtime).
 
 ### NIFs on the BEAM
 
@@ -20,7 +20,7 @@ If you lack context, NIFs stand for [Native Implemented Function](https://www.er
 
 > As a NIF library is dynamically linked into the emulator process, this is the fastest way of calling C-code from Erlang (alongside port drivers). Calling NIFs requires no context switches. But it is also the least safe, because a crash in a NIF brings the emulator down too.
 
-Popular way to do NIFs in the last years were [Zigler](https://hexdocs.pm/zigler/readme.html) and [Rustler](https://hexdocs.pm/rustler/readme.html) because of the memory safety guarantees of Rust and Zig, that gave reasonable safety that they wouldn't crash the BEAM (designated as "the emulator" in the above quote). But Erlang/OTP itself is full of C NIFs, and a NIF being in C of course does not guarantee unstability either. See [Erlang/OTP otp/erts/emulator/nifs/common](https://github.com/erlang/otp/tree/master/erts/emulator/nifs/common) for a little peek into Erlang.
+Popular way to do NIFs in the last years were [Zigler](https://hexdocs.pm/zigler/readme.html) and [Rustler](https://hexdocs.pm/rustler/readme.html) because of the memory safety guarantees of Rust and Zig, that gave reasonable safety that they wouldn't crash the BEAM (designated as "the emulator" in the above quote). But Erlang/OTP itself is full of C NIFs, and a NIF being in C of course does not guarantee instability either. See [Erlang/OTP otp/erts/emulator/nifs/common](https://github.com/erlang/otp/tree/master/erts/emulator/nifs/common) for a little peek into Erlang.
 
 NIFs also do not play well with preemptive scheduling, as the emulator cannot time-slice them. Preemptive scheduling is one of the greatest strengths of our runtime, as it allows for transparent and fair concurrency between all processes in an Elixir instance without any action from the user.
 
@@ -97,7 +97,7 @@ We could have a `SafeNIF` module that would :
 
 A few remarks :
 - code is a bit simplified for brevity
-- don't make a process synchronously sleep
+- I synchronously sleep in the example to wait for the node to come up
 
 ```elixir
 defmodule MyNifApp.SafeNif do
@@ -106,7 +106,7 @@ defmodule MyNifApp.SafeNif do
     # Gather necessary information
     cookie = Node.get_cookie()
     elixir_path = elixir_path()
-    node_name = "safe-nif_#{:rand.uniform(10_000_000)}"
+    node_name = "safe_nif_#{:rand.uniform(10_000_000)}"
     host = local_hostname()
     temp_node = :"#{node_name}@#{host}"
 
@@ -147,14 +147,14 @@ defmodule MyNifApp.SafeNif do
   end
 ```
 
-Then, if we call `MyNifApp.SafeNIF.call(MyNifApp.Nif, :crash, [])`, we get this dance :
+Then, if we call `MyNifApp.SafeNIF.call(MyNifApp.Nif, :crash_nif, [])`, we get this dance :
 
 ```
 ➜  my_nif_app iex --name my_app@127.0.0.1 --cookie cookie -S mix
 Erlang/OTP 26 [erts-14.0.2] [source] [64-bit] [smp:8:8] [ds:8:8:10] [async-threads:1] [jit]
 
 Interactive Elixir (1.15.6) - press Ctrl+C to exit (type h() ENTER for help)
-iex(my_app@127.0.0.1)1> MyNifApp.SafeNif.call(MyNifApp, :crash, [])
+iex(my_app@127.0.0.1)1> MyNifApp.SafeNif.call(MyNifApp.Nif, :crash_nif, [])
 Starting temporary node: safe_nif_4998973
 Starting node with: elixir --name safe_nif_4998973@127.0.0.1 --cookie :cookie --no-halt /tmp/safe_nif_4998973_init.exs
 Successfully connected to temporary node
@@ -164,4 +164,4 @@ Node crashed during execution
 iex(my_app@127.0.0.1)2>
 ```
 
-And our Elixir app stays alive, the crash having been transformed to a regular value for us to pattern match on :-). This example is a bit far-fetched, but we can manage Elixir nodes as well (or even better) as other languages in long-running processes, and take advantage of dynamic code loading on those spawned nodes too.
+And our Elixir app stays alive, the crash having been transformed to a regular value for us to pattern match on :-). This example is a bit far-fetched, but we can absolutely manage Elixir nodes as well (or even better) as other languages in long-running processes, and take advantage of dynamic code loading on those spawned nodes too. [FLAME](https://hexdocs.pm/flame/FLAME.html) is thought for remote back-ends, but the general principle stays the same : there's no limit on what you can spawn, and Elixir itself is a great candidate.
