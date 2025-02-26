@@ -1,0 +1,167 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "Elixir from elixir"
+description: "Spawning elixir nodes for fun and safety"
+pubDate: "Feb 26 2025"
+tags: ["programming", "elixir"]
+---
+
+### Elixir is a great orchestrator
+
+After my post ["Variations on the "leverage language from elixir" pattern."](/blog/lang-x-from-elixir), I have had the pleasure to read on Dashbit's blog an article titled ["Embedding Python in Elixir, it's Fine"](https://dashbit.co/blog/running-python-in-elixir-its-fine). I was thrilled seeing that because our community is at the same time very creative and experimentative, but also conservative on some topics (hot code loading, distribution and running other ecosystems come to mind).
+
+I think this is partly explained because of a difference in context with regards to Erlang systems. Erlang systems, from what I gathered online and in books like [Erlang Programming](https://www.oreilly.com/library/view/erlang-programming/9780596803940/) and [Designing for scalability with Erlang/OTP](https://www.oreilly.com/library/view/designing-for-scalability/9781449361556/) and [Ferd's blog](https://ferd.ca/), embraced the dynamic nature of the runtime and the advantages that distributed statefulness give, whereas Elixir grows in cloud-era, where stateless throwaway containers reign, so long companion processes and runtime alterations are less common in the Elixir world.
+
+With that in mind, seeing core maintainers promoting such an approach was very nice to read. Keeping an eye on what everyone (who publicly publishes progress) is up to, it feels like there's a very creative boil happening in the Elixir community. People on the forum also advocate for non-cloud again. People integrate other runtimes in Elixir, even via NIFs ! (See [Pythonx](https://hexdocs.pm/pythonx/Pythonx.html) and [DenoRider](https://hexdocs.pm/deno_rider/readme.html) that fully embed a runtime).
+
+### NIFs on the BEAM
+
+If you lack context, NIFs stand for [Native Implemented Function](https://www.erlang.org/doc/system/nif.html). To quote the documentation :
+
+> As a NIF library is dynamically linked into the emulator process, this is the fastest way of calling C-code from Erlang (alongside port drivers). Calling NIFs requires no context switches. But it is also the least safe, because a crash in a NIF brings the emulator down too.
+
+Popular way to do NIFs in the last years were [Zigler](https://hexdocs.pm/zigler/readme.html) and [Rustler](https://hexdocs.pm/rustler/readme.html) because of the memory safety guarantees of Rust and Zig, that gave reasonable safety that they wouldn't crash the BEAM (designated as "the emulator" in the above quote). But Erlang/OTP itself is full of C NIFs, and a NIF being in C of course does not guarantee unstability either. See [Erlang/OTP otp/erts/emulator/nifs/common](https://github.com/erlang/otp/tree/master/erts/emulator/nifs/common) for a little peek into Erlang.
+
+NIFs also do not play well with preemptive scheduling, as the emulator cannot time-slice them. Preemptive scheduling is one of the greatest strengths of our runtime, as it allows for transparent and fair concurrency between all processes in an Elixir instance without any action from the user.
+
+This feature is so central to the Elixir and Erlang ecosystem I even designed myself a cursed t-shirt about it :
+
+![](/pics/langfromx/elixir_shirt.webp)
+
+So, NIFs cannot run for more than 1 millisecond without getting the scheduler into trouble. To circumvent that, dirty schedulers were introduced. [See erlang's doc about schedulers](https://www.erlang.org/doc/apps/runtime_tools/scheduler.html). There are two kinds of dirty schedulers, dirty CPU and dirty IO, to schedule NIFs that are CPU-bound or IO-bound on the right kind of scheduler, avoiding interfering with the rest of the runtime.
+
+### What would be another way to safely execute a dangerous C NIF ?
+
+All of that made me think : if you have a dangerous or unstable C NIF, you can divide your app in safe and dangerous nodes, and distribute them. Your users or consumers interact with the safe nodes, whereas NIF work is done via distribution in the dangerous nodes. The dangerous nodes would be supervised or watched by the OS or an orchestrator, and re-launched if they fail.
+
+In the absence of an OS safeguard or an orchestrator, maybe we can dynamically spawn those worker nodes just in time of NIF invocations ?
+
+Given this C NIF :
+
+```c
+#include <erl_nif.h>
+
+static ERL_NIF_TERM crash_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    int *ptr = NULL;
+    *ptr = 42;
+    return enif_make_int(env, 0);
+}
+
+static ErlNifFunc nif_funcs[] = {
+    {"crash_nif", 0, crash_nif, 0}
+};
+
+ERL_NIF_INIT(Elixir.MyNifApp.Nif, nif_funcs, NULL, NULL, NULL, NULL)
+```
+
+and this Elixir module calling it :
+
+```elixir
+defmodule MyNifApp.Nif do
+  @on_load :load_nif
+
+  def load_nif do
+    nif_file = Path.join(:code.priv_dir(:my_nif_app), "nif")
+
+    case :erlang.load_nif(String.to_charlist(nif_file), 0) do
+      :ok -> :ok
+      {:error, {:reload, _}} -> :ok
+      {:error, reason} ->
+        IO.puts("#{inspect(reason)}")
+        :ok
+    end
+  end
+
+  def crash_nif(), do: :erlang.nif_error(:nif_not_loaded)
+end
+```
+
+Calling `MyNifApp.Nif.crash_nif()` segfaults and crashes the VM :
+
+```
+➜  my_nif_app iex --name my_app@127.0.0.1 --cookie cookie -S mix
+Erlang/OTP 26 [erts-14.0.2] [source] [64-bit] [smp:8:8] [ds:8:8:10] [async-threads:1] [jit]
+
+Interactive Elixir (1.15.6) - press Ctrl+C to exit (type h() ENTER for help)
+iex(my_app@127.0.0.1)1> MyNifApp.Nif.crash_nif()
+[1]    97437 segmentation fault
+```
+
+We could have a `SafeNIF` module that would :
+- wrap NIF invocations to spawn another Elixir node
+- configure it for distribution
+- make this new node load our app's modules after it started
+- connect to it
+- run the dangerous call via :erpc
+
+A few remarks :
+- code is a bit simplified for brevity
+- don't make a process synchronously sleep
+
+```elixir
+defmodule MyNifApp.SafeNif do
+
+  def call(module, function, args) do
+    # Gather necessary information
+    cookie = Node.get_cookie()
+    elixir_path = elixir_path()
+    node_name = "safe-nif_#{:rand.uniform(10_000_000)}"
+    host = local_hostname()
+    temp_node = :"#{node_name}@#{host}"
+
+    # Prepare a script that will be ran by the new node, loading the modules of our own app
+    script_path = "/tmp/#{node_name}_init.exs"
+
+    script_content = """
+    #{Enum.map_join(:code.get_path(), "\n", fn path -> "true = :code.add_path(#{inspect(path)})" end)}
+    IO.puts("Temporary node #{temp_node} started")
+    IO.puts("Connecting back to #{Node.self()}")
+    Node.set_cookie(#{inspect(cookie)})
+    true = Node.connect(#{inspect(Node.self())})
+    Code.ensure_loaded(MyNifApp.Nif)
+    """
+
+    File.write!(script_path, script_content)
+
+    port = Port.open({:spawn_executable, elixir_path}, [:use_stdio, :exit_status, :binary, args:  ["--name", "#{node_name}@#{host}", "--cookie", "#{inspect(cookie)}", "--no-halt", script_path]])
+
+    Process.sleep(5000)
+
+    if Node.connect(temp_node) do
+      IO.puts("Successfully connected to temporary node")
+
+      try do
+        result = :erpc.call(temp_node, module, function, args, 5000)
+        File.rm(script_path)
+        {:ok, result}
+      catch
+        :exit, _ ->
+          IO.puts("Node crashed during execution")
+          File.rm(script_path)
+          {:error, :node_down}
+      end
+    else
+      {:error, :connection_failed}
+    end
+  end
+```
+
+Then, if we call `MyNifApp.SafeNIF.call(MyNifApp.Nif, :crash, [])`, we get this dance :
+
+```
+➜  my_nif_app iex --name my_app@127.0.0.1 --cookie cookie -S mix
+Erlang/OTP 26 [erts-14.0.2] [source] [64-bit] [smp:8:8] [ds:8:8:10] [async-threads:1] [jit]
+
+Interactive Elixir (1.15.6) - press Ctrl+C to exit (type h() ENTER for help)
+iex(my_app@127.0.0.1)1> MyNifApp.SafeNif.call(MyNifApp, :crash, [])
+Starting temporary node: safe_nif_4998973
+Starting node with: elixir --name safe_nif_4998973@127.0.0.1 --cookie :cookie --no-halt /tmp/safe_nif_4998973_init.exs
+Successfully connected to temporary node
+Calling MyNifApp.crash([]) on temporary node
+Node crashed during execution
+{:error, :node_down}
+iex(my_app@127.0.0.1)2>
+```
+
+And our Elixir app stays alive, the crash having been transformed to a regular value for us to pattern match on :-). This example is a bit far-fetched, but we can manage Elixir nodes as well (or even better) as other languages in long-running processes, and take advantage of dynamic code loading on those spawned nodes too.
