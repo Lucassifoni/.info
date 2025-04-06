@@ -3,6 +3,7 @@ import BaseHead from "../components/BaseHead.astro";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import Navigation from "../components/Navigation.astro";
+import Alchemist from "../components/Alchemist.astro";
 
 export interface Props {
     content: {
@@ -92,6 +93,8 @@ const {
                 <hr />
                 <slot />
             </article>
+
+            {(tags || []).some((t) => t === "elixir") ? <Alchemist /> : <div />}
 
             <Navigation me={url} />
         </main>

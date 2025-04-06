@@ -183,7 +183,7 @@ watch(params, () => {
             background: lightgray;
             padding: 1em;
             margin-bottom: 1em;
-            border-radius: 3px;
+            border-radius: 2px;
             font-family: sans-serif;
             overflow: hidden;
         "
@@ -291,7 +291,7 @@ watch(params, () => {
 
         <div style="width: 100%; overflow-x: scroll">
             <canvas
-                style="border: 1px solid lightcoral; border-radius: 3px"
+                style="border: 1px solid lightcoral; border-radius: 2px"
                 ref="canvasRef"
             ></canvas>
         </div>

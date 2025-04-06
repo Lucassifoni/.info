@@ -159,7 +159,7 @@ onMounted(async () => {
             font-family: sans-serif;
             background: lightgray;
             padding: 4px;
-            border-radius: 4px;
+            border-radius: 2px;
         "
     >
         <div style="margin: 8px 0">
