@@ -8,43 +8,276 @@ tags: ["programming", "elixir", "talk"]
 
 I have had the pleasure to make a small presentation at the Belgian Elixir And erlang Meetup (BEAMing online). The meetup was a calm and warm experience with another talk by Nelson Vides from Erlang Solutions, showing how they secured and revived Prometheus libraries, and people chatting about the projects they were working on (special mention to Raf Lefever and their research work on Scarab/Ex-ESDB).
 
+I presented the architecture and specificities of Alzo, and how I was in the process of leveraging Node.JS (to build Astro-powered static but editable websites) and Java (through JInterface to get access to Apache POI to read/write MS Office documents). A few of the topics touched were also written about in this previous post: https://lucassifoni.info/blog/lang-x-from-elixir/
 
+Slides+text below (Alternatively find the [slides as PDF here](/talks/meetup/beam_0325/slides.pdf) :
 
-I presented the architecture and specificities of Alzo, and how I was in the process of leveraging Node.JS (to build Astro-powered static but editable websites) and Java (through JInterface to get access to Apache POI to read/write MS Office documents.)
-
-Slides below (Alternatively find the [slides as PDF here](/talks/meetup/beam_0325/slides.pdf) :
-
+<figure class="slide">
 ![](/talks/meetup_beam_0325/slide_0.png)
+<figcaption>
+### Embrace the runtime
+How the BEAM helps me build my software+services solution.
+</figcaption>
+</figure>
+
+<figure class="slide">
 ![](/talks/meetup_beam_0325/slide_1.png)
+<figcaption>
+What's alzo ?
+
+Data :
+- Archive of EVERYTHING an architecture agency did
+- Tools for searching and organizing Tools :
+- Document (call for offers, communication) production apps
+- Websites
+- Integrations with software suites (MS Office, Adobe's creative suite)
+-...
+
+Phoenix + LiveView (+ Vue)
+</figcaption>
+</figure>
+
+<figure class="slide">
 ![](/talks/meetup_beam_0325/slide_2.png)
+<figcaption>
+    [Screenshot of an UI]
+</figcaption>
+</figure>
+<figure class="slide">
 ![](/talks/meetup_beam_0325/slide_3.png)
+<figcaption>
+### Document production apps / websites
+- Not whitelabel templates. Custom developed for each client
+- Adapt to existing practices and vocabulary
+- Truly adapt to graphic design guidelines
+- Adapt interactivity and behavior levels
+
+fully automatic/no interaction/background generation<br/>
+VS<br/>
+manual layout/design rules are the program/real-time collaboration
+</figcaption>
+</figure>
+<figure class="slide">
 ![](/talks/meetup_beam_0325/slide_4.png)
+<figcaption>
+    [Screenshot of a basic composition UI]
+</figcaption>
+</figure>
+<figure class="slide">
 ![](/talks/meetup_beam_0325/slide_5.png)
+<figcaption>
+**Services** backed by software
+
+Graphic design = strict rules + explicitness<br/>
+Business = domain knowledge + shared terminology<br/>
+Programs = high expressivity clear data structures
+
+all of this enable Automation + Interaction
+</figcaption>
+</figure>
+<figure class="slide">
 ![](/talks/meetup_beam_0325/slide_6.png)
+<figcaption>
+    [Screenshot of a data -> template injection]
+</figcaption>
+</figure>
+<figure class="slide">
 ![](/talks/meetup_beam_0325/slide_7.png)
+<figcaption>
+    [Screenshot of a layout UI with user overrides]
+</figcaption>
+</figure>
+<figure class="slide">
 ![](/talks/meetup_beam_0325/slide_8.png)
+<figcaption>
+    [Screenshot of an UI where multiple people collaborate in real-time on building long chaptered documents]
+</figcaption>
+</figure>
+<figure class="slide">
 ![](/talks/meetup_beam_0325/slide_9.png)
+<figcaption>
+You're at *super* low scale. You could use anything. Why Elixir?
+
+- long-running processes in supervision trees
+- orchestration of third party stuff
+- hot code loading
+- introspectability
+- massive concurrency for coordination services
+- stack consolidation
+- runtime behavioral changes
+- personal preference
+- actor model
+- functions, functions, functions
+</figcaption>
+</figure>
+<figure class="slide">
 ![](/talks/meetup_beam_0325/slide_10.png)
+<figcaption>
+    [Architecture diagram showing the client app, a message brocker, and an aggregates platform]
+</figcaption>
+</figure>
+<figure class="slide">
 ![](/talks/meetup_beam_0325/slide_11.png)
+<figcaption>
+    [Architecture diagram showing how end users interact with the app]
+</figcaption>
+</figure>
+<figure class="slide">
 ![](/talks/meetup_beam_0325/slide_12.png)
+<figcaption>
+    [Architecture diagram showing the monolith modularization through hot loading of behaviours]
+</figcaption>
+</figure>
+<figure class="slide">
 ![](/talks/meetup_beam_0325/slide_13.png)
+<figcaption>
+    [Diagram showing dynamic tooling generation from MS Office documents through an internal representation + user intents]
+</figcaption>
+</figure>
+<figure class="slide">
 ![](/talks/meetup_beam_0325/slide_14.png)
+<figcaption>
+    Reading/Writing office docs from Elixir. I start by wrapping PHPOffice.
+</figcaption>
+</figure>
+<figure class="slide">
 ![](/talks/meetup_beam_0325/slide_15.png)
+<figcaption>
+    The general steps are :
+    - write elixir that compiles down to PHP for you
+    - execute it
+    - profit
+
+    But the actual implementation needs to mess with PHP installs, which I do not want.
+</figcaption>
+</figure>
+<figure class="slide">
 ![](/talks/meetup_beam_0325/slide_16.png)
+<figcaption>
+    I turn to leveraging Apache POI from a friend's advice. Contrary to PHP, Java runtimes are actually easy to install at runtime.
+</figcaption>
+</figure>
+<figure class="slide">
 ![](/talks/meetup_beam_0325/slide_17.png)
+<figcaption>
+    An Elixir app sets up a JVM, configures it for Erlang Distribution through JInterface, then sends it regular messages to perform conversions.
+</figcaption>
+</figure>
+<figure class="slide">
 ![](/talks/meetup_beam_0325/slide_18.png)
+<figcaption>
+    All in all, this approach brings complexity (running a JVM along the app) but looks saner in the long run.
+</figcaption>
+</figure>
+<figure class="slide">
 ![](/talks/meetup_beam_0325/slide_19.png)
+<figcaption>
+    Hot loading parts of my monolith at startup only required a few hacks for JS interop in Liveview, but they actively are in the works in mainline Liveview as of writing (https://github.com/phoenixframework/phoenix_live_view/pull/3705).
+</figcaption>
+</figure>
+<figure class="slide">
 ![](/talks/meetup_beam_0325/slide_20.png)
+<figcaption>
+    Functionality is made of plain elixir modules, with only a single entry convention with a DynamicApp behaviour.
+</figcaption>
+</figure>
+<figure class="slide">
 ![](/talks/meetup_beam_0325/slide_21.png)
+<figcaption>
+    I can then upload signed tarballs of applications in a running Alzo instance.
+</figcaption>
+</figure>
+<figure class="slide">
 ![](/talks/meetup_beam_0325/slide_22.png)
+<figcaption>
+    So, with dynamic applications for clients, and the ability to juggle languages at runtime, I turn to Astro.build for static websites generation, controlling websites from a LiveView panel.
+</figcaption>
+</figure>
+<figure class="slide">
 ![](/talks/meetup_beam_0325/slide_23.png)
+<figcaption>
+    To this end, I need to have a live preview of the Astro websites in real-time, in an iframe. To this end, a lot of things are simpler if the parent app and the Astro dev server are on the same host.
+</figcaption>
+</figure>
+<figure class="slide">
 ![](/talks/meetup_beam_0325/slide_24.png)
+<figcaption>
+    To handle Node.js installs at runtime, I leverage Nodelix. This way, not all of my instances have node installed.
+</figcaption>
+</figure>
+<figure class="slide">
 ![](/talks/meetup_beam_0325/slide_25.png)
+<figcaption>
+    Since an instance can have 0 or more websites concurrently edited, I need some registry and plumbing to dispatch requests to the correct proxied instance.
+</figcaption>
+</figure>
+<figure class="slide">
 ![](/talks/meetup_beam_0325/slide_26.png)
+<figcaption>
+    After a bit of simplification, I settle on global naming of websites, since they are managed and launched by DynamicApps, which I control. There cannot be name collisions nor missing names there.
+</figcaption>
+</figure>
+<figure class="slide">
 ![](/talks/meetup_beam_0325/slide_27.png)
+<figcaption>
+    To get hot reload (which is there for free in Astro), I also need to proxy its HMR websocket.
+</figcaption>
+</figure>
+<figure class="slide">
 ![](/talks/meetup_beam_0325/slide_28.png)
+<figcaption>
+    So my app is the source of truth about a website's settings and contents, but the astro website can be ejected from the app at any time and does not depend on it.
+</figcaption>
+</figure>
+<figure class="slide">
 ![](/talks/meetup_beam_0325/slide_29.png)
+<figcaption>
+    All in all, I'm quite happy with this architecture. Astro is a great framework and I get a lot of user-friendliness by having live editing of pages.
+</figcaption>
+</figure>
+<figure class="slide">
 ![](/talks/meetup_beam_0325/slide_30.png)
+<figcaption>
+### To wrap it up
+
+I prefer :
+- a single codebase
+- abstracted transport with messaging
+- to keep extraction in mind
+- high modularity
+- to have runtimes on-demand
+- to have easy collaboration
+
+Over :
+- multiple services
+- knowledge of transport
+- coupled services
+- a strict monolith
+- more initial dependencies
+- arcane technologies
+
+So I need :
+- pluggable behaviour
+- wrappers to get messages
+- build-time / runtime parts
+- well-known framework integrations
+</figcaption>
+</figure>
+<figure class="slide">
 ![](/talks/meetup_beam_0325/slide_31.png)
+<figcaption>
+risks :
+- codebase scaling
+- third-party deprecations
+- many similar but different apps
+- nonstandard liveview features
+
+mitigations :
+- low client count
+- stable third party choices
+- build genericity over common patterns
+- watch project directions
+</figcaption>
+</figure>
 
 Thanks to the BEAM organizer group and Linus De Meyere for hosting this meetup !
