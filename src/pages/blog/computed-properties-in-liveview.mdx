@@ -1,0 +1,457 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "Computed properties in Liveview : a pure approach"
+description: "How to implement computed properties in Phoenix LiveView using pure functional patterns. Practical examples for managing state without dependency graphs."
+pubDate: "Apr 16 2025"
+tags: ["programming", "elixir"]
+---
+
+I have often read questions about computed properties in Liveview on the Elixir forum. Sometimes it even is a feature request for Liveview itself. I see how this would be desirable after having worked with Vue for 10 years now. (... writing this stings a little!)
+
+In this post I'll show how I implement two flavors of computed / derived properties, and I hope that in the end you will end up convinced that this is a functional programming concern and not a Liveview concern.
+
+### Pattern 1 : absence of data dependencies (and enforcing that)
+
+In my opinion you should stick to this pattern.
+Computed properties with a single layer are already useful as-is.
+
+I will leave only the relevant code in the below modules for clarity.
+
+Let's say we have a case of items, boxes, and bags here :
+
+```elixir
+defmodule SampleLiveview do
+  def mount(params, session, socket) do
+    {:ok, socket |> update_sample_state(fn _ -> SampleState.init() end)}
+  end
+
+  def update_sample_state(socket, fun) do
+    assign(socket, :state, fun.(socket.assigns.sample_state))
+  end
+
+  def render(assigns) do
+    ~"""
+    <p>
+    There are {@state.views.item_count} items in a bag. <br/>
+    {@state.items_per_box} items can go in a box. <br/>
+    This means {@state.views.boxes_count} are needed to box our items.
+    </p>
+    <button phx-click="add_item">Add an item</button>
+    <button phx-click="remove_item">Remove an item</button>
+    <button phx-click="inc_item_per_box">Increase items per boxes</button>
+    <button phx-click="dec_item_per_box">Decrease items per boxes</button>
+    """
+  end
+end
+```
+
+We first see that all state updates will go through an `update_sample_state/2` function that takes the socket, and an update function that takes the previous state as an argument.
+
+`update_sample_state/2` is the link between a module made only of pure functions, detached from the transport, `SampleState`, and our liveview.
+
+It allows us to write concise event handlers and keep the logic outside of liveview.
+
+```elixir
+def handle_event("add_item", _, socket) do
+  {:noreply, socket |> update_sample_state(fn v -> SampleState.add_item(v) end)}
+end
+
+def handle_event("remove_item", _, socket) do
+  {:noreply, socket |> update_sample_state(fn v -> SampleState.remove_item(v) end)}
+end
+
+def handle_event("inc_item_per_box", _, socket) do
+  {:noreply, socket |> update_sample_state(fn v -> SampleState.alter_items_per_box(v, 1) end)}
+end
+
+def handle_event("dec_item_per_box", _, socket) do
+  {:noreply, socket |> update_sample_state(fn v -> SampleState.alter_items_per_box(v, -1) end)}
+end
+```
+
+I chose to write inc_item/dec_item in terms of an `alter_items_per_box/2` function to illustrate that of course, we can bring in outside arguments to our state module. If we had params, we could of course use them.
+
+We also see that there is this `views` key in the state :
+
+```elixir
+~H"""
+There are {@state.views.item_count} items in a bag.
+"""
+```
+
+Here is how `SampleState` looks :
+
+```elixir
+defmodule SampleState do
+  defstruct ~w(items views)a
+
+  @views ~w(item_count boxes_count)a
+
+  def init() do
+    %__MODULE__{
+      items: [],
+      items_per_box: 5,
+      views: %{
+        item_count: 0,
+        boxes_count: 0
+      }
+    }
+  end
+
+  def add_item(state) do
+    with_compute(fn () ->
+      %__MODULE__{state | items: [:some_item | state.items]}
+    end)
+  end
+
+  def remove_item(state) do
+    with_compute(fn () ->
+      new_items = case state.items do
+        [] -> []
+        [a] -> [a]
+        [_x | xs] -> xs
+      end
+      %__MODULE__{state | items: new_items}
+    end)
+  end
+
+  def alter_items_per_box(state, by) do
+    with_compute(fn () ->
+      new_per_box = state.items_per_box + by
+      if new_per_box < 1 do
+        state
+      else
+        %__MODULE__{
+          state | items_per_box: new_per_box
+        }
+      end
+    end)
+  end
+end
+```
+
+We see that I define a struct (matter of preference), a module attribute named @views, and a few state transition functions that have their body wrapped in a `with_compute/1` call. This is a matter of preference too. I prefer calling an explicit view update function rather than writing a decorator macro or calculating a result then calling a state update function. The aesthetics of an explicit 0-arity function wrap feel better to me, but that's up to you.
+
+Here is how this with_compute wrapper is defined :
+
+```elixir
+def with_compute(fun) do
+  new_state = fun.()
+  Enum.reduce(@views, new_state, fn (view, state) ->
+    %__MODULE__{
+      state |
+        views: Map.put(state.views, view, compute_view(new_state, view))
+    }
+  end)
+end
+
+def compute_view(state, :item_count) do
+  length(state.items)
+end
+
+def compute_view(state, :boxes_count) do
+  trunc(length(state.items) / state.items_per_box)
+end
+```
+
+There are a few important things to observe :
+- Views compute their results with only accessing state, and not other views
+- This means that they are fully autonomous
+- We ensure this by passing `new_state` instead of `state` as a first argument in `compute_view/2` in the reduction.
+- We could even go further to make this intent clearer to another developer by reducing on `Enum.shuffle(@views)` instead of `@views`.
+
+The idea is that the views **do not form a dependency graph**. This means a single layer of computed views. This means no data dependencies in tests and thus no arcane state preparation work for tests. Every compute_view clause is a public testable pure function of the state. This already brings a lot of convenience to the developer while staying easy to reason about.
+
+### Pattern 2 : explicit data dependencies
+
+Let's say the items evolve a bit and can be red or blue. Let's forget the removal logic too.
+
+```elixir
+  def render(assigns) do
+    ~"""
+    <p>
+    There are {@state.views.item_count} items in a bag. <br/>
+    {@state.items_per_box} items can go in a box. <br/>
+    This means {@state.views.blue_boxes_count} are needed to box our blue items.<br/>
+    This means {@state.views.red_boxes_count} are needed to box our red items.<br/>
+    This means {@state.views.boxes_count} are needed.<br/>
+    </p>
+    <button phx-click="add_item" phx-value-color="blue">Add a blue item</button>
+    <button phx-click="add_item" phx-value-color="red">Add a red item</button>
+    """
+  end
+```
+
+Our event handler setup evolves a bit :
+
+```elixir
+def handle_event("add_item", %{"color"=> color}, socket) when color in ["red", "blue"] do
+  {:noreply, socket |> update_sample_state(fn v -> SampleState.add_item(v, color) end)}
+end
+```
+
+And our `SampleState` module changes too :
+
+```elixir
+  def make_item(color) do
+    case color do
+      "red" -> {:some_item, :red}
+      "blue" -> {:some_item, :blue}
+    end
+  end
+
+ def add_item(state, color) when color in ["red", "blue"] do
+    with_compute(fn () ->
+      item = make_item(color)
+      %__MODULE__{state | items: [item | state.items]}
+    end)
+  end
+```
+
+Let's forget how color is represented here. But we have red and blue items.
+
+Our template wants to display the total number of boxes.
+
+For that, it needs to know :
+- the number of red boxes
+- the number of blue boxes
+
+For those, it needs to know :
+- the number of blue items
+- the number of red items
+
+Note that we have a choice here. We can either represent dependencies as a list of lists&thinsp;:
+
+```elixir
+@views [
+  [:blue_items_count, :red_items_count],
+  [:blue_boxes_count, :red_boxes_count],
+  [:boxes_count]
+]
+```
+
+Where the vertical organization in layers makes it quite clear how ordering affects computation.
+
+But we could also think linearly :
+
+```elixir
+@views [:blue_items_count, :blue_boxes_count, :red_items_count, :red_boxes_count, :boxes_count]
+```
+
+But we could also think with a tree :
+
+```elixir
+@views {:boxes_count, [
+  {:blue_boxes_count, [
+    {:blue_items_count, []}
+  ]},
+  {:red_boxes_count, [
+    {:red_items_count, []}
+  ]}
+]}
+```
+
+And we could also think with a graph (but the example is a bit too simple to think about it as a graph) :
+
+```elixir
+@views %{
+  nodes: %{
+    a: :boxes_count,
+    b: :blue_boxes_count,
+    c: :blue_items_count,
+    d: :red_boxes_count,
+    e: :red_items_count,
+  },
+  edges: [{:a, :b}, {:a, :d}, {:b, :c}, {:d, :e}]
+}
+```
+
+All of those can be useful in different situations, though I would personnally think that if you need to resort to a tree or a graph of data dependencies in a liveview module for display reasons, you are doing something in a way that is too complex and should be thought again to stay at a flat data level.
+
+For all cases, the views now depend on each other :
+```elixir
+def count_by_color(items, color) do
+  Enum.reduce(items, 0, fn ({_, color}, sum) ->
+    case color do
+      ^color -> sum + 1
+      _ -> sum
+    end
+  end)
+end
+
+def compute_view(state, :blue_items_count) do
+  count_by_color(state.items, :blue)
+end
+
+def compute_view(state, :blue_boxes_count) do
+  trunc(state.views.blue_items_count / state.items_per_box)
+end
+
+def compute_view(state, :red_items_count) do
+  count_by_color(state.items, :red)
+end
+
+def compute_view(state, :red_boxes_count) do
+  trunc(state.views.red_items_count / state.items_per_box)
+end
+
+def compute_view(state, :boxes_count) do
+  state.views.red_boxes_count + state.views.blue_boxes_count
+end
+```
+
+For each of these cases, we can rewrite our with_compute function.
+The first case is easy : we pass the state from the previous iteration of the view reduction to the current view reduction, instead of passing the updated state without view updates.
+
+
+```elixir
+@views [:blue_items_count, :blue_boxes_count, :red_items_count, :red_boxes_count, :boxes_count]
+
+def with_compute(fun) do
+  new_state = fun.()
+  Enum.reduce(@views, new_state, fn (view, state) ->
+    %__MODULE__{
+      state |
+        views: Map.put(state.views, view, compute_view(state, view))
+    }
+  end)
+end
+```
+
+The second case is easy too : it reduces to the first one since there is no dependency in a layer, only dependencies between layers. So flattening the list of lists allows to keep the same implementation of with_compute.
+
+```elixir
+@views [
+  [:blue_items_count, :red_items_count],
+  [:blue_boxes_count, :red_boxes_count],
+  [:boxes_count]
+]
+
+def with_compute(fun) do
+  new_state = fun.()
+  Enum.reduce(List.flatten(@views), new_state, fn (view, state) ->
+    %__MODULE__{
+      state |
+        views: Map.put(state.views, view, compute_view(state, view))
+    }
+  end)
+end
+```
+
+The third state is a depth-first tree traversal :
+
+```elixir
+@views {:boxes_count, [
+  {:blue_boxes_count, [
+    {:blue_items_count, []}
+  ]},
+  {:red_boxes_count, [
+    {:red_items_count, []}
+  ]}
+]}
+
+def with_compute(fun) do
+  new_state = fun.()
+  compute_tree(new_state, @views)
+end
+
+defp compute_tree(state, {view, children}) do
+  state_with_children = Enum.reduce(children, state, fn child, acc ->
+    compute_tree(acc, child)
+  end)
+  %__MODULE__{
+    state_with_children |
+      views: Map.put(state_with_children.views, view, compute_view(state_with_children, view))
+  }
+end
+```
+
+The last one is a graph traversal, we need to find leaf nodes (nodes that have no dependencies in the graph) and compute them first, then work our way up to the top of the graph.
+
+At this point you should have red flags, warnings, and alarms firing.
+
+You didn't leave Vue or React with automatic dependency resolution just to recreate the same thing in Liveview
+
+```elixir
+@views %{
+  nodes: %{
+    a: :boxes_count,
+    b: :blue_boxes_count,
+    c: :blue_items_count,
+    d: :red_boxes_count,
+    e: :red_items_count,
+  },
+  edges: [{:a, :b}, {:a, :d}, {:b, :c}, {:d, :e}]
+}
+
+def with_compute(fun) do
+  new_state = fun.()
+  compute_graph(new_state, @views)
+end
+
+defp compute_graph(state, graph) do
+  leaf_nodes = get_leaf_nodes(graph.nodes, graph.edges)
+  Enum.reduce(leaf_nodes, state, fn node_id, acc_state ->
+    process_node(acc_state, node_id, graph)
+  end)
+end
+
+defp get_leaf_nodes(nodes, edges) do
+  non_leaves = MapSet.new(Enum.map(edges, fn {to, from} -> to end))
+  Map.keys(nodes) |> Enum.reject(fn node -> MapSet.member?(non_leaves, node) end)
+end
+
+defp process_node(state, node_id, graph) do
+  view = graph.nodes[node_id]
+
+  updated_state = %__MODULE__{
+    state |
+      views: Map.put(state.views, view, compute_view(state, view))
+  }
+
+  connected_edges = Enum.filter(graph.edges, fn {_to, from} -> from === node_id end)
+  connected_nodes = Enum.map(connected_edges, fn {to, _from} -> to end)
+
+  case connected_nodes do
+    [] -> updated_state
+    nodes -> Enum.reduce(nodes, updated_state, fn node, acc ->
+      process_node(acc, node, graph)
+    end)
+  end
+end
+```
+
+Personnally, I stick with the pattern 1 (single layer of little helpers without dependencies) or pattern 2 with a layered approach. More than that and the pattern turns against you.
+
+So, at the end of the day, I still feel this should stay in the land of pure functions. How we compute views on our data has little to do with Liveview which is really a transport layer to deliver an UI to an user, and a channel to get interactions from an user to our code.
+
+### Pattern 3 : automatic dependency resolution and computation
+
+Sorry ! Nothing to see here.
+
+I feel we do not need the "magic" of automatic dependency resolution between computed properties as this implies a runtime that overlooks data accesses and updates.
+
+In most React or Vue apps, this meant at some point that you had to have knowledge of this runtime, and discipline, to avoid dependency hell and unnecessary re-renders.
+
+Liveview gives us a chance to stay focused : data and computation belong to pure modules and functions. UI, view deliveries and interaction belong to a stateful transport process managed by Liveview.
+
+### A few notes on user interactions
+
+Sure, user interactions can be complex and often make mutation or statefulness desirable.
+
+With Liveview, I often resort to doing optimistic updates in JS for things like dragging an object on-screen, but at the end of the interaction (user releases the object), I send the pointer coordinates (or the target hovered zone, or any useful information), update state, and re-render.
+
+In other words I try to stay close to the Elm architecture.
+
+```
+View -> Events -> State update -> View
+```
+
+This does not forbids to be creative. How you update state can be quite subtle. Some UIs can benefit from altered takes on that by distinguishing between an user intent and an event.
+
+```
+View -> User intents -> Event log
+Event log -> Projected state -> View
+```
+
+All events originate from valid user intents, but all user intents cannot produce a valid event at a given point in time. This gives you a foundation for replayability and undo/redos.
