@@ -1,26 +1,39 @@
 ---
-import BaseHead from "../components/BaseHead.astro";
-import Header from "../components/Header.astro";
-import Footer from "../components/Footer.astro";
-import { SITE_TITLE, SITE_DESCRIPTION } from "../config";
 import { getCollection } from "astro:content";
-import Introduction from "../components/Introduction.astro";
+import BaseHead from "../../../components/BaseHead.astro";
+import Header from "../../../components/Header.astro";
+import Footer from "../../../components/Footer.astro";
+import { SITE_TITLE, SITE_DESCRIPTION } from "../../../config";
+import Introduction from "../../../components/Introduction.astro";
+
+export async function getStaticPaths() {
+    const tags = await getCollection("tags");
+    return tags.map((t) => ({
+        params: { id: t.id },
+        props: { tag: t },
+    }));
+}
+const { tag } = Astro.props;
+const tags = await getCollection("tags");
 
 const posts = Object.values(
-    import.meta.glob("./blog/*.{md,mdx}", { eager: true }),
-).sort(
-    (a, b) =>
-        new Date(b?.frontmatter?.pubDate).valueOf() -
-        new Date(a?.frontmatter?.pubDate).valueOf(),
-);
-
-const tags = await getCollection("tags");
+    import.meta.glob("./../*.{md,mdx}", { eager: true }),
+)
+    .sort(
+        (a, b) =>
+            new Date(b?.frontmatter?.pubDate).valueOf() -
+            new Date(a?.frontmatter?.pubDate).valueOf(),
+    )
+    .filter((p) => (p.frontmatter.tags || []).indexOf(tag.id) !== -1);
 ---
 
 <!doctype html>
 <html lang="en">
     <head>
-        <BaseHead title={SITE_TITLE + ""} description={SITE_DESCRIPTION} />
+        <BaseHead
+            title={SITE_TITLE + " - articles about " + tag.id}
+            description={SITE_DESCRIPTION}
+        />
         <style scoped>
             ul {
                 list-style-type: none;
@@ -82,10 +95,10 @@ const tags = await getCollection("tags");
     </head>
     <body>
         <Header have_langs={false} />
+        <Introduction tag={tag} />
         <main>
-            <Introduction />
-
             <div class="tags">
+                <a href="/"><span class="tag">All posts</span></a>
                 {
                     tags
                         .filter((t) => t.data.entries > 2)
