@@ -6,7 +6,7 @@ pubDate: "Apr 21 2025"
 tags: ["elixir", "programming"]
 ---
 
-On a project that has no database, hierarchical data, and a low amount of data, I tried to find a way to have the quickest data accesses as I could, while avoiding unnecessary copies of the data.
+On a project that has no database, hierarchical data, and a low amount of data, I tried to find a way to have the quickest data accesses as I could, while avoiding unnecessary copies of the data. The data is mapped so that every relation does not resolve to the target data but to a pointer to the data, meant to be lightweight to pass around and later dereferenced. This also helps in selectively updating the data structure without having to later rehydrate every single data piece.
 
 Here is how the data looks :
 
