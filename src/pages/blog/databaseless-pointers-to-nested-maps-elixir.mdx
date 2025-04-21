@@ -1,0 +1,336 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "Pointers to in-memory nested maps in Elixir and concurrent access patterns"
+description: "Benchmarking various ways of referencing nested maps and accessing them from various processes"
+pubDate: "Apr 21 2025"
+tags: ["elixir", "programming"]
+---
+
+On a project that has no database, hierarchical data, and a low amount of data, I tried to find a way to have the quickest data accesses as I could, while avoiding unnecessary copies of the data.
+
+Here is how the data looks :
+
+
+```elixir
+def sample_data() do
+    %{
+      lookup: %{
+        by_building: %{
+          bricks: %{
+            nil => [
+              %Core.Data.Models.Brick{
+                building: nil,
+                sibling: nil,
+                bundles: [],
+                product_price: Enum.random([40, 60]),
+                id: "bricks/marble-limestone-standard"
+              },
+              %Core.Data.Models.Brick{
+                building: nil,
+                sibling: nil,
+                bundles: [],
+                product_price: Enum.random([40, 60]),
+                id: "bricks/marble-limestone-special"
+              }
+            ],
+            "buildings/marble" => [
+              %Core.Data.Models.Brick{
+                building: Core.Data.Models.<SomePointer>.make(:buildings, "buildings/marble"),
+                sibling: Core.Data.Models.<SomePointer>.make(:bricks, "bricks/marble-special"),
+                bundles: [
+                  Core.Data.Models.<SomePointer>.make(:bundles, "bundles/promo-bundle-2025")
+                ],
+                product_price: Enum.random([40, 60]),
+                id: "bricks/marble-standard"
+              },
+              ...
+            ],
+          }
+        },
+        by_id: %{
+          bundles: %{
+            "bundles/promo-bundle-2025" => %Core.Data.Models.Bundle{
+              product_price: Enum.random([40, 60]),
+              id: "bundles/promo-bundle-2025"
+            }
+          },
+          collections: %{
+            "collections/marble-collection" => %Core.Data.Models.Collection{
+              product_price: Enum.random([40, 60]),
+              id: "collections/marble-collection"
+            }
+          },
+          buildings: %{
+            "buildings/marble" => %Core.Data.Models.Building{
+              product_price: Enum.random([40, 60]),
+              id: "buildings/marble"
+            },
+            "buildings/limestone" => %Core.Data.Models.Building{
+              product_price: Enum.random([40, 60]),
+              id: "buildings/limestone"
+            }
+          },
+          bricks: %{
+            "bricks/limestone-type-3" => %Core.Data.Models.Brick{
+              building:
+                Core.Data.Models.<SomePointer>.make(:buildings, "buildings/limestone"),
+              sibling: nil,
+              bundles: [
+                Core.Data.Models.<SomePointer>.make(:bundles, "bundles/promo-bundle-2025")
+              ],
+              product_price: Enum.random([40, 60]),
+              id: "bricks/limestone-type-3"
+            },
+            "bricks/limestone-line" => %Core.Data.Models.Brick{
+              building: nil,
+              sibling: nil,
+              bundles: [],
+              product_price: Enum.random([40, 60]),
+              id: "bricks/limestone-line"
+            },
+```
+
+You get the idea. Bricks relate to buildings and to other sibling bricks, they also can be included in bundles and collections. Everything can be indexed by type and id in this nested data structure. Relationships are modeled with a `<SomePointer>` function call.
+
+In benchmarking, I pass a map of pointers to dereference in this data structure :
+
+```elixir
+ def pointers() do
+    %{
+      bricks: %{
+        standard: Core.Data.Models.<SomePointer>.make(:bricks, "bricks/marble-standard"),
+        special: Core.Data.Models.<SomePointer>.make(:bricks, "bricks/marble-special"),
+        limestone_type_3: Core.Data.Models.<SomePointer>.make(:bricks, "bricks/limestone-type-3"),
+        limestone_line:
+          Core.Data.Models.<SomePointer>.make(:bricks, "bricks/limestone-line"),
+        limestone_line_special:
+          Core.Data.Models.<SomePointer>.make(:bricks, "bricks/limestone-line-special")
+      },
+      buildings: %{
+        marble: Core.Data.Models.<SomePointer>.make(:buildings, "buildings/marble"),
+        limestone:
+          Core.Data.Models.<SomePointer>.make(:buildings, "buildings/limestone")
+      },
+      bundles: %{
+        promo_2025: Core.Data.Models.<SomePointer>.make(:bundles, "bundles/promo-bundle-2025")
+      },
+      collections: %{
+        marble:
+          Core.Data.Models.<SomePointer>.make(:collections, "collections/marble-collection")
+      }
+    }
+  end
+```
+
+And then try to actually dereference all pointers.
+
+```elixir
+  def run_accesses(data, 30, p) do
+    brick = deref(data, p.bricks.standard)
+    brick_2 = deref(data, p.bricks.special)
+    brick_3 = deref(data, p.bricks.limestone_type_3)
+    building = deref(data, p.buildings.marble)
+    building_2 = deref(data, p.buildings.limestone)
+    bundle = deref(data, p.bundles.promo_2025)
+    brick_4 = deref(data, p.bricks.limestone_line)
+    brick_5 = deref(data, p.bricks.limestone_line_special)
+    collection = deref(data, p.collections.marble)
+    brick_6 = deref(data, brick.sibling)
+    brick_7 = deref(data, brick_3.building)
+    brick_8 = deref(data, brick_2.building)
+    brick_9 = deref(data, brick_2.sibling)
+    brick_10 = deref(data, p.bricks.standard)
+    brick_11 = deref(data, p.bricks.special)
+    brick_12 = deref(data, brick.bundles |> hd())
+    brick_13 = deref(data, brick_2.bundles |> hd())
+    brick_14 = deref(data, brick_3.bundles |> hd())
+    brick_15 = deref(data, p.bricks.limestone_type_3)
+    brick_16 = deref(data, brick_15.building)
+    building_3 = deref(data, p.buildings.marble)
+    building_4 = deref(data, p.buildings.limestone)
+    building_5 = deref(data, brick.building)
+    building_6 = deref(data, brick_2.building)
+    building_7 = deref(data, brick_3.building)
+    bundle_2 = deref(data, p.bundles.promo_2025)
+    bundle_3 = deref(data, brick.bundles |> hd())
+    bundle_4 = deref(data, brick_2.bundles |> hd())
+    bundle_5 = deref(data, brick_3.bundles |> hd())
+    brick_17 = deref(data, p.bricks.limestone_line)
+    brick_18 = deref(data, p.bricks.limestone_line_special)
+    brick_19 = deref(data, brick_9.sibling)
+    brick_20 = deref(data, brick_10.building)
+    collection_2 = deref(data, p.collections.marble)
+    collection_3 = deref(data, p.collections.marble)
+    brick_21 = deref(data, p.bricks.standard)
+    brick_22 = deref(data, brick_21.sibling)
+    brick_23 = deref(data, brick_22.building)
+    brick_24 = deref(data, brick_21.bundles |> hd())
+    brick_25 = deref(data, brick_22.bundles |> hd())
+  end
+```
+
+I tried five slighly different pointer types over this data structure.
+<br/>
+#### Struct pointer :
+
+Type and ID are saved in a struct, dereferencing is calling get_in/2
+
+```elixir
+defmodule Pointer do
+  defstruct ~w(type id)a
+  @types ~w(bricks buildings bundles collections)a
+  defp make(type, id) when type in @types do
+    %__MODULE__{
+      type: type,
+      id: id
+    }
+  end
+
+  def deref(%Pointer{type: t, id: id}, data), do: get_in(data, [:lookup, :by_id, t, id])
+end
+```
+<br/>
+
+#### List pointer :
+
+Type and ID are in a list, and deref/2 folds the list.
+
+```elixir
+def make(type, id) when type in @types do
+  [:lookup, :by_id, type, id]
+end
+
+def deref(data, []), do: data
+def deref(data, [x | xs]), do: deref(data[x], xs)
+```
+<br/>
+
+#### Closure with get_in/2 :
+
+The pointer itself is an access closure that is passed around.
+
+```elixir
+def make(type, id) when type in @types do
+  fn data -> get_in(data, [:lookup, :by_id, type, id]) end
+end
+def deref(data, pointer), do: pointer.(data)
+```
+<br/>
+#### Closure with pattern match :
+
+The pointer is a closure that contains a pattern match with pinned keys.
+
+```elixir
+def make(type, id) when type in @types do
+  fn data ->
+    case data do
+      %{lookup: %{by_id: %{^type => %{^id => res}}}} -> res
+      _ -> nil
+    end
+  end
+end
+def deref(data, pointer), do: pointer.(data)
+```
+<br/>
+#### Closure with explicit access :
+
+```elixir
+def make(type, id) when type in @types do
+  fn data ->
+    data.lookup.by_id[type][id]
+  end
+end
+def deref(data, pointer), do: pointer.(data)
+```
+
+### Benchmarking
+
+I then proceeded to run Benchee benchmarks, with six different access modes to the data. Before running, the data was first copied to a Cachex key, put in a single globally named process, and put in another 10 globally named processes (:data_holder_n).
+
+50 async tasks were launched and awaited to all complete the run_accesses/3 function which accesses 30 pointers.
+
+The six access modes were the following :
+
+- Call sample_data() and run accesses over the result (named _static).
+- Call Cachex.get and run accesses over the result (named _cachex).
+- Copy the data from the single process and run accesses over the result (named _from_process).
+- Copy the data from a random process in the 10 and run accesses over the result (named _from_random_process).
+- Send the access function to the single process (named _through_process).
+- Send the access function to a random process in the 10 (named _through_random_process).
+
+### Results
+
+Without too much surprise, the explicit written-out access syntax in a closure was the fastest, with similar times to the pattern matching closure. Times are very, very similar. The emitted BEAM assembly is quite different, with the access syntax resulting in a very longer assembly than the pattern matching variant, but the general pattern of access/pattern matching is similar and that shows in the results.
+
+To visualize the assembly, I used "mix decompile" from M.Muskała : https://github.com/michalmuskala/decompile
+
+```
+Explicit access closure
+Name                                    ips        average
+access_parallel_through_process              2.64 K      379.46 μs
+access_parallel_static                      2.39 K      418.97 μs
+access_parallel_from_process                 2.16 K      462.46 μs
+access_parallel_cachex                      1.90 K      525.60 μs
+access_parallel_through_random_process       1.88 K      531.60 μs
+access_parallel_from_random_process          1.78 K      562.07 μs
+
+Pattern matching closure
+Name                                    ips        average
+pattern_parallel_through_process              2.63 K      380.09 μs
+pattern_parallel_static                      2.41 K      415.55 μs
+pattern_parallel_from_process                 2.14 K      466.97 μs
+pattern_parallel_through_random_process       1.99 K      502.30 μs
+pattern_parallel_cachex                      1.86 K      537.64 μs
+pattern_parallel_from_random_process          1.72 K      583.02 μs
+
+Lists
+Name                                    ips        average
+lists_parallel_through_process              2.50 K      400.69 μs
+lists_parallel_static                      2.29 K      435.81 μs
+lists_parallel_from_process                 2.04 K      489.65 μs
+lists_parallel_through_random_process       1.95 K      511.91 μs
+lists_parallel_cachex                      1.81 K      552.25 μs
+lists_parallel_from_random_process          1.74 K      574.58 μs
+
+Get_in closure
+Name                                    ips        average
+get_in_parallel_through_process              2.18 K      457.84 μs
+get_in_parallel_static                      2.01 K      496.82 μs
+get_in_parallel_through_random_process       1.88 K      530.54 μs
+get_in_parallel_from_process                 1.82 K      550.67 μs
+get_in_parallel_cachex                      1.80 K      556.36 μs
+get_in_parallel_from_random_process          1.59 K      628.50 μs
+
+Structs
+Name                                    ips        average
+struct_parallel_through_process              2.09 K      478.76 μs
+struct_parallel_through_random_process       1.88 K      531.44 μs
+struct_parallel_static                      1.86 K      536.52 μs
+struct_parallel_from_process                 1.79 K      557.28 μs
+struct_parallel_from_random_process          1.72 K      583.08 μs
+struct_parallel_cachex                      1.57 K      635.48 μs
+```
+
+Lists follow closely, then calls to get_in in a closure, and lastly, calls to get_in from struct fields. I thought Cachex would be higher in my tests.
+
+### Data provenance
+
+The single process computing the access in its own memory space was consistently the fastest, meaning that the scale of accesses does not justify a pool of processes, for which the cost of choosing one is high relative to the computation done. This also means the single process is able to process the 1500 requests sequentially at a high enough speed that it does not become a bottleneck.
+
+The versions that create data (static, from_process, from_random_process) are quite inefficient compared to message passing a result.
+
+So, on my computer, 1500 requests * 2640 iterations / second means 3,96 millions of indexings in this nested data structure per second. The website that is going to use that will run on lower-end hardware, but not that much lower.
+
+Let's conservatively say it is 10x less powerful, giving a bandwidth of 396k data accesses per second.
+
+Accesses only occur on mount of a specific liveview, and a mean of 180 accesses is needed for the page to be built. This means every second, we can index in this data structure in the required quantity 2200 times.
+
+This b2b website currently has 30 people interacting with this page per day. I would say there is room for growth.
+
+### What about the database ?
+
+So, do we need a database in this case ? Maybe we would like to persist this data structure somewhere. Maybe a database is the right place for that. But should we interact with the database for data accesses ? I would be inclined to say that in some cases, the right answer is no.
+
+By only using the DB for persistence and seeding a system after restarts, and thinking about access patterns, we can get so much better developer and testing ergonomics when every computation is on pure data, maybe guarded by processes if that is relevant. This data structure which is quite compact and isn't updated often naturally suits itself to distribution, since every node could hold a few copies in memory.
+
+On another scale, I invite you to check out this talk from Bryan Hunter about an highly available, distributed erlang system that does not use any kind of persistence : https://www.youtube.com/watch?v=pQ0CvjAJXz4.
