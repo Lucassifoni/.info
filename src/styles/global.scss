@@ -242,15 +242,6 @@ ul ul {
         background: rgb(163, 225, 163);
     }
 
-    &.maintain {
-        background: rgb(212, 211, 211);
-    }
-
-    &.laravel {
-        background: rgb(236, 91, 115);
-        color: white;
-    }
-
     &.rust {
         background: chocolate;
         color: white;
@@ -265,26 +256,38 @@ ul ul {
         background: gold;
     }
 
-    &.php,
-    &.wp {
-        background: darkblue;
+    &.programming {
+        background: rgb(255, 182, 193);
+    }
+
+    &.talk {
+        background: rgb(135, 206, 235);
+    }
+
+    &.parsing {
+        background: rgb(152, 251, 152);
+    }
+
+    &.hardware {
+        background: rgb(221, 160, 221);
         color: white;
     }
 
-    &.node {
-        background: green;
+    &.chemistry {
+        background: rgb(100, 200, 100);
+    }
+
+    &.print-in-3d {
+        background: rgb(200, 100, 200);
+    }
+
+    &.graphics {
+        background: rgb(100, 100, 200);
         color: white;
     }
 
-    &.w2p,
-    &.etl,
-    &.ovo2 {
-        background: rgb(128, 126, 126);
-        color: white;
-    }
-
-    &.kirby {
-        background: lightpink;
+    &.nerves {
+        background: rgb(200, 150, 150);
     }
 }
 
