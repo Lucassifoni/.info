@@ -3,6 +3,7 @@ import BaseHead from "../components/BaseHead.astro";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import Navigation from "../components/Navigation.astro";
+import RelatedPosts from "../components/RelatedPosts.astro";
 import Alchemist from "../components/Alchemist.astro";
 import { SITE_TITLE } from "../config";
 
@@ -102,7 +103,15 @@ const {
 
             {(tags || []).some((t) => t === "elixir") ? <Alchemist /> : <div />}
 
-            <Navigation me={url} />
+            {
+                (tags || []).length > 0 && (
+                    <RelatedPosts
+                        currentTags={tags || []}
+                        currentUrl={url}
+                        minCommonTags={1}
+                    />
+                )
+            }
         </main>
         <Footer />
     </body>

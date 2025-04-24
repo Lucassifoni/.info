@@ -1,0 +1,118 @@
+---
+export interface Props {
+    currentTags: string[];
+    currentUrl: string;
+    limit?: number;
+    minCommonTags?: number;
+}
+
+const {
+    currentTags = [],
+    currentUrl,
+    limit = 5,
+    minCommonTags = 1,
+} = Astro.props;
+
+if (!currentTags || currentTags.length === 0) {
+    return null;
+}
+
+const currentPostDate = new Date(
+    Object.values(
+        import.meta.glob("/src/pages/blog/*.{md,mdx}", { eager: true }),
+    ).find((post) => post.url === currentUrl)?.frontmatter?.pubDate ||
+        new Date(),
+);
+
+const posts = Object.values(
+    import.meta.glob("/src/pages/blog/*.{md,mdx}", { eager: true }),
+)
+    .filter((post) => {
+        if (post.url === currentUrl) return false;
+        const postDate = new Date(post.frontmatter?.pubDate);
+        return postDate < currentPostDate;
+    })
+    .map((post) => ({
+        ...post,
+        commonTags: (post.frontmatter?.tags || []).filter((tag) =>
+            currentTags.includes(tag),
+        ),
+    }))
+    .filter((post) => post.commonTags.length >= minCommonTags)
+    .sort((a, b) => {
+        if (b.commonTags.length !== a.commonTags.length) {
+            return b.commonTags.length - a.commonTags.length;
+        }
+        return (
+            new Date(b.frontmatter?.pubDate).valueOf() -
+            new Date(a.frontmatter?.pubDate).valueOf()
+        );
+    })
+    .slice(0, limit);
+
+if (posts.length === 0) return null;
+---
+
+<div class="related-posts">
+    <h3>Related previous articles</h3>
+    <ul>
+        {
+            posts.map((post) => (
+                <li>
+                    <a
+                        href={post.url}
+                        set:html={post.frontmatter?.title.replace(
+                            "--",
+                            "<br/>",
+                        )}
+                    />
+                    <div class="tags">
+                        {post.commonTags.map((tag) => (
+                            <a href={"/blog/tag/" + tag}>
+                                <span class={`tag ${tag}`}>{tag}</span>
+                            </a>
+                        ))}
+                    </div>
+                </li>
+            ))
+        }
+    </ul>
+</div>
+
+<style>
+    .related-posts {
+        margin: 1.5rem 0;
+        padding-top: 1rem;
+        border-top: 1px solid #eee;
+    }
+
+    .related-posts h3 {
+        font-size: 1.2em;
+        margin-bottom: 1rem;
+    }
+
+    .related-posts ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .related-posts li {
+        margin-bottom: 0.8rem;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .related-posts a {
+        color: inherit;
+        text-decoration: none;
+    }
+
+    .related-posts a:hover {
+        text-decoration: underline;
+    }
+
+    .tags {
+        margin-top: 0.3rem;
+    }
+</style>
