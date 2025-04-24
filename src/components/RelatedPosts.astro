@@ -67,7 +67,7 @@ if (posts.length === 0) return null;
                         )}
                     />
                     <div class="tags">
-                        {post.commonTags.map((tag) => (
+                        {(post.frontmatter?.tags || []).map((tag) => (
                             <a href={"/blog/tag/" + tag}>
                                 <span class={`tag ${tag}`}>{tag}</span>
                             </a>
