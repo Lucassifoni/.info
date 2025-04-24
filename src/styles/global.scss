@@ -224,8 +224,18 @@ ul ul {
 
     &.elixir,
     &.bumblebee {
-        background: rgb(205, 136, 205);
+        background: rgba(119, 77, 187, 1);
         color: white;
+    }
+
+    &.liveview {
+        background: rgb(119, 77, 187);
+        color: white;
+        background: linear-gradient(
+            148deg,
+            rgba(119, 77, 187, 1) 0%,
+            rgba(175, 103, 232, 1) 100%
+        );
     }
 
     &.erlang {
@@ -257,7 +267,8 @@ ul ul {
     }
 
     &.programming {
-        background: rgb(255, 182, 193);
+        background: rgb(155, 182, 193);
+        color: white;
     }
 
     &.talk {

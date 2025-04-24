@@ -3,7 +3,7 @@ layout: "../../layouts/BlogPost.astro"
 title: "What if LiveView gave DOM access to Elixir ?"
 description: "An experiment in filling in the imperative parts of interaction-heavy UIs in Elixir"
 pubDate: "Aug 5 2024"
-tags: ["elixir", "programming"]
+tags: ["elixir", "programming", "liveview"]
 ---
 
 ### Background :
@@ -192,7 +192,7 @@ Maybe you even tried some hacks with on-the-fly classes generation and JS comman
 - A `Sequence` uses this property to schedule `Batches` in-order, akin to the classic sequential execution of promises with `then`+`reduce` in JS.
 - A nested list of `Batches` of `Commands` is rendered to a hidden `<div>`. By this, I mean a literal `<ul>` for each `Batch` and a nested `<li>` tag for each `Command` in a `Batch`.
 - All `<li>` tags have a `phx-hook` property that triggers the `DOMStuff` hook. Inside it, I translate the snake_case command names, split nested property accesses, test if the target property is a function or not, and either read or write the property if it is not a function. The result of this read/write/call triggers an event.
-- Events are handled by a nested data structure that represents ongoning `Batches`, and for each reply, check if the batch is complete or not. 
+- Events are handled by a nested data structure that represents ongoning `Batches`, and for each reply, check if the batch is complete or not.
 - When a reply from a single operation, or a closing batch reply comes in, the individual and batch-related callbacks are run, allowing the user to store or further process the information gathered from JS.
 
 ### Current point of view
