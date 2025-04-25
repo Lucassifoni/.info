@@ -1,9 +1,9 @@
 ---
 layout: "../../layouts/BlogPost.astro"
 title: "Periodic averages with overflowing buckets"
-description: "Keeping windowed averages periodic values"
+description: "Comparing circular buffer vs cascading bucket approaches for time-windowed data averages in Elixir for embedded systems"
 pubDate: "Aug 23 2023"
-tags: ["elixir", "programming"]
+tags: ["elixir", "programming", "algorithms", "performance"]
 ---
 
 I recently had the need of keeping track of time-windowed averages of values emitted by a periodic system `(f = 2 Hz)`, on a constrained system (1GHz single-core SOC). The general idea is that a pulse emits a floating point value every `500ms`, and I must keep track of the average value over `the last 1s`, `the last 5s`, up to a two week time span.
@@ -119,7 +119,7 @@ end
 
 We keep track of the number of items placed in the bucket, to avoid expensive `length` calls. The `stamp` function adds metadata to every value, but that's not really relevant here. We pattern match on `capacity == number of items` by matching both keys with `s` to detect an overflow condition. We also update the bucket's current average value.
 
-```elixir 
+```elixir
   def push(%__MODULE__{capacity: s, items: s, values: vs} = b, value) do
     avg = (vs |> Enum.map(&elem(&1, 0)) |> Enum.sum()) / s
     {:overflowed,
@@ -148,7 +148,7 @@ We keep track of the number of items placed in the bucket, to avoid expensive `l
   end
 ```
 
-Usage is then quite easy : 
+Usage is then quite easy :
 
 ``` elixir
     test "bucket pushing" do
@@ -230,7 +230,7 @@ end
 
 ```
 
-Using this module, our alternate `TimeValues` implementation looks like this : 
+Using this module, our alternate `TimeValues` implementation looks like this :
 
 ```elixir
 defmodule TimeBuckets do

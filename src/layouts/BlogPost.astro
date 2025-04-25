@@ -15,12 +15,26 @@ export interface Props {
         updatedDate?: string;
         heroImage?: string;
         tags?: string[];
+        url?: string;
+        author?: string;
     };
 }
 
 const {
-    content: { url, title, description, pubDate, updatedDate, heroImage, tags },
+    content: {
+        url,
+        title,
+        description,
+        pubDate,
+        updatedDate,
+        heroImage = "/cover.png",
+        tags = [],
+        author = "Lucas Sifoni",
+    },
 } = Astro.props;
+
+// Generate canonical URL
+const canonicalURL = url ? new URL(url, Astro.site) : Astro.url;
 ---
 
 <html lang="en">
@@ -28,6 +42,13 @@ const {
         <BaseHead
             title={SITE_TITLE + " - " + title}
             description={description}
+            image={heroImage}
+            canonical={canonicalURL.pathname}
+            publishDate={pubDate}
+            modifiedDate={updatedDate}
+            type="article"
+            tags={tags}
+            author={author}
         />
         <style>
             .title {
@@ -59,17 +80,6 @@ const {
         <Header have_langs={false} />
         <main>
             <article>
-                {
-                    heroImage && (
-                        <img
-                            width={720}
-                            height={360}
-                            style="width:100%;height:auto;"
-                            src={heroImage}
-                            alt=""
-                        />
-                    )
-                }
                 <h1 class="title" set:html={title.replace("--", "<br/>")} />
                 {
                     (tags || []).length && (

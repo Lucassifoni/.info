@@ -31,8 +31,11 @@ const posts = Object.values(
 <html lang="en">
     <head>
         <BaseHead
-            title={SITE_TITLE + " - articles about " + tag.id}
-            description={SITE_DESCRIPTION}
+            title={SITE_TITLE + " - Articles about " + tag.id}
+            description={`Browse all articles about ${tag.id} - ${SITE_DESCRIPTION}`}
+            image="/cover.png"
+            type="website"
+            tags={[tag.id]}
         />
         <style scoped>
             ul {

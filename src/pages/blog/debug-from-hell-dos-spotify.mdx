@@ -1,12 +1,12 @@
 ---
 layout: "../../layouts/BlogPost.astro"
 title: "Absurd debug : why is the website DOSing Spotify ?"
-description: "Root cause analysis of a seemingly overloaded website"
+description: "A detective story of 18k outbound requests per minute from a WordPress site to Spotify - tracing back to uncached oEmbed fields and bot traffic"
 pubDate: "Feb 10 2024"
-tags: ["debug"]
+tags: ["debug", "web", "performance"]
 ---
 
-For a bit of context, I help keep alive a french music-oriented website, before an upcoming overhaul. Technically, it is the typical nobody-knows-how-it-still runs Wordpress that has been put together with a bunch of plug-ins having side effects all around that you cannot decently reason about. Touching anything breaks something elsewhere, and knowledge of the inner workings has been lost as the original builders left. 
+For a bit of context, I help keep alive a french music-oriented website, before an upcoming overhaul. Technically, it is the typical nobody-knows-how-it-still runs Wordpress that has been put together with a bunch of plug-ins having side effects all around that you cannot decently reason about. Touching anything breaks something elsewhere, and knowledge of the inner workings has been lost as the original builders left.
 
 The website runs on shared hosting, which should be 10 to 100 times over-powered for the kind of content served. But somehow the site slows down to being totally unavailable for a full day at times.
 
@@ -14,7 +14,7 @@ With the shared hosting provider's logs, I noticed the website somehow started t
 
 ![](/pics/debug-dos-spotify/01.png)
 
-Most requests issued a 5XX response, until that same moment (light blue is 5XX, darker blue is 2XX). There was a sudden peak of 5XX a bit later, that I will have to investigate too, but nothing too bad compared to the rest of the day : 
+Most requests issued a 5XX response, until that same moment (light blue is 5XX, darker blue is 2XX). There was a sudden peak of 5XX a bit later, that I will have to investigate too, but nothing too bad compared to the rest of the day :
 
 ![](/pics/debug-dos-spotify/02.png)
 
@@ -52,7 +52,7 @@ I started to have a very strong suspicion that the "structured fields" plug-in d
 A bit of googling landed me on this plug-in's support forum, where someone asked this very question in February 2018.
 
 <blockquote>
-Q : Is the Embed field result cached like it is when added in the content of a post? Or is a call made to the Embed service each time the page is loaded?  
+Q : Is the Embed field result cached like it is when added in the content of a post? Or is a call made to the Embed service each time the page is loaded?
 A : Unfortunately, a call is made each time.
 </blockquote>
 

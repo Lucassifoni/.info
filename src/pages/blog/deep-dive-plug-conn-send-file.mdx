@@ -1,9 +1,9 @@
 ---
 layout: "../../layouts/BlogPost.astro"
 title: "Let's dive deep into Plug.Conn.send_file/5"
-description: "Going through layers of source code to see how exactly a file response gets sent."
+description: "A code archaeology expedition from Elixir through Erlang to C - tracing how send_file uses the Linux kernel's zero-copy optimization for file transfers"
 pubDate: "Nov 10 2023"
-tags: ["elixir", "erlang", "exploration"]
+tags: ["elixir", "erlang", "exploration", "performance", "web-server"]
 ---
 
 Let's dive into Plug.Conn.send_file/5, because we can find a lot of questioning online about this one.

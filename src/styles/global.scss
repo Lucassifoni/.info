@@ -258,6 +258,7 @@ ul ul {
     }
 
     &.iot,
+    &.IoT,
     &.typescript {
         background: lightblue;
     }
@@ -299,6 +300,239 @@ ul ul {
 
     &.nerves {
         background: rgb(200, 150, 150);
+    }
+
+    &.programming-language {
+        background: rgb(190, 170, 220);
+        color: white;
+    }
+
+    &.performance {
+        background: rgb(255, 140, 0);
+        color: white;
+    }
+
+    &.telescope {
+        background: rgb(70, 130, 180);
+        color: white;
+    }
+
+    &.mirror-making {
+        background: rgb(192, 192, 192);
+    }
+
+    &.web-development {
+        background: rgb(102, 205, 170);
+    }
+
+    &.\33 d-printing {
+        background: rgb(219, 112, 147);
+        color: white;
+    }
+
+    &.whisper {
+        background: rgb(110, 123, 139);
+        color: white;
+    }
+
+    &.distribution {
+        background: rgb(205, 133, 63);
+        color: white;
+    }
+
+    &.telescope-making {
+        background: rgb(112, 128, 144);
+        color: white;
+    }
+
+    &.design {
+        background: rgb(221, 160, 221);
+    }
+
+    &.gamedev,
+    &.game-development {
+        background: rgb(255, 69, 0);
+        color: white;
+    }
+
+    &.data-structures {
+        background: rgb(60, 179, 113);
+    }
+
+    &.benchmarking {
+        background: rgb(255, 215, 0);
+    }
+
+    &.debug {
+        background: rgb(178, 34, 34);
+        color: white;
+    }
+
+    &.web {
+        background: rgb(135, 206, 250);
+    }
+
+    &.exploration {
+        background: rgb(189, 183, 107);
+    }
+
+    &.web-server {
+        background: rgb(72, 209, 204);
+    }
+
+    &.nif {
+        background: rgb(238, 130, 238);
+    }
+
+    &.beam {
+        background: rgb(46, 139, 87);
+        color: white;
+    }
+
+    &.iot {
+        background: rgb(30, 144, 255);
+        color: white;
+    }
+
+    &.art-installation {
+        background: rgb(218, 112, 214);
+        color: white;
+    }
+
+    &.podcast {
+        background: rgb(210, 105, 30);
+        color: white;
+    }
+
+    &.automation {
+        background: rgb(95, 158, 160);
+    }
+
+    &.langdev {
+        background: rgb(139, 69, 19);
+        color: white;
+    }
+
+    &.git,
+    &.github,
+    &.version-control {
+        background: rgb(105, 105, 105);
+        color: white;
+    }
+
+    &.atomvm {
+        background: rgb(255, 99, 71);
+        color: white;
+    }
+
+    &.esp32 {
+        background: rgb(0, 128, 128);
+        color: white;
+    }
+
+    &.embedded {
+        background: rgb(255, 140, 0);
+        color: white;
+    }
+
+    &.machine-learning {
+        background: rgb(75, 0, 130);
+        color: white;
+    }
+
+    &.interop {
+        background: rgb(106, 90, 205);
+        color: white;
+    }
+
+    &.compilers {
+        background: rgb(165, 42, 42);
+        color: white;
+    }
+
+    &.file-formats {
+        background: rgb(0, 139, 139);
+        color: white;
+    }
+
+    &.user-experience {
+        background: rgb(222, 184, 135);
+    }
+
+    &.security {
+        background: rgb(139, 0, 0);
+        color: white;
+    }
+
+    &.interferometry {
+        background: rgb(0, 100, 0);
+        color: white;
+    }
+
+    &.open-hardware {
+        background: rgb(255, 165, 0);
+    }
+
+    &.ovo {
+        background: rgb(138, 43, 226);
+        color: white;
+    }
+
+    &.algorithms {
+        background: rgb(85, 107, 47);
+        color: white;
+    }
+
+    &.phoenix {
+        background: rgb(255, 69, 0);
+        color: white;
+    }
+
+    &.cad,
+    &.CAD {
+        background: rgb(70, 130, 180);
+        color: white;
+    }
+
+    &.mac {
+        background: rgb(211, 211, 211);
+    }
+
+    &.two-dimensions {
+        background: rgb(152, 251, 152);
+    }
+
+    &.hyperbolic {
+        background: rgb(186, 85, 211);
+        color: white;
+    }
+
+    &.blogging {
+        background: rgb(255, 182, 193);
+    }
+
+    &.three\.js {
+        background: rgb(100, 149, 237);
+        color: white;
+    }
+
+    &.photography {
+        background: rgb(25, 25, 112);
+        color: white;
+    }
+
+    &.zoneplate {
+        background: rgb(153, 102, 204);
+        color: white;
+    }
+
+    &.pinhole {
+        background: rgb(85, 107, 47);
+        color: white;
+    }
+
+    &.javascript {
+        background: rgb(240, 230, 140);
     }
 }
 

@@ -20,7 +20,12 @@ const tags = await getCollection("tags");
 <!doctype html>
 <html lang="en">
     <head>
-        <BaseHead title={SITE_TITLE + ""} description={SITE_DESCRIPTION} />
+        <BaseHead
+            title={SITE_TITLE}
+            description={SITE_DESCRIPTION}
+            image="/cover.png"
+            type="website"
+        />
         <style scoped>
             ul {
                 list-style-type: none;
