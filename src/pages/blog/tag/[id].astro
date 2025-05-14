@@ -104,10 +104,12 @@ const posts = Object.values(
                 <a href="/"><span class="tag">All posts</span></a>
                 {
                     tags
-                        .filter((t) => t.data.entries > 2)
+                        .filter((t) => t.data.entries > 3)
                         .map((t) => (
                             <a href={"/blog/tag/" + t.id}>
-                                <span class={"tag " + t.id}>{t.id}</span>
+                                <span class={"tag " + t.id}>
+                                    {t.id} ({t.data.entries - 1})
+                                </span>
                             </a>
                         ))
                 }
