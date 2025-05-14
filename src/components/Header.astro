@@ -2,54 +2,58 @@
 import HeaderLink from "./HeaderLink.astro";
 const { have_langs } = Astro.props;
 const active_lang = Astro.url.toString().includes("/fr") ? "fr" : "en";
-const fren = (a: string, b: string) => active_lang === 'fr' ? a : b;
-const parts = Astro.url.pathname.slice(1).split('/');
-const no_lang = parts.filter((a, i) => !(i === 0 && a === 'fr'));
-const url_fr = '/' + ['fr'].concat(no_lang).join('/');
-const url_en = '/' + no_lang.join('/'); 
+const fren = (a: string, b: string) => (active_lang === "fr" ? a : b);
+const parts = Astro.url.pathname.slice(1).split("/");
+const no_lang = parts.filter((a, i) => !(i === 0 && a === "fr"));
+const url_fr = "/" + ["fr"].concat(no_lang).join("/");
+const url_en = "/" + no_lang.join("/");
 ---
 
 <header>
-	<h2><a href="/" style="text-decoration: none;">Lucas Sifoni</a></h2>
+    <h2><a href="/" style="text-decoration: none;">Lucas Sifoni</a></h2>
 </header>
 <style lang="scss">
-	header {
-		margin: 0em 0 2em;
-		a {
-			display: inline-block;
-			margin-right: 0.5ch;
-		}
-		a:last-child {
-			&::after {
-				content: "";
-			}
-		}
-		a[href*="cv"] {
-			&::after {
-				content: "";
-			}
-		}
-		nav {
-			display: flex;
-		}
-		span.lang_selector {
-			display: inline-block;
-			margin-left: auto;
-			a {
-				text-decoration: none;
-			}
-			a.active {
-				text-decoration: underline;
-			}
-		}
-	}
-	@media screen and (max-width: 600px) {
-		nav {
-			flex-wrap: wrap;
-		}
-		span.lang_selector {
-			display: block;
-			flex: 0 0 100%;
-		}
-	}
+    header {
+        h2 {
+            font-weight: 400;
+            margin: 0;
+        }
+        margin: 0;
+        a {
+            display: inline-block;
+            margin-right: 0.5ch;
+        }
+        a:last-child {
+            &::after {
+                content: "";
+            }
+        }
+        a[href*="cv"] {
+            &::after {
+                content: "";
+            }
+        }
+        nav {
+            display: flex;
+        }
+        span.lang_selector {
+            display: inline-block;
+            margin-left: auto;
+            a {
+                text-decoration: none;
+            }
+            a.active {
+                text-decoration: underline;
+            }
+        }
+    }
+    @media screen and (max-width: 600px) {
+        nav {
+            flex-wrap: wrap;
+        }
+        span.lang_selector {
+            display: block;
+            flex: 0 0 100%;
+        }
+    }
 </style>
