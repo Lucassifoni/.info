@@ -4,4 +4,3 @@
 export const SITE_TITLE = "Lucas Sifoni";
 export const SITE_DESCRIPTION =
   "Independent Elixir/Beam developer. Articles on programming, optics, astronomy";
-export const DISPLAY_ALCHEMIST_BAND = true;
