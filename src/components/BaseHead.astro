@@ -84,7 +84,12 @@ const canonicalURL = new URL(canonical, Astro.site);
     "dateModified": modifiedDate ? new Date(modifiedDate).toISOString() : null,
     "author": {
       "@type": "Person",
-      "name": author
+      "@id": new URL("/#person", Astro.site).toString(),
+      "name": author,
+      "url": Astro.site?.toString(),
+      "jobTitle": "Independent Elixir/BEAM Developer",
+      "knowsAbout": ["Elixir", "BEAM", "Programming", "Optics", "Astronomy"],
+      "sameAs": []
     },
     "mainEntityOfPage": {
       "@type": "WebPage",
@@ -93,18 +98,39 @@ const canonicalURL = new URL(canonical, Astro.site);
     "keywords": tags.join(", "),
     "publisher": {
       "@type": "Person",
+      "@id": new URL("/#person", Astro.site).toString(),
       "name": author,
+      "url": Astro.site?.toString(),
       "logo": {
         "@type": "ImageObject",
         "url": new URL("/favicon.png", Astro.site).toString()
       }
-    }
+    },
+    "articleSection": tags.length > 0 ? tags[0] : "Technology",
+    "wordCount": null,
+    "inLanguage": "en-US"
   } : {
     "@context": "https://schema.org",
-    "@type": "WebSite",
+    "@type": ["WebSite", "Person"],
+    "@id": new URL("/#person", Astro.site).toString(),
     "name": "Lucas Sifoni",
     "description": description,
-    "url": Astro.site?.toString()
+    "url": Astro.site?.toString(),
+    "jobTitle": "Independent Elixir/BEAM Developer",
+    "knowsAbout": ["Elixir", "BEAM", "Programming", "Optics", "Astronomy"],
+    "sameAs": [],
+    "mainEntity": {
+      "@type": "Blog",
+      "name": "Lucas Sifoni's Blog",
+      "description": "Articles on programming, optics, astronomy",
+      "url": new URL("/blog", Astro.site).toString(),
+      "author": {
+        "@type": "Person",
+        "@id": new URL("/#person", Astro.site).toString(),
+        "name": author
+      },
+      "inLanguage": "en-US"
+    }
   }
 )} />
 

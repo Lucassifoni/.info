@@ -1,0 +1,136 @@
+---
+import BaseHead from "../components/BaseHead.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import { getCollection } from "astro:content";
+
+const people = await getCollection("people");
+---
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <BaseHead
+            title="People - Lucas Sifoni"
+            description="What people around me are up to"
+            type="website"
+        />
+        <style scoped>
+            ul {
+                width: 100%;
+                list-style-type: none;
+                padding: unset;
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 0.75em;
+            }
+
+            ul li {
+                display: flex;
+                flex-direction: column;
+                padding: 0.4em;
+                padding-left: 0;
+                border-radius: 3px;
+                border-bottom: 1px dotted #ccc;
+                padding-bottom: 0.6em;
+            }
+
+            ul li h3 {
+                margin: 0 0 0.25em 0;
+                color: #000;
+                font-weight: 400;
+                font-size: 0.9em;
+                line-height: 1.2;
+            }
+
+            ul li p {
+                margin: 0 0 0.4em 0;
+                color: #555;
+                line-height: 1.3;
+                font-size: 0.8em;
+            }
+
+            ul li a {
+                color: #0066cc;
+                text-decoration: none;
+                font-weight: 500;
+                font-size: 0.8em;
+            }
+
+            ul li a:hover {
+                text-decoration: underline;
+            }
+
+            ul li a:visited {
+                color: #0066cc;
+            }
+
+            main {
+                max-width: 1000px;
+                margin: 0 auto;
+            }
+
+            h1,
+            h2 {
+                margin-bottom: 1em;
+                margin-top: 1.8em;
+                color: #000;
+                font-weight: 400;
+            }
+
+            @media screen and (max-width: 1100px) {
+                ul {
+                    grid-template-columns: repeat(3, 1fr);
+                }
+            }
+
+            @media screen and (max-width: 800px) {
+                ul {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+                main {
+                    max-width: 800px;
+                }
+            }
+
+            @media screen and (max-width: 500px) {
+                ul {
+                    grid-template-columns: 1fr;
+                }
+                ul li {
+                    padding-bottom: 0.8em;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <Header have_langs={false} />
+        <h2>People</h2>
+        <p>
+            What people are up to. It's a mixed bag of friends, professionnal
+            relations, and people I like to read, and I of course forgot a lot
+            of them. I encourage you to build some kind of similar page to your
+            website.
+        </p>
+
+        <section>
+            <ul>
+                {
+                    people.map((person) => (
+                        <li>
+                            <h3>
+                                {person.data.emoji} {person.data.lastName}{" "}
+                                {person.data.firstName}
+                            </h3>
+                            <p>{person.data.description}</p>
+                            <a href={person.data.link} target="_blank">
+                                ☞ link
+                            </a>
+                        </li>
+                    ))
+                }
+            </ul>
+        </section>
+        <Footer />
+    </body>
+</html>

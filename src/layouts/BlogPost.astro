@@ -4,6 +4,7 @@ import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import Navigation from "../components/Navigation.astro";
 import RelatedPosts from "../components/RelatedPosts.astro";
+import BreadcrumbSchema from "../components/BreadcrumbSchema.astro";
 import { SITE_TITLE } from "../config";
 
 export interface Props {
@@ -34,6 +35,13 @@ const {
 
 // Generate canonical URL
 const canonicalURL = url ? new URL(url, Astro.site) : Astro.url;
+
+// Breadcrumb items for blog posts
+const breadcrumbItems = [
+    { name: "Home", url: "/" },
+    { name: "Blog", url: "/blog" },
+    { name: title, url: canonicalURL.pathname }
+];
 ---
 
 <html lang="en">
@@ -49,6 +57,7 @@ const canonicalURL = url ? new URL(url, Astro.site) : Astro.url;
             tags={tags}
             author={author}
         />
+        <BreadcrumbSchema items={breadcrumbItems} />
         <style>
             .title {
                 font-size: 2.4em;
