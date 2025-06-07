@@ -1,5 +1,7 @@
 import { z } from "astro/zod";
 import { defineCollection } from "astro:content";
+import fs from "fs/promises";
+import path from "path";
 
 const tags = defineCollection({
   loader: () => {
@@ -32,24 +34,21 @@ const tags = defineCollection({
 
 const people = defineCollection({
   loader: async () => {
-    const fs = await import('fs/promises');
-    const path = await import('path');
-    
-    const filePath = path.resolve('./src/people.tsv');
-    const csvContent = await fs.readFile(filePath, 'utf-8');
-    const lines = csvContent.trim().split('\n');
-    
+    const filePath = path.resolve("./src/people.tsv");
+    const csvContent = await fs.readFile(filePath, "utf-8");
+    const lines = csvContent.trim().split("\n");
+
     return lines
       .slice(1)
-      .filter(line => line.trim())
+      .filter((line) => line.trim())
       .map((line, index) => {
-        const values = line.split(';').map(v => v.trim());
+        const values = line.split(";").map((v) => v.trim());
         const firstName = values[0];
         const lastName = values[1];
         const description = values[2];
         const link = values[3];
-        const emoji = values[4] || '';
-        
+        const emoji = values[4] || "";
+
         return {
           id: index.toString(),
           firstName,
