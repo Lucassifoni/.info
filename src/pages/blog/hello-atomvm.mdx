@@ -6,6 +6,10 @@ pubDate: "Nov 16 2023"
 tags: ["elixir", "erlang", "atomvm", "esp32", "embedded"]
 ---
 
+<div class="message">
+⚠️ This post ranks fairly well, but keep in mind it is from <strong>november 2023</strong>. While the AtomVM setup was already quite simple at that point in time, you should go to the https://atomvm.org/ website to get up-to-date instructions.
+</div>
+
 This post will show my log from no toolchain, to `hello world` running from Erlang on an ESP32 SOC, with a mac laptop as the host computer.
 
 I started by installing the ESP toolchain as [instructed by Espressif](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/linux-macos-setup.html).
@@ -26,7 +30,7 @@ $ git clone --recursive https://github.com/espressif/esp-idf.git
 
 Be aware that this represented more than 1 gigabyte on my laptop.
 
-After that, install the relevant toolchain for your specific chip. 
+After that, install the relevant toolchain for your specific chip.
 I installed all toolchains to cope with the facts that I have a bunch of different ESPs.
 
 ```
@@ -93,7 +97,7 @@ Configuring flash size...
 Auto-detected Flash size: 4MB
 ````
 
-After the VM is successfully flashed, follow the guide to the [AtomVM Tooling chapter](https://www.atomvm.net/doc/master/atomvm-tooling.html). 
+After the VM is successfully flashed, follow the guide to the [AtomVM Tooling chapter](https://www.atomvm.net/doc/master/atomvm-tooling.html).
 
 You are invited to clone the examples repository to start with a simple `Hello World` :
 
@@ -202,7 +206,7 @@ $ mix atomvm.packbeam
 $ mix atomvm.esp32.flash --port /dev/cu.usbserial-10 --baud 115200
 ```
 
-And are greeted with : 
+And are greeted with :
 
 ```
     ###########################################################
