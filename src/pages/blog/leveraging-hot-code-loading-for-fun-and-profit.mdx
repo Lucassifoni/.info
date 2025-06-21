@@ -19,7 +19,7 @@ If you come from outside Elixir/Erlang, the BEAM VM (Erlang's virtual machine) l
 The rationale behind that choice comes from the following goals I set for myself :
 - I want Alzo to be able to easily run on-prem at clients that desire it
 - I want to open-source it when it has stabilized enough, and I would like people to be able to use it without the hassle of managing a multi-tenant platform
-- I want to be able to easily build client-specific apps (what clients actually want of my platform) on top of Alzo without going into an authorization / segregation nightmare.
+- I want to be able to easily build client-specific apps (what clients actually want of my platform) on top of Alzo without going into an authorization / isolation nightmare.
 - I want people that would use the open-source version to be able to build their own tools on top of it, without building a full-fledged separate service, nor changing the mainline code.
 
 ![](/talks/meetup_beam_0325/slide_10.png)
@@ -83,7 +83,7 @@ end
 ```
 
 
-### Build-time segregation
+### Build-time isolation
 
 I do not want any of a client's specific code and behaviour to be included in my app build. This means I need to remove them all before build time. And that is exactly what I do.
 
