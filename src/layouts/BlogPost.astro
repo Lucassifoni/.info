@@ -13,7 +13,6 @@ export interface Props {
         description: string;
         pubDate?: string;
         updatedDate?: string;
-        heroImage?: string;
         tags?: string[];
         url?: string;
         author?: string;
@@ -48,7 +47,6 @@ const breadcrumbItems = [
         <BaseHead
             title={SITE_TITLE + " - " + title}
             description={description}
-            image={heroImage}
             canonical={canonicalURL.pathname}
             publishDate={pubDate}
             modifiedDate={updatedDate}

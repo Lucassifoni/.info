@@ -6,7 +6,6 @@ import "../styles/global.scss";
 export interface Props {
     title: string;
     description: string;
-    image?: string;
     canonical?: string;
     publishDate?: string;
     modifiedDate?: string;
@@ -95,7 +94,6 @@ const canonicalURL = new URL(canonical, Astro.site);
                   "@type": "BlogPosting",
                   headline: (title || "").replace("<br/>", ""),
                   description: description,
-                  image: [new URL(image, Astro.site).toString()],
                   datePublished: publishDate
                       ? new Date(publishDate).toISOString()
                       : null,
