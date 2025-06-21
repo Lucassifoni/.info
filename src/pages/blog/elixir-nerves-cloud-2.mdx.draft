@@ -1,0 +1,52 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "An (Elixir+Nerves)-powered Cloud ☁️ (2/2)"
+description: "Details of an art installation by Lab212 that generates real clouds controlled by electromagnetic field sensors - built with Elixir, Nerves, and LiveView"
+pubDate: "May 30 2025"
+tags: ["elixir", "nerves", "hardware", "IoT", "art-installation"]
+---
+
+Previous post : [An (Elixir+Nerves)-powered Cloud ☁️ (1/2)](/blog/elixir-nerves-cloud)
+
+Ombres Blanches Blog Post - Table of Contents / Writing Outline
+ 1. Project Overview & Concept
+  - High-pressure pump creating ultrafine water droplets
+  - Electromagnetic activity detection as input signal
+  - Metaphor: digital shadows of human activity made physical
+  - Art installation responding to invisible electromagnetic environment
+2. System Architecture
+  - Three-component system: Server, Client, Nerves platform
+  - Communication flow: Sensors → Client → Server → Visualization
+3. Server Component (/server)
+  - Phoenix web application for data aggregation
+  - Location management
+  - Temporal data processing: instantaneous vs. averaged values
+  - Data persistence: hourly values stored in database
+  - Live dashboard with sensor visualization graphs
+  - Admin interface for system management
+4. Client Component (/ombres_client)
+  - Sensor data collection via ETS-based queues
+  - PWM control system
+    - Dual lookup tables for frequency and duty cycle
+    - Adaptive response curves based on electromagnetic readings
+    - Real-time interpolation
+    - Manual override capabilities for testing
+  - Temperature safety monitoring and overload protection
+  - Communication with server for data upload
+  - Generic serial sensors integration for hardware interfacing
+5. Embedded System (/shadow - Nerves)
+  - Raspberry Pi + Nerves
+  - Hardware interfaces
+
+  PWM Control Algorithm
+  - Electromagnetic input normalization
+  - Lookup table interpolation mathematics
+  - Real-time parameter adjustment
+  - Pump frequency vs. duty cycle relationship
+
+  Data Flow & Processing
+  - Sensor reading collection and queuing
+  - Moving averages and temporal windows
+  - Server-side aggregation and storage
+  - Real-time visualization pipeline
+  - Adaptive calibration to different electromagnetic environments

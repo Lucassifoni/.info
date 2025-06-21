@@ -1,0 +1,144 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "Leveraging Elixir's hot code loading capabilities for high customization abilities in a monolithic app"
+description: "How hot code loading solves client-specific engineering problems in my startup Alzo"
+pubDate: "Jun 21 2025"
+tags: ["programming", "elixir", "alzo"]
+---
+
+My "services startup" [Alzo](https://alzo.archi) is an Elixir monolithic app that gets deployed with 1 instance per client.<br/>
+
+In this post we will see how Elixir's and the Erlang VM's hot code loading capabilties help me build **client-specific features** while maintaining a **coherent codebase** and avoiding a microservices-like situation with cascading failures or complex testing situations.
+
+If you come from outside Elixir/Erlang, the BEAM VM (Erlang's virtual machine) lets you load compiled modules into a running system, and also provides the ability to compile files at runtime. This allows to either add code and behaviour at runtime, or even replace it, without stopping a running system.
+
+### 1 instance per client
+
+The rationale behind that choice comes from the following goals I set for myself :
+- I want Alzo to be able to easily run on-prem at clients that desire it
+- I want to open-source it when it has stabilized enough, and I would like people to be able to use it without the hassle of managing a multi-tenant platform
+- I want to be able to easily build client-specific apps (what clients actually want of my platform) on top of Alzo without going into an authorization / segregation nightmare.
+- I want people that would use the open-source version to be able to build their own tools on top of it, without building a full-fledged separate service, nor changing the mainline code.
+
+![](/talks/meetup_beam_0325/slide_10.png)
+
+### Client-specific apps
+
+Client specific apps are mostly live multiplayer document editors built to accelerate existing workflows. See [this presentation at the Belgian Elixir meetup](/blog/beaming-online-meetup) for a few examples.
+
+![](/talks/meetup_beam_0325/slide_12.png)
+
+Those apps are Liveview applications, embarking UIs but also behaviour on top of Alzo's generic primitives. They can leverage background processes and actors by registering themselves at startup with a `DynamicSupervisor`.
+
+Client specific apps have a few characteristics code-wise :
+
+- They all live in /alzo/lib/clients/apps/\<client_name>/\<app_name>, allowing me to easily enumerate them.
+- Their entrypoint module has a name that ends with AppEntry. So a typical dynamic app's main module will be `Alzo.Clients.Apps.ClientX.AppYAppEntry`. This allows me to easily enumerate them in development by finding them in the code server.
+- The entry module is a LiveComponent that gets mounted by `Alzo.ApplicationLive` at app open.
+- They implement `Alzo.Clients.DynamicApp`, a behaviour allowing me to route to them in a dev environment.
+
+`ApplicationLive`, lightly simplified looks like this :
+
+```elixir
+def render(assigns) do
+  ~H"""
+  <div>
+    <.live_component
+      module={@dynamic_module}
+      id={@dynamic_id}
+      {assigns}
+    >
+    </.live_component>
+  </div>
+  """
+end
+
+def mount(%{"serve_url" => url} = params, _, socket) do
+  case get_load_target(url) do
+    :error ->
+      {:error, assign(socket, :original_params, params)}
+
+    {:ok, :sideloaded, result} ->
+      mount_with_sideloaded_app(result, assign(socket, :original_params, params))
+
+    {:ok, :dynamic_loaded, result} ->
+      mount_dynamic(result, assign(socket, :original_params, params))
+  end
+end
+```
+
+To allow those dynamically mounted LiveComponents to get messages, ApplicationLive provides me a few convenience helpers. If you already leveraged LiveComponents, you must recognize the `send_update`/`update` dance coming from the fact that LiveComponents are not processes, but live in their parent liveview's process.
+
+```elixir
+def handle_info({:___live_app_message, message}, socket) do
+  send_update(socket.assigns.dynamic_module, id: socket.assigns.dynamic_id, message: message)
+  {:noreply, socket}
+end
+
+def notify(pid, message) do
+  send(pid, {:___live_app_message, message})
+end
+```
+
+
+### Build-time segregation
+
+I do not want any of a client's specific code and behaviour to be included in my app build. This means I need to remove them all before build time. And that is exactly what I do.
+
+In CI, the dynamic apps are just part of the codebase, so they get tested like any other code in Alzo, with a simple `mix test` (well, it's `./test.sh`, but you get it). Just after tests pass, I completely remove all of their code by doing :
+
+```
+rm -rf alzo/lib/clients/apps
+rm -rf alzo/test/alzo/clients/apps
+```
+
+Then the Docker image gets built.
+
+From this rule emerge a few other interesting properties :
+- The main app can never depend on a runtime app's code. If it did, the build would simply break.
+- Dynamic apps can never depend on the presence of another dynamic app, because there is no guarantee of its presence.
+- **What would be integration tests between a main app and child microservices become regular liveview tests and unit tests in a monolithic codebase.**
+- If I accidentally try to change an API in Alzo on which dynamic apps depend, they break in testing on my dev machine, not in production.
+
+What I do *not* test is :
+- Erlang's hot code loading mechanism
+- Liveview itself
+- DynamicSupervisors themselves
+
+### Run-time loading
+
+I package client-specific apps with a mix command :
+
+```
+mix alzo.app.package <client>/<app>
+```
+
+This produces a tarball of the app that I can simply upload from my instance super-administrator panel. In this panel, I set the following attributes :
+- App kind (liveview or legacy, when I hot loaded JS SPAs a few years ago.)
+- Desired routing path
+- App icon, description, name
+- Capabilities
+
+This gets persisted in DB, pointing to the app code on the filesystem.
+
+When an app gets uploaded, its code is recompiled. When Alzo starts, it also loads all dynamic apps registered in DB and compiles their files. If any declares needing a companion process, it registers it with the DynamicApp-specific DynamicSupervisor.
+
+### Hot code upgrades
+
+What I did not write about here is hot code upgrades. They are inconsequential because of the nature of my business. The dynamic apps serve specific business purposes, so they behavior only change if a client's team requests adjustments or upgrades. So there is no code upgrade at random points in time or surprising someone with in-flight state upgrades. This is why when asked, I explain I only use hot code *loading*, not hot code *reloading*.
+
+### More complex child services
+
+Of course, and as outlined in [the presentation at the Belgian Elixir meetup](/blog/beaming-online-meetup), some child services are simply better as external, full-featured apps, in green on this diagram.
+
+![](/talks/meetup_beam_0325/slide_11.png)
+
+They talk to Alzo's public APIs through a message router which is part of the same monolithic codebase, but deployed separately. This allows the API to work both in a request/response fashion for instances on the public internet, but also in a request/mailbox/poll/response for instances deployed on-prem in a server closet and not publically routable.
+
+### Conclusion
+
+I was a bit afraid of hot code loading three years ago when I started building. This mechanism has a reputation for being *scary* in the Elixir community. After reading [Erlang Programming](https://www.oreilly.com/library/view/erlang-programming/9780596803940/) and [Designing for Scalability with Erlang/OTP](https://www.oreilly.com/library/view/designing-for-scalability/9781449361556/) I became convinced that this was just another tool in the VM's toolbelt and that it looked suspiciously fitting for my use-case.
+
+The real problems come with state upgrades, but the VM and OTP have tools to deal with them. I chose to remove this complexity by not doing state upgrades.
+
+Three years in, and a few dozen dynamic apps written, I feel this was the best choice given the tools I had on hand. Having the dynamic apps in the monolithic codebase also means that behaviour that starts specific but repeats itself, or shows enough hints of genericity over time, can really easily be refactored out from the dynamic apps and in the main codebase. With separate microservices, it would have been repeated, or extracted to a private library with the added tooling and updates that come with it.
