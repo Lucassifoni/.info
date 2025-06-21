@@ -27,7 +27,6 @@ const {
         description,
         pubDate,
         updatedDate,
-        heroImage = "/cover.png",
         tags = [],
         author = "Lucas Sifoni",
     },
@@ -40,7 +39,7 @@ const canonicalURL = url ? new URL(url, Astro.site) : Astro.url;
 const breadcrumbItems = [
     { name: "Home", url: "/" },
     { name: "Blog", url: "/blog" },
-    { name: title, url: canonicalURL.pathname }
+    { name: title, url: canonicalURL.pathname },
 ];
 ---
 
