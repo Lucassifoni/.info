@@ -4,6 +4,8 @@ title: "Pointers to in-memory nested maps in Elixir and concurrent access patter
 description: "Comparing five pointer implementation strategies for accessing nested data in Elixir - benchmarking closures, pattern matching, and inter-process access patterns"
 pubDate: "Apr 21 2025"
 tags: ["elixir", "programming", "data-structures"]
+frenchTitle: "Pointeurs vers des maps imbriquées en mémoire en Elixir et patterns d'accès concurrents"
+frenchSummary: "Exploration de cinq stratégies pour implémenter des pointeurs vers des données imbriquées en Elixir sans base de données. Benchmarks des closures, pattern matching et accès inter-processus."
 ---
 
 On a project that has no database, hierarchical data, and a low amount of data, I tried to find a way to have the quickest data accesses as I could, while avoiding unnecessary copies of the data. The data is mapped so that every relation does not resolve to the target data but to a pointer to the data, meant to be lightweight to pass around and later dereferenced. This also helps in selectively updating the data structure without having to later rehydrate every single data piece.

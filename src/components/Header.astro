@@ -10,7 +10,16 @@ const url_en = "/" + no_lang.join("/");
 ---
 
 <header>
-    <h2><a href="/" style="text-decoration: none;">Lucas Sifoni</a></h2>
+    <nav>
+        <h2><a href="/" style="text-decoration: none;">Lucas Sifoni</a></h2>
+        {have_langs && (
+            <span class="lang_selector">
+                <a href={url_en} class={active_lang === "en" ? "active" : ""}>EN</a>
+                {" | "}
+                <a href={url_fr} class={active_lang === "fr" ? "active" : ""}>FR</a>
+            </span>
+        )}
+    </nav>
 </header>
 <style lang="scss">
     header {

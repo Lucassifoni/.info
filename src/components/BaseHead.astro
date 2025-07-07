@@ -12,6 +12,7 @@ export interface Props {
     type?: "website" | "article";
     tags?: string[];
     author?: string;
+    lang?: string;
 }
 
 const {
@@ -23,6 +24,7 @@ const {
     type = "website",
     tags = [],
     author = "Lucas Sifoni",
+    lang = "en-US",
 } = Astro.props;
 
 const canonicalURL = new URL(canonical, Astro.site);
@@ -33,6 +35,12 @@ const canonicalURL = new URL(canonical, Astro.site);
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <meta name="generator" content={Astro.generator} />
+
+<!-- Localization -->
+<meta name="geo.region" content="FR-OCC" />
+<meta name="geo.placename" content="Toulouse" />
+<meta name="geo.position" content="43.604652;1.444209" />
+<meta name="ICBM" content="43.604652, 1.444209" />
 
 <!-- Canonical URL -->
 <link rel="canonical" href={canonicalURL} />
@@ -114,6 +122,12 @@ const canonicalURL = new URL(canonical, Astro.site);
                           "Astronomy",
                       ],
                       sameAs: [],
+                      address: {
+                          "@type": "PostalAddress",
+                          addressLocality: "Toulouse",
+                          addressRegion: "Occitanie",
+                          addressCountry: "FR",
+                      },
                   },
                   mainEntityOfPage: {
                       "@type": "WebPage",
@@ -132,7 +146,7 @@ const canonicalURL = new URL(canonical, Astro.site);
                   },
                   articleSection: tags.length > 0 ? tags[0] : "Technology",
                   wordCount: null,
-                  inLanguage: "en-US",
+                  inLanguage: lang,
               }
             : {
                   "@context": "https://schema.org",
@@ -150,6 +164,12 @@ const canonicalURL = new URL(canonical, Astro.site);
                       "Astronomy",
                   ],
                   sameAs: [],
+                  address: {
+                      "@type": "PostalAddress",
+                      addressLocality: "Toulouse",
+                      addressRegion: "Occitanie",
+                      addressCountry: "FR",
+                  },
                   mainEntity: {
                       "@type": "Blog",
                       name: "Lucas Sifoni's Blog",
@@ -160,7 +180,7 @@ const canonicalURL = new URL(canonical, Astro.site);
                           "@id": new URL("/#person", Astro.site).toString(),
                           name: author,
                       },
-                      inLanguage: "en-US",
+                      inLanguage: lang,
                   },
               },
     )}

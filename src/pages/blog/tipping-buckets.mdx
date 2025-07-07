@@ -4,6 +4,8 @@ title: "Periodic averages with overflowing buckets"
 description: "Comparing circular buffer vs cascading bucket approaches for time-windowed data averages in Elixir for embedded systems"
 pubDate: "Aug 23 2023"
 tags: ["elixir", "programming", "algorithms", "performance"]
+frenchTitle: "Moyennes périodiques avec des buckets débordants"
+frenchSummary: "Comparaison de deux approches pour calculer des moyennes glissantes : buffers circulaires vs buckets en cascade. Les buckets sont plus rapides en lecture, parfait pour mon systèmes embarqué."
 ---
 
 I recently had the need of keeping track of time-windowed averages of values emitted by a periodic system `(f = 2 Hz)`, on a constrained system (1GHz single-core SOC). The general idea is that a pulse emits a floating point value every `500ms`, and I must keep track of the average value over `the last 1s`, `the last 5s`, up to a two week time span.

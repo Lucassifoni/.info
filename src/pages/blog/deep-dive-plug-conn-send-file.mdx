@@ -4,6 +4,8 @@ title: "Let's dive deep into Plug.Conn.send_file/5"
 description: "A code archaeology expedition from Elixir through Erlang to C - tracing how send_file uses the Linux kernel's zero-copy optimization for file transfers"
 pubDate: "Nov 10 2023"
 tags: ["elixir", "erlang", "exploration", "performance", "web-server"]
+frenchTitle: "Plongée dans Plug.Conn.send_file/5"
+frenchSummary: "Archéologie de code : comment Plug.Conn.send_file descend jusqu'aux syscalls Linux. Exploration technique de la stack complète depuis Elixir jusqu'aux optimisations zero-copy du kernel. Pas un post fun, mais instructif."
 ---
 
 Let's dive into Plug.Conn.send_file/5, because we can find a lot of questioning online about this one.
