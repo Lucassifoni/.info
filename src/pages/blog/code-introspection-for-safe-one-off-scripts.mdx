@@ -38,6 +38,18 @@ end
 
 This uses the fact that loaded modules are queryable at runtime. No manual registration is needed, no configuration files – just code discovery based on module names and exported functions. As soon as a module is loaded and implements the required functions, it becomes discoverable. This eliminates the common problem of forgetting to register a new script in some configuration file.
 
+Note that another way of seeing if a module implements a behaviour would be to query the module information :
+
+```elixir
+iex> Alzo.Scripts.AssignProjectsToCompany.module_info(:attributes)
+[
+  vsn: [...],
+  behaviour: [Alzo.Scripts.UiRunnableScript]
+]
+```
+
+But declaring the behaviour does not guarantee implementing it correctly, unless you use the :warnings_as_errors elixirc option (which you should). I had the habit of checking for exported functions. Both are fine.
+
 ### Mix does the same thing
 
 Writing the discovery code above, I had a feeling I had seen this pattern before. Indeed, Mix uses almost exactly the same approach for discovering tasks in the `Mix.Tasks.*` namespace.
