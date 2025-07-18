@@ -104,7 +104,7 @@ The patterns are nearly identical:
 - They eliminate manual registration entirely
 - They use Elixir's runtime introspection capabilities
 
-The main difference is how they look for modules. Mix scans the file system using `:code.get_path()` to find modules, while my approach uses `:code.all_loaded()` to work with already-loaded modules. Mix also has a simpler interface requirement (just `run/1`) while my scripts need to define their UI contract through a few behaviour callbacks.
+The main difference is how they look for modules. Mix scans the file system using `:code.get_path()` to find modules, while my approach uses `:code.all_loaded()` to work with already-loaded modules. Mix also has a simpler interface requirement (just `run/1`) while my scripts need to define their UI contract through a few behaviour callbacks. Note that **I am able to use :code.all_loaded because I already have a namespace-selective module loading happening at app startup** to [hot load code at runtime](/blog/leveraging-hot-code-loading-for-fun-and-profit). If you do not, leverage the pattern that the Mix.Task module does.
 
 But the core is the same: namespace + behavior validation + runtime introspection is a nice pattern for building discoverable sub-applications in Elixir.
 
