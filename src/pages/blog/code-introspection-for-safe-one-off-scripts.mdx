@@ -1,0 +1,231 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "Code Introspection for safely firing one-off scripts"
+description: "How Elixir's runtime code discovery enables safe, discoverable, and UI-driven data cleaning scripts"
+pubDate: "Jul 18 2025"
+tags: ["programming", "elixir", "alzo", "introspection"]
+frenchTitle: "Introspection de code pour l'exécution sécurisée de scripts à usage peu fréquent"
+frenchSummary: "Comment l'introspection de code de la VM Elixir permet de créer des scripts de nettoyage de données sécurisés, découvrables et pilotés par une interface utilisateur."
+---
+
+My services startup [Alzo](https://alzo.archi) makes me have the need for one-off data cleaning scripts – those inevitable "fix this batch of data" or "migrate these records" tasks that come up in any growing application where I offer to import user data gathered from unstructured sources.
+
+One-off scattered script files or manual database queries are both risky and unmaintainable. SSH'ing into running docker containers to access the IEX remote is annoying. Clustering with them from the outside is annoying too. I chose to leverage Elixir's runtime introspection capabilities to build a discoverable, UI-driven script runner system that makes data operations safer than invoking them from a CLI.
+
+*This post focuses on the runtime code discovery patterns that make this possible – how behaviours, module filtering, and dynamic UI generation create a self-registering system for infrequent (thus dangerous) operations.*
+
+I first created a lib/scripts/ directory in the repository. But remembering the number of arguments, their format or order is quite hard for tasks that are not meant to be frequently executed.
+
+Elixir's runtime provides introspection capabilities through the `:code` erlang module. We can discover loaded modules, examine their exports, and filter them based on patterns, at runtime.
+
+```elixir
+def discover_scripts do
+  :code.all_loaded()
+  |> Enum.map(fn {module, _} -> module end)
+  |> Enum.filter(&script_module?/1)
+  |> Enum.filter(&implements_behaviour?/1)
+end
+
+defp script_module?(module), do: String.starts_with?("#{module}", "Elixir.Alzo.Scripts.")
+
+defp implements_behaviour?(module) do
+    function_exported?(module, :name, 0) &&
+    function_exported?(module, :description, 0) &&
+    function_exported?(module, :ui_controls, 0) &&
+    function_exported?(module, :run_with_params, 1)
+end
+```
+
+This uses the fact that loaded modules are queryable at runtime. No manual registration is needed, no configuration files – just code discovery based on module names and exported functions. As soon as a module is loaded and implements the required functions, it becomes discoverable. This eliminates the common problem of forgetting to register a new script in some configuration file.
+
+### Mix does the same thing
+
+Writing the discovery code above, I had a feeling I had seen this pattern before. Indeed, Mix uses almost exactly the same approach for discovering tasks in the `Mix.Tasks.*` namespace.
+
+Let's see how Mix does it:
+
+```elixir
+# From https://github.com/elixir-lang/elixir/blob/main/lib/mix/lib/mix/task.ex
+
+@prefix_size byte_size("Elixir.Mix.Tasks.")
+@suffix_size byte_size(".beam")
+
+def load_all, do: load_tasks(:code.get_path())
+
+def load_tasks(dirs) do
+  for dir <- dirs,
+      file <- safe_list_dir(to_charlist(dir)),
+      mod = task_from_path(file),
+      uniq: true,
+      do: mod
+end
+
+defp task_from_path(filename) do
+  base = Path.basename(filename)
+  part = byte_size(base) - @prefix_size - @suffix_size
+
+  case base do
+    <<"Elixir.Mix.Tasks.", rest::binary-size(^part), ".beam">> ->
+      mod = :"Elixir.Mix.Tasks.#{rest}"
+      ensure_task?(mod) && mod
+
+    _ ->
+      nil
+  end
+end
+
+defp ensure_task?(module) do
+  Code.ensure_loaded?(module) and function_exported?(module, :run, 1)
+end
+
+defp safe_list_dir(path) do
+  case File.ls(path) do
+    {:ok, paths} -> paths
+    {:error, _} -> []
+  end
+end
+```
+
+The patterns are nearly identical:
+- They filter by namespace (`Mix.Tasks.*` vs `Alzo.Scripts.*`)
+- They validate modules by checking required functions exist
+- They eliminate manual registration entirely
+- They use Elixir's runtime introspection capabilities
+
+The main difference is how they look for modules. Mix scans the file system using `:code.get_path()` to find modules, while my approach uses `:code.all_loaded()` to work with already-loaded modules. Mix also has a simpler interface requirement (just `run/1`) while my scripts need to define their UI contract through a few behaviour callbacks.
+
+But the core is the same: namespace + behavior validation + runtime introspection is a nice pattern for building discoverable sub-applications in Elixir.
+
+### UI Generation through a behaviour
+
+Each script implements a common behaviour that defines both its data contract and UI representation:
+
+```elixir
+defmodule Alzo.Scripts.UiRunnableScript do
+  @callback name() :: String.t()
+  @callback description() :: String.t()
+  @callback ui_controls() :: [map()]
+  @callback run_with_params(map()) :: {:ok, any()} | {:error, String.t()}
+end
+```
+
+The `ui_controls/0` callback allows each script define its own UI dynamically. Here's how a sample script in Alzo implements it:
+
+```elixir
+@impl true
+def ui_controls do
+  teammates = Repo.all(Teammate)
+  teammate_options = Enum.map(teammates, &{&1.id, &1.name || "Teammate ##{&1.id}"})
+  role_options = Teammate.available_roles()
+
+  [
+    %{
+      name: :teammate_id,
+      type: :select,
+      label: "Teammate",
+      required: true,
+      options: teammate_options,
+      placeholder: "Select a teammate"
+    },
+    %{
+      name: :role,
+      type: :select,
+      label: "Role",
+      required: true,
+      options: role_options,
+      placeholder: "Select a role"
+    }
+  ]
+end
+```
+
+### UI Generation
+
+The LiveView component uses this data to generate forms dynamically.
+
+```elixir
+defp discover_and_load_scripts do
+  UiRunnableScript.discover_scripts()
+  |> Enum.map(fn module ->
+    %{
+      module: module,
+      name: module.name(),
+      description: module.description(),
+      ui_controls: module.ui_controls()
+    }
+  end)
+  |> Enum.sort_by(& &1.name)
+end
+```
+
+The template then iterates over the controls to build the appropriate form elements (simplified here):
+
+```elixir
+<%= for control <- @selected_script.ui_controls do %>
+  <div class="mb-4">
+    <%= case control.type do %>
+      <% :select -> %>
+        ...
+      <% :ex_data -> %>
+        ...
+        <p class="mt-1 text-sm text-gray-500">
+          Enter valid Elixir code that evaluates to the expected data structure.
+        </p>
+      <% _ -> %>
+        ... render a text input
+    <% end %>
+  </div>
+<% end %>
+```
+
+Note that I give myself the ability to enter elixir code as data, if an input is specified with the :ex_data type. I then parse it. Given all that I am already doing with the platform, and that people cluster their applications with LiveBook to get the same kind of actions, I feel comfortable allowing my super-admin user code execution. In fact, my super admin user already leverages code execution to [hot load parts of my monolith at runtime](/blog/leveraging-hot-code-loading-for-fun-and-profit).
+
+### Parameter parsing
+
+Each script defines a run_with_params/1 callback that allows to proceed with execution or reject parameters. Here is an example for a script that has an "append/replace" option and the ability to do a dry run.
+
+```elixir
+@impl true
+def run_with_params(params) do
+  with {:ok, data} <- parse_ex_data(params["data"]),
+       {:ok, append} <- parse_boolean_param(params["append"]),
+       {:ok, dry_run} <- parse_boolean_param(params["dry_run"]) do
+    case run(data, append: append, dry_run: dry_run) do
+      {:ok, stats} ->
+        {:ok, %{
+          processed: stats.processed,
+          success: stats.success,
+          dry_run: stats.dry_run,
+          message: format_stats_message(stats)
+        }}
+
+      error ->
+        error
+    end
+  end
+end
+
+defp parse_ex_data(data_str) when is_binary(data_str) do
+  try do
+    {result, _} = Code.eval_string(data_str)
+
+    if is_list(result) and Enum.all?(result, &valid_tuple?/1) do
+      {:ok, result}
+    else
+      {:error, "Data must be a list of tuples with format {category_name, import_id}"}
+    end
+  rescue
+    e -> {:error, "Invalid Elixir code: #{Exception.message(e)}"}
+  end
+end
+```
+
+This pattern allows scripts to accept complex data structures (like lists of tuples) without commiting to developing a full data input UI, which is also way clunkier to use than directly typing data in a language we are used to.
+
+The result is a simple UI that lists all scripts and allows me to not worry about memorizing data shapes or arguments, without going all-in on Livebook and Kino - which are great, but that I did not yet properly explore. Also, I prefer having the scripts in my main codebase tree, which allows to test them properly if needed, and avoids a bit of clustering boilerplate.
+
+![](/pics/scripts_ui.png)
+
+### Where's the LLM in that ?
+
+I'm glad the current times raise this question ! Given a data fixing script that I develop in an old-fashioned REPL-driven way, a LLM fed with the UiRunnableScript behaviour, and two or three samples of previous, already-converted scripts, will be able to one-shot the implementation of the UI controls, while the script itself will have been developed by the developer.
