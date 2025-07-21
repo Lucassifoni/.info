@@ -241,3 +241,7 @@ The result is a simple UI that lists all scripts and allows me to not worry abou
 ### Where's the LLM in that ?
 
 I'm glad the current times raise this question ! Given a data fixing script that I develop in an old-fashioned REPL-driven way, a LLM fed with the UiRunnableScript behaviour, and two or three samples of previous, already-converted scripts, will be able to one-shot the implementation of the UI controls, while the script itself will have been developed by the developer.
+
+### Why not build on top of Mix Tasks ?
+
+I'm still considering it - define the scripts as plain mix tasks, and add a behaviour on top for the ones that can have an UI. But my use case does not involve running them from the terminal too much... I think it would be the best of both worlds though. CLI + GUI discoverability.
