@@ -8,6 +8,8 @@ frenchTitle: "Tirer parti du hot code loading d'Elixir pour modulariser une app 
 frenchSummary: "Comment j'exploite le hot code loading d'Elixir pour construire des fonctionnalités client-spécifiques dans Alzo. Une approche monolithique qui évite les microservices tout en gardant une base de code cohérente et testable."
 ---
 
+*Well, this post is my first time staying on <span style="font-style:normal;display:inline-block;background:#FF6600; color: white; width:1.2em; text-align: center; line-height: 1.2; height: 1.2em;position:relative;top:-.1em;"><span style="position: relative; top:.1em">Y</span></span> HN's front page :) . I'm happy to see that Elixir and the Erlang's VM capabilities struck the curiosity of people. If you don't know Erlang/OTP, take a bit of time and explore it ! It's a deep platform that offers both width and depth of knowledge to dig at.*
+
 My "services startup" [Alzo](https://alzo.archi) is an Elixir monolithic app that gets deployed with 1 instance per client.<br/>
 
 In this post we will see how Elixir's and the Erlang VM's hot code loading capabilties help me build **client-specific features** while maintaining a **coherent codebase** and avoiding a microservices-like situation with cascading failures or complex testing situations.
