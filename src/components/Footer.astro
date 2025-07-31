@@ -6,9 +6,11 @@ const fren = (a: string, b: string) => (active_lang === "fr" ? a : b);
 
 <footer>
     <p>
-        <span class="noprint">2022 - </span>
-        {today.getFullYear()} Lucas Sifoni / Turing-Express, 32490 Castillon-Savès,
-        Gers<br />
+        <strong
+            ><span class="noprint">2022 - </span>
+            {today.getFullYear()} Lucas Sifoni / Turing-Express, 32490 Castillon-Savès,
+            Gers<br /></strong
+        >
         Entreprise Individuelle — SIREN 799 377 452<br
         />contact@turing-express.fr
     </p>
@@ -21,6 +23,14 @@ const fren = (a: string, b: string) => (active_lang === "fr" ? a : b);
             <a href="https://www.linkedin.com/in/lucas-sifoni/">linkedin</a>
         </li>
     </ul>
+    <p>
+        If you are invested in / benefit from Erlang or Elixir, please consider
+        adhering to the <strong
+            ><a href="https://erlef.org" target="_blank"
+                >Erlang Ecosystem Foundation</a
+            ></strong
+        >, either as an individual or as a company.
+    </p>
     <slot />
 </footer>
 
