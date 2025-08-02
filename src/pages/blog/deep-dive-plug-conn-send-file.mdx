@@ -1,6 +1,6 @@
 ---
 layout: "../../layouts/BlogPost.astro"
-title: "Let's dive deep into Plug.Conn.send_file/5"
+title: "Let's dive deep into Plug.Conn.send_file/5 - from Elixir to C syscalls"
 description: "A code archaeology expedition from Elixir through Erlang to C - tracing how send_file uses the Linux kernel's zero-copy optimization for file transfers"
 pubDate: "Nov 10 2023"
 tags: ["elixir", "erlang", "exploration", "performance", "web-server"]
@@ -99,7 +99,7 @@ Back to the implementation of `send_file/5` :
       adapter.send_file(payload, conn.status, conn.resp_headers, file, offset, length)
 ```
 
-The actual implementation of `send_file/5` is delegated to the Plug.Conn's adapter's `send_file/6`, of which we find the signature in `Plug.Conn.Adapter` : 
+The actual implementation of `send_file/5` is delegated to the Plug.Conn's adapter's `send_file/6`, of which we find the signature in `Plug.Conn.Adapter` :
 
 [🔗 source elixir-plug/plug/lib/plug/conn/adapter.ex:73](https://github.com/elixir-plug/plug/blob/fef28b80a0a1c9365d5608b051120419c863292d/lib/plug/conn/adapter.ex#L73)
 
@@ -182,7 +182,7 @@ Going through the clauses one by one :
 - if the length of the file is 0, the "Content-Length" header is set to 0 before calling `do_reply/4`
 - finally, if the file has a non-zero length, do_reply/4 is called, setting the "Content-Length" header to the length of the file
 
-Following to `do_reply/4` : 
+Following to `do_reply/4` :
 
 [🔗 source ninenines/cowboy/src/cowboy_req.erl:832](https://github.com/ninenines/cowboy/blob/22adc4de517bf54661795f6e18b6b2e62aec4140/src/cowboy_req.erl#L832)
 ```erlang
@@ -256,7 +256,7 @@ commands(State0=#state{socket=Socket, transport=Transport, out_state=wait, strea
 		[{response, StatusCode, Headers0, Body}|Tail]) ->
 ```
 
-and 
+and
 
 [🔗 source ninenines/cowboy/src/cowboy_http.erl:1084](https://github.com/ninenines/cowboy/blob/22adc4de517bf54661795f6e18b6b2e62aec4140/src/cowboy_http.erl#L1084)
 ```erlang
@@ -456,7 +456,7 @@ ERL_NIF_TERM essio_sendfile_start(ErlNifEnv*       env,
 {
 ```
 
-This points us to `essio_sendfile` in this same file : 
+This points us to `essio_sendfile` in this same file :
 
 [🔗 source erlang/otp/erts/emulator/nifs/unix/unix_socket_syncio.c:6103](https://github.com/erlang/otp/blob/928b323d91386e56d94eb8a6b556dc475a949798/erts/emulator/nifs/unix/unix_socket_syncio.c#L6103)
 ```c
@@ -495,7 +495,7 @@ We finally find a call to `sendfile` as defined in `sys/sendfile.h` :
 ```
 
 Sendfile is documented here : https://man7.org/linux/man-pages/man2/sendfile.2.html
-To quote this page : 
+To quote this page :
 
 <div class="message">
 >        sendfile() copies data between one file descriptor and another.
@@ -507,4 +507,3 @@ To quote this page :
 So.. **yeah, sending a file with Plug.Conn.send_file is pretty efficient** provided you're running linux.
 
 Sometimes it's about the journey, even if the destination is well-known ;-) .
-
