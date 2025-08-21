@@ -192,6 +192,10 @@ The template then iterates over the controls to build the appropriate form eleme
 
 Note that I give myself the ability to enter elixir code as data, if an input is specified with the :ex_data type. I then parse it. Given all that I am already doing with the platform, and that people cluster their applications with LiveBook to get the same kind of actions, I feel comfortable allowing my super-admin user code execution. In fact, my super admin user already leverages code execution to [hot load parts of my monolith at runtime](/blog/leveraging-hot-code-loading-for-fun-and-profit).
 
+<div style="background: #eee; max-width: 70ch; border-radius: 2px; padding: .1em .75em; margin-bottom: 1em">
+If you want to read about another take that **actually leverages Livebook for administrative tasks without building UIs**, checkout Baptiste Chaleil's article here, where he shows how he connects Livebook to Fly.io or Kubernetes production environments :  https://mrdotb.com/posts/integrating-livebook-phoenix-elixir
+</div>
+
 ### Parameter parsing
 
 Each script defines a run_with_params/1 callback that allows to proceed with execution or reject parameters. Here is an example for a script that has an "append/replace" option and the ability to do a dry run.
