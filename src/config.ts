@@ -3,4 +3,4 @@
 
 export const SITE_TITLE = "Lucas Sifoni";
 export const SITE_DESCRIPTION =
-  "Independent Elixir/Beam developer. Articles on programming, optics, astronomy";
+  "Independent product-focused Elixir / BEAM developer";
