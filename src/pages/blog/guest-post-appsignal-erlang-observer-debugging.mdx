@@ -1,0 +1,27 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "Guest post @ AppSignal – Debugging in Elixir with Observer"
+description: "Introduction to the Erlang Observer app, on the Appsignal blog"
+pubDate: "Nov 5 2025"
+tags: ["elixir", "erlang", "writing"]
+frenchTitle: "Post invité chez AppSignal – Debugging en Elixir avec l'Observer erlang"
+frenchSummary: "Introduction aux possibilités de l'Observeur erlang et de ses capacités de tracing et d'introspection."
+---
+
+Folks at AppSignal have given me the opportunity to write a guest post on their Elixir blog, about the Erlang Observer.
+
+Observer is one of the things I love to show as an introduction to Elixir to newcomers, along with two videos : https://www.youtube.com/watch?v=JvBT4XBdoUE (you know which one it is, in case you don't, watch it, it's Sasa Juric's "The Soul of Erlang and Elixir") and Bryan Hunter's Waterpark presentation here : https://www.youtube.com/watch?v=pQ0CvjAJXz4.
+
+Without reproducing the full post here, it's a brief guide showing that Erlang's Observer is more deep than that "cool GUI thing" usually only briefly mentioned.
+
+We walk through launching Observer and use it to debug a "real" problem, a memory leak caused by a process that keeps creating references to large binaries. We run the leaky app on one node, and Observer on a separate hidden node and distribute both nodes so the monitoring doesn't interfere with the measurements.
+
+We then see how to use Observer's tracing features : select a process, set up tracing, and watch things happening in real-time. The garbage collection traces show how the bin_vheap_size keeps growing and growing.
+
+Here's the post : https://blog.appsignal.com/2025/11/04/debugging-in-elixir-with-observer.html
+
+Writing as a guest author, as opposed to on my own blog, was an interesting experience, even if I selected a topic that mandated a lot of pictures, which even if they aren't worth a thousand words each, helped materialize the step by step process. It was my first time doing guest writing and overcoming a "personal style" for something more neutral took a fair bit of time. The editor team was super helpful and the overall experience has been great.
+
+My time is now split between my SaaS Alzo one one side, another new tooling project for the construction industry on the other, a new contract on API designs for derived data graphs (in Elixir !) which I enjoyed a lot, long-ish distance running which I finally managed to pick up 2 years ago, and mention because I had already failed to pick up running 9 or 10 times before... 11 was the charm, so my blog is now a bit on the backburner. Still, it helped me on a lot of various facets and I'm glad I persevered writing on it those last three years. It has allowed me to meet new people, find work, and have a personal programming expressive space when I was in "crunch mode" on Alzo.
+
+So, blog all you can, and happy hacking with Elixir :-) .
