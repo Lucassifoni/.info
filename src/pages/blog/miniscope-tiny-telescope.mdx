@@ -41,8 +41,6 @@ All the holes for the rods are straight, which forces them to arch, which "locks
 
 The alt/az movements use "teflon pads" (actually gray HDPE or UHMW for furniture feet) with rubber backing, scalped and glued.
 
-The optics have been quickly tested with a ronchi test - the primary appears to be aspherical, smooth, with a good clean edge. I have yet to test them with my Bath interferometer, but as a lot of small-size chinese optics, they are pretty good out of the box. Most spheres I bought lately have been &lambda;/7 wavefront, and a friend buying small aspheres was pretty pleased too. 
-
 [Download the 3D files on Printables](https://www.printables.com/model/1475113-76300-pocket-dobson) • [Discussion on Astrosurf](http://www.astrosurf.com/topic/179851-mon-nouveau-micro-scope-imprim%C3%A9-en-3d/)
 
 If you build it, the real trick for ease of mounting is to chamfer the carbon rods with a 1mm chamfer at both ends and seal it with CA glue. See the chamfer pic in the gallery.
@@ -111,6 +109,48 @@ If you build it, the real trick for ease of mounting is to chamfer the carbon ro
     </div>
     <div className="gallery-item" data-type="image" data-src="/pics/miniscope/IMG_2285.webp">
       <img src="/pics/miniscope/IMG_2285.webp" alt="Miniscope view 18" />
+    </div>
+  </div>
+</div>
+
+## Optical tests
+
+Sadly, the results aren't great. We were used to very good l/6 or better recent buys from Aliexpress, but this one is very overcorrected. This one is very smooth, with a rather good edge at the foucault, but is overcorrected by 70%. With the eyepiece I selected, putting it at 30x power, this does not show too much, and it retains its "real telescope" status. But this mirror is so small that I will not refigure it – the realuminizing costs would outweigh the entire project.
+
+<div className="tests-gallery">
+  <div className="gallery-grid">
+    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/tests/bench.png">
+      <img src="/pics/miniscope/tests/bench.png" alt="Optical bench overview" />
+    </div>
+    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/tests/_MG_0777.JPG">
+      <img src="/pics/miniscope/tests/_MG_0777.JPG" alt="Bath interferometer setup" />
+    </div>
+    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/tests/_MG_0778.JPG">
+      <img src="/pics/miniscope/tests/_MG_0778.JPG" alt="Interferometry test view" />
+    </div>
+    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/tests/_MG_0780.JPG">
+      <img src="/pics/miniscope/tests/_MG_0780.JPG" alt="Test setup detail" />
+    </div>
+    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/tests/igram.png">
+      <img src="/pics/miniscope/tests/igram.png" alt="Interferogram 1" />
+    </div>
+    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/tests/igram_2.png">
+      <img src="/pics/miniscope/tests/igram_2.png" alt="Interferogram 2" />
+    </div>
+    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/tests/igram_3.png">
+      <img src="/pics/miniscope/tests/igram_3.png" alt="Interferogram 3" />
+    </div>
+    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/tests/igram_4.png">
+      <img src="/pics/miniscope/tests/igram_4.png" alt="Interferogram 4" />
+    </div>
+    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/tests/dft_1.png">
+      <img src="/pics/miniscope/tests/dft_1.png" alt="DFT analysis 1" />
+    </div>
+    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/tests/dft_2.png">
+      <img src="/pics/miniscope/tests/dft_2.png" alt="DFT analysis 2" />
+    </div>
+    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/tests/dft_3.png">
+      <img src="/pics/miniscope/tests/dft_3.png" alt="DFT analysis 3" />
     </div>
   </div>
 </div>
@@ -272,12 +312,14 @@ If you build it, the real trick for ease of mounting is to chamfer the carbon ro
     const closeBtn = document.querySelector('.lightbox-close');
     const prevBtn = document.querySelector('.lightbox-prev');
     const nextBtn = document.querySelector('.lightbox-next');
-    const galleryItems = Array.from(document.querySelectorAll('.gallery-item'));
+    const testsGalleryItems = Array.from(document.querySelectorAll('.tests-gallery .gallery-item'));
+    const miniscopeGalleryItems = Array.from(document.querySelectorAll('.miniscope-gallery .gallery-item'));
 
+    let currentGalleryItems = [];
     let currentIndex = 0;
 
     function showMedia(index) {
-      const item = galleryItems[index];
+      const item = currentGalleryItems[index];
       const type = item.dataset.type;
       const src = item.dataset.src;
 
@@ -305,17 +347,27 @@ If you build it, the real trick for ease of mounting is to chamfer the carbon ro
     }
 
     function showNext() {
-      currentIndex = (currentIndex + 1) % galleryItems.length;
+      currentIndex = (currentIndex + 1) % currentGalleryItems.length;
       showMedia(currentIndex);
     }
 
     function showPrev() {
-      currentIndex = (currentIndex - 1 + galleryItems.length) % galleryItems.length;
+      currentIndex = (currentIndex - 1 + currentGalleryItems.length) % currentGalleryItems.length;
       showMedia(currentIndex);
     }
 
-    galleryItems.forEach((item, index) => {
-      item.addEventListener('click', () => showMedia(index));
+    testsGalleryItems.forEach((item, index) => {
+      item.addEventListener('click', () => {
+        currentGalleryItems = testsGalleryItems;
+        showMedia(index);
+      });
+    });
+
+    miniscopeGalleryItems.forEach((item, index) => {
+      item.addEventListener('click', () => {
+        currentGalleryItems = miniscopeGalleryItems;
+        showMedia(index);
+      });
     });
 
     closeBtn.addEventListener('click', closeModal);
