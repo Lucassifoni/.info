@@ -17,7 +17,7 @@ export async function GET(context) {
       .filter(([_, post]) => (post.frontmatter?.tags || []).includes(tagId))
       .map(async ([path, post]) => {
         return {
-          link: path.replace(/^\.\/\.\.\/\.\.\/(.*)\.mdx?$/, "/blog/$1"),
+          link: path.replace(/^\.\.\/\.\.\/(.*)\.mdx?$/, "/blog/$1"),
           title: post.frontmatter?.title,
           pubDate: post.frontmatter?.pubDate,
           description: post.frontmatter?.description,
@@ -25,7 +25,7 @@ export async function GET(context) {
             ? `<category>${post.frontmatter.tags.join("</category><category>")}</category>`
             : "",
         };
-      })
+      }),
   );
 
   return rss({
@@ -34,6 +34,6 @@ export async function GET(context) {
     site: context.site,
     items: posts,
     customData: `<language>en-us</language>`,
-    stylesheet: '/rss/styles.xsl',
+    stylesheet: "/rss/styles.xsl",
   });
 }
