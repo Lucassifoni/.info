@@ -13,6 +13,7 @@ export interface Props {
     tags?: string[];
     author?: string;
     lang?: string;
+    rssUrl?: string;
 }
 
 const {
@@ -25,6 +26,7 @@ const {
     tags = [],
     author = "Lucas Sifoni",
     lang = "en-US",
+    rssUrl,
 } = Astro.props;
 
 const canonicalURL = new URL(canonical, Astro.site);
@@ -52,6 +54,14 @@ const canonicalURL = new URL(canonical, Astro.site);
     title="Lucas Sifoni"
     href={new URL("rss.xml", Astro.site)}
 />
+{rssUrl && (
+    <link
+        rel="alternate"
+        type="application/rss+xml"
+        title={`Articles about ${tags[0]}`}
+        href={rssUrl}
+    />
+)}
 <link rel="sitemap" href="/sitemap-index.xml" />
 
 <!-- Primary Meta Tags -->

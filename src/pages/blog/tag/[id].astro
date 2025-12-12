@@ -35,6 +35,7 @@ const posts = Object.values(
             description={`Browse all articles about ${tag.id} - ${SITE_DESCRIPTION}`}
             type="website"
             tags={[tag.id]}
+            rssUrl={`/blog/tag/${tag.id}/rss.xml`}
         />
         <style scoped>
             ul {
