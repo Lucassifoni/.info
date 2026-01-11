@@ -1,0 +1,29 @@
+---
+interface Props {
+    lang?: "en" | "fr";
+}
+
+const { lang = "en" } = Astro.props;
+
+const content = {
+    en: {
+        date: "March 4-5, 2026",
+        text: "I'm organizing the",
+        link: "Table ronde optique amateur francophone",
+        suffix: ", an online event for French-speaking amateur opticians on Astro-FR Discord. Call for presentations open until February 8.",
+    },
+    fr: {
+        date: "4-5 mars 2026",
+        text: "J'organise une",
+        link: "Table ronde optique amateur francophone",
+        suffix: ", un événement en ligne sur le Discord Astro-FR. Appel à présentations ouvert jusqu'au 8 février.",
+    },
+};
+
+const c = content[lang];
+---
+
+<div class="message" style="margin-bottom: 1.5em;">
+    <strong>{c.date}</strong> — {c.text}
+    <a href="https://table-ronde-optique-amateur.fr/">{c.link}</a>{c.suffix}
+</div>

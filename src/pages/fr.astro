@@ -3,6 +3,7 @@ import BaseHead from "../components/BaseHead.astro";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import { getCollection } from "astro:content";
+import Announcement from "../components/Announcement.astro";
 
 const posts = Object.values(
     import.meta.glob("./blog/*.{md,mdx}", { eager: true }),
@@ -147,6 +148,8 @@ const tags = await getCollection("tags");
                     >
                 </p>
             </div>
+
+            <Announcement lang="fr" />
 
             <div class="tags">
                 {
