@@ -1,0 +1,165 @@
+---
+const { src } = Astro.props;
+---
+
+<step-viewer data-src={src}></step-viewer>
+
+<style>
+    step-viewer {
+        display: block;
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        border: 1px solid #ddd;
+        border-radius: 3px;
+        overflow: hidden;
+        position: relative;
+        background: #f5f5f5;
+    }
+
+    step-viewer .loading {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #999;
+        font-size: 0.85em;
+    }
+</style>
+
+<script>
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+    import occtImportJsInit from "occt-import-js";
+
+    let occtPromise: ReturnType<typeof occtImportJsInit> | null = null;
+
+    function getOcct() {
+        if (!occtPromise) {
+            occtPromise = occtImportJsInit({
+                locateFile: () => "/occt-import-js.wasm",
+            });
+        }
+        return occtPromise;
+    }
+
+    class StepViewerElement extends HTMLElement {
+        connectedCallback() {
+            const src = this.dataset.src;
+            if (!src) return;
+
+            const loadingEl = document.createElement("div");
+            loadingEl.className = "loading";
+            loadingEl.textContent = "Loading STEP\u2026";
+            this.appendChild(loadingEl);
+
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setClearColor(0xf5f5f5);
+
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 10000);
+
+            const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambient);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(1, 2, 3);
+            scene.add(dirLight);
+            const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.3);
+            dirLight2.position.set(-1, -1, -1);
+            scene.add(dirLight2);
+
+            const controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+
+            const resize = () => {
+                const w = this.clientWidth;
+                const h = this.clientHeight;
+                renderer.setSize(w, h);
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+            };
+
+            this.appendChild(renderer.domElement);
+            resize();
+            const ro = new ResizeObserver(resize);
+            ro.observe(this);
+
+            const animate = () => {
+                requestAnimationFrame(animate);
+                controls.update();
+                renderer.render(scene, camera);
+            };
+            animate();
+
+            this.loadStep(src, scene, camera, controls, loadingEl);
+        }
+
+        async loadStep(
+            src: string,
+            scene: THREE.Scene,
+            camera: THREE.PerspectiveCamera,
+            controls: OrbitControls,
+            loadingEl: HTMLElement,
+        ) {
+            try {
+                const [occt, response] = await Promise.all([
+                    getOcct(),
+                    fetch(src),
+                ]);
+
+                const buffer = await response.arrayBuffer();
+                const fileBuffer = new Uint8Array(buffer);
+                const result = occt.ReadStepFile(fileBuffer, null);
+
+                const group = new THREE.Group();
+
+                for (const mesh of result.meshes) {
+                    const geometry = new THREE.BufferGeometry();
+                    geometry.setAttribute(
+                        "position",
+                        new THREE.BufferAttribute(new Float32Array(mesh.attributes.position.array), 3),
+                    );
+                    if (mesh.attributes.normal) {
+                        geometry.setAttribute(
+                            "normal",
+                            new THREE.BufferAttribute(new Float32Array(mesh.attributes.normal.array), 3),
+                        );
+                    }
+                    geometry.setIndex(new THREE.BufferAttribute(new Uint32Array(mesh.index.array), 1));
+
+                    let color = 0x6688aa;
+                    if (mesh.color) {
+                        color = new THREE.Color(mesh.color[0], mesh.color[1], mesh.color[2]).getHex();
+                    }
+
+                    const material = new THREE.MeshPhongMaterial({
+                        color,
+                        specular: 0x222222,
+                        shininess: 40,
+                    });
+                    group.add(new THREE.Mesh(geometry, material));
+                }
+
+                const box = new THREE.Box3().setFromObject(group);
+                const center = box.getCenter(new THREE.Vector3());
+                group.position.sub(center);
+                scene.add(group);
+
+                const size = box.getSize(new THREE.Vector3());
+                const maxDim = Math.max(size.x, size.y, size.z);
+                camera.position.set(maxDim, maxDim * 0.8, maxDim * 1.5);
+                camera.lookAt(0, 0, 0);
+                controls.target.set(0, 0, 0);
+                controls.update();
+
+                loadingEl.remove();
+            } catch (e) {
+                loadingEl.textContent = "Failed to load STEP file";
+                console.error("StepViewer:", e);
+            }
+        }
+    }
+
+    customElements.define("step-viewer", StepViewerElement);
+</script>

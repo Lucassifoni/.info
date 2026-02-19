@@ -1,0 +1,192 @@
+---
+import BaseHead from "../../components/BaseHead.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import ModelPreview from "../../components/ModelPreview.astro";
+import { getCollection } from "astro:content";
+
+export async function getStaticPaths() {
+    const models = await getCollection("models");
+    return models.map((model) => ({
+        params: { slug: model.id },
+        props: { model },
+    }));
+}
+
+const { model } = Astro.props;
+const { name, description, printables, files, images, thumb } = model.data;
+const slug = model.id;
+
+const PREVIEWABLE = new Set(["stl", "step"]);
+const nonThumbImages = images.filter(
+    (img: string) => img !== thumb,
+);
+
+function formatSize(bytes: number): string {
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+}
+---
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <BaseHead
+            title={`${name} - 3D Models - Lucas Sifoni`}
+            description={name}
+            type="website"
+        />
+        <style scoped>
+            main {
+                max-width: 960px;
+                margin: 0 auto;
+            }
+
+            h2 {
+                font-weight: 400;
+                margin-top: 1.8em;
+                margin-bottom: 0.5em;
+            }
+
+            .description {
+                margin-bottom: 1.5em;
+                line-height: 1.5;
+            }
+
+            .printables-link {
+                display: inline-block;
+                margin-bottom: 1.5em;
+                font-size: 0.9em;
+            }
+
+            .back-link {
+                display: inline-block;
+                margin-bottom: 1em;
+                font-size: 0.85em;
+                color: #555;
+            }
+
+            h3 {
+                font-weight: 400;
+                font-size: 1em;
+                margin-top: 1.5em;
+                margin-bottom: 0.5em;
+                border-bottom: 1px dotted #ccc;
+                padding-bottom: 0.3em;
+            }
+
+            .files-list {
+                list-style-type: none;
+                padding: 0;
+            }
+
+            .files-list li {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0.4em 0;
+                border-bottom: 1px dotted #eee;
+                font-size: 0.9em;
+            }
+
+            .files-list li .file-name {
+                font-family: monospace;
+            }
+
+            .files-list li .file-meta {
+                color: #555;
+                font-size: 0.85em;
+                white-space: nowrap;
+                margin-left: 1em;
+            }
+
+            .files-list li a {
+                color: inherit;
+                text-decoration: none;
+            }
+
+            .files-list li a:hover .file-name {
+                text-decoration: underline;
+            }
+
+            .gallery {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                gap: 0.75em;
+                margin-top: 0.5em;
+            }
+
+            .gallery img {
+                width: 100%;
+                border-radius: 3px;
+            }
+
+            .thumb {
+                max-width: 480px;
+                margin-bottom: 1em;
+            }
+
+            .thumb img {
+                width: 100%;
+                border-radius: 3px;
+            }
+        </style>
+    </head>
+    <body>
+        <Header have_langs={false} />
+        <main>
+            <a href="/models" class="back-link">&larr; All models</a>
+            <h2>{name}</h2>
+
+            {thumb && (
+                <div class="thumb">
+                    <img src={`/models/${slug}/${thumb}`} alt={name} />
+                </div>
+            )}
+
+            <div class="description" set:html={description} />
+
+            {printables && (
+                <a href={printables} class="printables-link" target="_blank" rel="noopener">
+                    Alternatively, view on Printables &rarr;
+                </a>
+            )}
+
+            <h3>Files</h3>
+            <ul class="files-list">
+                {files.map((f: { name: string; size: number; ext: string }) => (
+                    <li>
+                        <a href={`/models/${slug}/${f.name}`} download>
+                            <span class="file-name">{f.name}</span>
+                        </a>
+                        <span class="file-meta">
+                            {PREVIEWABLE.has(f.ext) && (
+                                <button
+                                    class="preview-btn"
+                                    data-src={`/models/${slug}/${f.name}`}
+                                    data-ext={f.ext}
+                                    data-filename={f.name}
+                                >Preview</button>
+                            )}
+                            {f.ext.toUpperCase()} &middot; {formatSize(f.size)}
+                        </span>
+                    </li>
+                ))}
+            </ul>
+            <ModelPreview />
+
+            {nonThumbImages.length > 0 && (
+                <div>
+                    <h3>Pictures</h3>
+                    <div class="gallery">
+                        {nonThumbImages.map((img: string) => (
+                            <img src={`/models/${slug}/${img}`} alt={name} />
+                        ))}
+                    </div>
+                </div>
+            )}
+        </main>
+        <Footer />
+    </body>
+</html>

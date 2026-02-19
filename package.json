@@ -15,9 +15,12 @@
     "@astrojs/rss": "^4.0.10",
     "@astrojs/sitemap": "^3.2.1",
     "@astrojs/vue": "^5.0.1",
+    "@types/three": "^0.183.0",
     "astro": "^5.0.3",
     "astro-i18next": "^1.0.0-beta.16",
+    "occt-import-js": "^0.0.23",
     "prismjs": "^1.29.0",
+    "three": "^0.183.0",
     "vue": "^3.2.30"
   }
 }

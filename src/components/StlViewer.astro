@@ -1,0 +1,93 @@
+---
+const { src } = Astro.props;
+---
+
+<stl-viewer data-src={src}></stl-viewer>
+
+<style>
+    stl-viewer {
+        display: block;
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        border: 1px solid #ddd;
+        border-radius: 3px;
+        overflow: hidden;
+        position: relative;
+        background: #f5f5f5;
+    }
+</style>
+
+<script>
+    import * as THREE from "three";
+    import { STLLoader } from "three/addons/loaders/STLLoader.js";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+    class StlViewerElement extends HTMLElement {
+        connectedCallback() {
+            const src = this.dataset.src;
+            if (!src) return;
+
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setClearColor(0xf5f5f5);
+            this.appendChild(renderer.domElement);
+
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 10000);
+
+            const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambient);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(1, 2, 3);
+            scene.add(dirLight);
+            const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.3);
+            dirLight2.position.set(-1, -1, -1);
+            scene.add(dirLight2);
+
+            const controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+
+            const resize = () => {
+                const w = this.clientWidth;
+                const h = this.clientHeight;
+                renderer.setSize(w, h);
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+            };
+            resize();
+            const ro = new ResizeObserver(resize);
+            ro.observe(this);
+
+            const loader = new STLLoader();
+            loader.load(src, (geometry: THREE.BufferGeometry) => {
+                geometry.computeBoundingBox();
+                geometry.center();
+                const box = geometry.boundingBox!;
+                const size = box.getSize(new THREE.Vector3());
+                const maxDim = Math.max(size.x, size.y, size.z);
+
+                const material = new THREE.MeshPhongMaterial({
+                    color: 0x6688aa,
+                    specular: 0x222222,
+                    shininess: 40,
+                });
+                const mesh = new THREE.Mesh(geometry, material);
+                scene.add(mesh);
+
+                camera.position.set(maxDim, maxDim * 0.8, maxDim * 1.5);
+                camera.lookAt(0, 0, 0);
+                controls.target.set(0, 0, 0);
+                controls.update();
+            });
+
+            const animate = () => {
+                requestAnimationFrame(animate);
+                controls.update();
+                renderer.render(scene, camera);
+            };
+            animate();
+        }
+    }
+
+    customElements.define("stl-viewer", StlViewerElement);
+</script>

@@ -12,6 +12,7 @@ const url_en = "/" + no_lang.join("/");
 <header>
     <nav>
         <h2><a href="/" style="text-decoration: none;">Lucas Sifoni</a></h2>
+
         {have_langs && (
             <span class="lang_selector">
                 <a href={url_en} class={active_lang === "en" ? "active" : ""}>EN</a>
@@ -20,6 +21,10 @@ const url_en = "/" + no_lang.join("/");
             </span>
         )}
     </nav>
+    <div class="nav_links">
+        <HeaderLink href="/">Journal</HeaderLink>
+        <HeaderLink href="/models">3D Models</HeaderLink>
+    </div>
 </header>
 <style lang="scss">
     header {
@@ -44,6 +49,13 @@ const url_en = "/" + no_lang.join("/");
         }
         nav {
             display: flex;
+            align-items: baseline;
+            gap: 1ch;
+        }
+        div.nav_links {
+            display: block;
+            margin-top: 1em;
+            font-size: .85em;
         }
         span.lang_selector {
             display: inline-block;
