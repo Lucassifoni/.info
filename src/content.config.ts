@@ -72,7 +72,46 @@ const people = defineCollection({
 });
 
 const IMAGE_EXTS = new Set([".jpg", ".jpeg", ".png", ".webp"]);
-const MODEL_EXTS = new Set([".stl", ".step", ".pdf"]);
+const MODEL_EXTS = new Set([".stl", ".step", ".pdf", ".3mf"]);
+
+async function collectFiles(
+  dir: string,
+  root: string,
+  files: { name: string; size: number; ext: string; folder: string }[],
+  images: string[],
+): Promise<string | null> {
+  const dirEntries = await fs.readdir(dir, { withFileTypes: true });
+  let thumb: string | null = null;
+
+  for (const entry of dirEntries) {
+    const fullPath = path.join(dir, entry.name);
+    const relPath = path.relative(root, fullPath);
+
+    if (entry.isDirectory()) {
+      const subThumb = await collectFiles(fullPath, root, files, images);
+      if (subThumb) thumb = subThumb;
+      continue;
+    }
+
+    const ext = path.extname(entry.name).toLowerCase();
+    const base = path.basename(entry.name, ext).toLowerCase();
+    const folder = path.relative(root, dir) || "";
+
+    if (MODEL_EXTS.has(ext)) {
+      const fileStat = await fs.stat(fullPath);
+      files.push({ name: relPath, size: fileStat.size, ext: ext.slice(1), folder });
+    }
+
+    if (IMAGE_EXTS.has(ext)) {
+      images.push(relPath);
+      if (base === "thumb" && folder === "") {
+        thumb = relPath;
+      }
+    }
+  }
+
+  return thumb;
+}
 
 const models = defineCollection({
   loader: async () => {
@@ -100,28 +139,9 @@ const models = defineCollection({
         continue;
       }
 
-      const dirEntries = await fs.readdir(dir);
-
-      const files = [];
+      const files: { name: string; size: number; ext: string; folder: string }[] = [];
       const images: string[] = [];
-      let thumb: string | null = null;
-
-      for (const entry of dirEntries) {
-        const ext = path.extname(entry).toLowerCase();
-        const base = path.basename(entry, ext).toLowerCase();
-
-        if (MODEL_EXTS.has(ext)) {
-          const fileStat = await fs.stat(path.join(dir, entry));
-          files.push({ name: entry, size: fileStat.size, ext: ext.slice(1) });
-        }
-
-        if (IMAGE_EXTS.has(ext)) {
-          images.push(entry);
-          if (base === "thumb") {
-            thumb = entry;
-          }
-        }
-      }
+      const thumb = await collectFiles(dir, dir, files, images);
 
       let descriptionHtml = "";
       try {
@@ -154,6 +174,7 @@ const models = defineCollection({
         name: z.string(),
         size: z.number(),
         ext: z.string(),
+        folder: z.string(),
       }),
     ),
     images: z.array(z.string()),

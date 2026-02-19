@@ -17,10 +17,23 @@ const { model } = Astro.props;
 const { name, description, printables, files, images, thumb } = model.data;
 const slug = model.id;
 
-const PREVIEWABLE = new Set(["stl", "step"]);
+const PREVIEWABLE = new Set(["stl", "step", "pdf"]);
 const nonThumbImages = images.filter(
     (img: string) => img !== thumb,
 );
+
+type ModelFile = { name: string; size: number; ext: string; folder: string };
+const filesByFolder = new Map<string, ModelFile[]>();
+for (const f of files) {
+    const group = filesByFolder.get(f.folder) || [];
+    group.push(f);
+    filesByFolder.set(f.folder, group);
+}
+const sortedFolders = [...filesByFolder.keys()].sort((a, b) => {
+    if (a === "") return -1;
+    if (b === "") return 1;
+    return a.localeCompare(b);
+});
 
 function formatSize(bytes: number): string {
     if (bytes < 1024) return bytes + " B";
@@ -76,6 +89,14 @@ function formatSize(bytes: number): string {
                 padding-bottom: 0.3em;
             }
 
+            .folder-name {
+                font-weight: 400;
+                font-size: 0.9em;
+                color: #333;
+                margin-top: 1em;
+                margin-bottom: 0.3em;
+            }
+
             .files-list {
                 list-style-type: none;
                 padding: 0;
@@ -85,9 +106,16 @@ function formatSize(bytes: number): string {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                padding: 0.4em 0;
-                border-bottom: 1px dotted #eee;
+                padding: 0.4em 0.5em;
                 font-size: 0.9em;
+            }
+
+            .files-list li:nth-child(even) {
+                background: #f8f8f8;
+            }
+
+            .files-list li:hover {
+                background: #eef2ff;
             }
 
             .files-list li .file-name {
@@ -133,10 +161,9 @@ function formatSize(bytes: number): string {
             }
         </style>
     </head>
-    <body>
+    <body class="models">
         <Header have_langs={false} />
         <main>
-            <a href="/models" class="back-link">&larr; All models</a>
             <h2>{name}</h2>
 
             {thumb && (
@@ -147,33 +174,43 @@ function formatSize(bytes: number): string {
 
             <div class="description" set:html={description} />
 
-            {printables && (
-                <a href={printables} class="printables-link" target="_blank" rel="noopener">
+                <a href={"https://www.printables.com/@chantepierre_1917922"} class="printables-link" target="_blank" rel="noopener">
                     Alternatively, view on Printables &rarr;
                 </a>
-            )}
 
             <h3>Files</h3>
-            <ul class="files-list">
-                {files.map((f: { name: string; size: number; ext: string }) => (
-                    <li>
-                        <a href={`/models/${slug}/${f.name}`} download>
-                            <span class="file-name">{f.name}</span>
-                        </a>
-                        <span class="file-meta">
-                            {PREVIEWABLE.has(f.ext) && (
-                                <button
-                                    class="preview-btn"
-                                    data-src={`/models/${slug}/${f.name}`}
-                                    data-ext={f.ext}
-                                    data-filename={f.name}
-                                >Preview</button>
-                            )}
-                            {f.ext.toUpperCase()} &middot; {formatSize(f.size)}
-                        </span>
-                    </li>
-                ))}
-            </ul>
+            {sortedFolders.map((folder) => {
+                const folderFiles = filesByFolder.get(folder)!;
+                const displayName = folder === "" ? null : folder;
+                return (
+                    <div>
+                        {displayName && <h4 class="folder-name">{displayName}</h4>}
+                        <ul class="files-list">
+                            {folderFiles.map((f) => {
+                                const fileName = f.name.split("/").pop()!;
+                                return (
+                                    <li>
+                                        <a href={`/models/${slug}/${f.name}`} download>
+                                            <span class="file-name">{fileName}</span>
+                                        </a>
+                                        <span class="file-meta">
+                                            {PREVIEWABLE.has(f.ext) && (
+                                                <button
+                                                    class="preview-btn"
+                                                    data-src={`/models/${slug}/${f.name}`}
+                                                    data-ext={f.ext}
+                                                    data-filename={fileName}
+                                                >Preview</button>
+                                            )}
+                                            {f.ext.toUpperCase()} &middot; {formatSize(f.size)}
+                                        </span>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    </div>
+                );
+            })}
             <ModelPreview />
 
             {nonThumbImages.length > 0 && (

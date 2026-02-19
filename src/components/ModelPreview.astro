@@ -228,22 +228,10 @@
         toolbar.appendChild(label);
         toolbar.appendChild(closeBtn);
 
-        const viewerContainer = document.createElement("div");
-        viewerContainer.className = "viewer-container";
-
-        const status = document.createElement("div");
-        status.className = "status";
-        status.textContent = ext === "step" ? "Loading STEP (this may take a moment)\u2026" : "Loading\u2026";
-        viewerContainer.appendChild(status);
-
         overlay.appendChild(toolbar);
-        overlay.appendChild(viewerContainer);
-        document.body.appendChild(overlay);
-
-        const { scene, camera, controls, dispose } = setupScene(viewerContainer);
 
         const close = () => {
-            dispose();
+            if (sceneHandle) sceneHandle.dispose();
             overlay.remove();
             document.removeEventListener("keydown", onKey);
         };
@@ -253,13 +241,40 @@
         closeBtn.addEventListener("click", close);
         document.addEventListener("keydown", onKey);
 
-        const loader = ext === "step" ? loadStep : loadStl;
-        loader(src, scene, camera, controls)
-            .then(() => status.remove())
-            .catch((err) => {
-                status.textContent = `Failed to load ${ext.toUpperCase()} file`;
-                console.error("ModelPreview:", err);
-            });
+        let sceneHandle: ReturnType<typeof setupScene> | null = null;
+
+        if (ext === "pdf") {
+            const iframeContainer = document.createElement("div");
+            iframeContainer.className = "viewer-container";
+            const iframe = document.createElement("iframe");
+            iframe.src = src;
+            iframe.style.cssText = "width:100%;height:100%;border:none;background:#fff;border-radius:0 0 6px 6px;";
+            iframeContainer.appendChild(iframe);
+            overlay.appendChild(iframeContainer);
+            document.body.appendChild(overlay);
+        } else {
+            const viewerContainer = document.createElement("div");
+            viewerContainer.className = "viewer-container";
+
+            const status = document.createElement("div");
+            status.className = "status";
+            status.textContent = ext === "step" ? "Loading STEP (this may take a moment)\u2026" : "Loading\u2026";
+            viewerContainer.appendChild(status);
+
+            overlay.appendChild(viewerContainer);
+            document.body.appendChild(overlay);
+
+            sceneHandle = setupScene(viewerContainer);
+            const { scene, camera, controls } = sceneHandle;
+
+            const loader = ext === "step" ? loadStep : loadStl;
+            loader(src, scene, camera, controls)
+                .then(() => status.remove())
+                .catch((err) => {
+                    status.textContent = `Failed to load ${ext.toUpperCase()} file`;
+                    console.error("ModelPreview:", err);
+                });
+        }
     }
 
     document.addEventListener("click", (e) => {
