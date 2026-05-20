@@ -14,6 +14,7 @@ export default defineConfig({
     },
   },
   redirects: {
-    "/fr": "/"
+    "/fr": "/",
+    "/blog/34-days-of-refactoring": "/blog/34-days-of-refactoring-my-elixir-saas"
   }
 });
