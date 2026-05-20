@@ -17,9 +17,9 @@ const latestPosts = posts.slice(0, 10);
 
 const currentlyUpdated = "May 2026";
 const currently = [
-    "Building Alzo with the team, and migrating isolated deploys to a BEAM cluster.",
+    "Building Alzo, and migrating isolated deploys to a BEAM cluster.",
     "Open to one new Elixir / BEAM engagement, see the hire page.",
-    "Building : the tiniest dobsonian telescope I know of : a 28mm f/4.",
+    "Building the tiniest dobsonian telescope I know of : a 28mm f/4.",
 ];
 
 const projects = [
@@ -150,6 +150,10 @@ const contactRoutes = [
                 margin-bottom: 0.9em;
                 padding-top: 0.75em;
                 border-top: 1px dotted lightgray;
+            }
+            ul.contact li:first-child {
+                padding-top: 0;
+                border-top: none;
             }
             ul.contact .label {
                 font-weight: 700;

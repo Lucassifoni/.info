@@ -79,6 +79,15 @@ const breadcrumbItems = [
             .footer_additions li:last-child::after {
                 content: "";
             }
+            .elixir-cta {
+                margin: 0 0 1.4rem;
+                padding: 0 0 0.9rem;
+                border-bottom: 1px dotted gray;
+                font-size: 0.8em;
+            }
+            .elixir-cta p {
+                margin: 0;
+            }
         </style>
     </head>
 
@@ -114,6 +123,20 @@ const breadcrumbItems = [
                 }
                 <Navigation me={url} />
                 <hr />
+                {
+                    (tags || []).includes("elixir") && (
+                        <aside class="elixir-cta">
+                            <p>
+                                Working on something in Elixir or on the BEAM
+                                where a fresh pair of eyes would help ? I take
+                                on a couple of days a week for consulting work
+                                : library design, structure review,
+                                exploratory prototypes...<br/>
+                                <a href="/hire">See how I can help &rarr;</a>
+                            </p>
+                        </aside>
+                    )
+                }
                 <slot />
             </article>
 
