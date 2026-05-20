@@ -1,0 +1,349 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "[Talk] Elixir-FR online Elixir meetup may 2026 - a modular monolith with hot code loading"
+description: "Hot code loading for feature segregation in Elixir"
+pubDate: "May 18 2026"
+tags: ["programming", "elixir", "talk"]
+frenchTitle: "[Talk] Meetup Elixir-FR mai 2026"
+frenchSummary: "Présentation au meetup Elixir FR sur mon usage du hot code loading dans Alzo."
+---
+
+Here is the content of my talk at the Elixir-FR meetup that took place on monday, may 18th on Discord. It is literally a copy-paste of the slides made with sli.dev, into a .mdx blog post. How convenient is this plaintext era ?
+
+## Modulariser mon monolithe avec le Hot code loading
+
+---
+
+## Vous utilisez déjà le hot code loading !
+
+Dans `iex`, avec `recompile`/`l`/`c`/`r`
+```
+iex> recompile
+:ok
+```
+
+Un fichier ~/foo.ex 
+```elixir
+defmodule Foo do
+  def bar(), do: "hello"
+end
+```
+
+```
+iex> c "foo.ex"
+[Foo]
+iex> Foo.bar()
+"hello"
+```
+
+---
+
+## Nos outils pour charger un module dans un noeud
+
+- `Code` manipule le compilateur Elixir
+- `:code` est le serveur de code du noeud pour charger/lister/purger des modules
+
+Note : les upgrades d'état via le callback GenServer `code_change/3` sont un problème que je me suis épargné.
+
+---
+
+## Mon besoin :
+- Développer des features par-client
+- Déployer on-prem certains contrats
+- Garder une release et un monorepo uniques
+- Pas d'umbrellas pour cet usage
+
+---
+
+## Quelques conventions :
+- code client dans /lib/clients/apps/\<client\>/\<app\>
+- point d'entrée `Alzo.Clients.Apps.Client.AppEntry` 
+  - ce module est un LiveComponent
+  - et implémente `@behaviour Alzo.Clients.DynamicApp`
+
+<div >
+    <img src="/pics/hotcodeelixirfr/file_tree.png" />
+</div>
+
+---
+
+DynamicApp = Quelques métadonnées + un point d'entrée pour l'UI
+
+```elixir
+defmodule Alzo.Clients.Apps.Xxx.ArchicadImportEntry do
+  use AlzoWeb, :live_component
+  @behaviour Alzo.Clients.DynamicApp
+
+  @impl true
+  def dev_path, do: "xxxxx_archicad_import"
+
+  @impl true
+  def capabilities, do: :none
+
+  @impl true
+  def friendly_name, do: "Xxxx / Import ArchiCAD"
+
+  alias Alzo.Clients.Apps.Xxx.ArchiCADImport.State, as: State
+  alias Alzo.Clients.Apps.Xxx.ArchiCADImport.Importer, as: Importer
+  alias Alzo.Clients.Apps.Xxx.ArchiCADImport.SaxyParser, as: Parser
+
+  @impl true
+  def mount(socket) do
+    {:ok,
+     socket
+     |> assign(:state, State.new())
+    }
+  end
+```
+
+---
+
+Test dans la codebase, y compris en CI :
+
+```elixir
+mix test
+# ou spécifiquement
+mix test lib/clients/apps/xxxx/archicad ...
+```
+
+Puis, au moment de release :
+
+```docker
+RUN rm -rf lib/clients/apps && rm -rf test/clients
+
+RUN MIX_ENV=prod mix compile && \
+    MIX_ENV=prod mix release
+```
+
+Une fois construit, il ne reste rien du code client.
+
+---
+
+Implications :
+- `Alzo.Clients.Apps.Client.AppEntry` appelle `Alzo.Context.context_function/1`, pas l'inverse
+- `Alzo.Clients.Apps.Client.FooAppModule` n'appelle pas `Alzo.Clients.Apps.Client.BarAppModule`
+
+Helper : `mix run --no-mix-exs check_abstractions_usage.exs` :
+
+```elixir
+    # ... règles d'architecture ...
+    {:error, "Alzo.Clients.",
+      scope: "lib/alzo/**/*.ex",
+      whitelist: ["lib/alzo/application.ex", "lib/alzo/apps/app.ex"],
+      hint: "Never reference Alzo.Clients.* from core"},
+
+    {:error, "Alzo.Clients.",
+      scope: "lib/alzo_web/**/*.ex",
+      whitelist: [],
+      hint: "Never reference Alzo.Clients.* from web"},
+```
+
+---
+
+### 2 chemins différents : en dev
+
+Charger les applications 
+
+```elixir
+  use Application
+
+  @impl true
+  def start(_type, _args) do
+    children =
+      [
+        Alzo.Repo,
+        Alzo.DynamicSupervisor,
+        ...
+      ]
+
+    load_dynamic_apps()
+    Supervisor.start_link(children, opts)
+  end
+
+  if Mix.env() == :prod do
+    def load_dynamic_apps, do: :ok
+  else
+    def load_dynamic_apps do
+      Alzo.Clients.DynamicApp.load_dynamic_modules()
+    end
+  end
+```
+
+---
+
+```elixir
+@spec load(binary()) :: :ok
+defp load(dir) do
+  files = File.ls!(dir)
+  entrypoints = Enum.filter(files, &entry?/1)
+  dirs = Enum.filter(files, &dir?/1)
+  Code.put_compiler_option(:ignore_module_conflict, true)
+
+  for entry <- entrypoints do
+    Code.compile_file(Path.join(dir, entry))
+    |> Enum.each(fn {module, _} ->
+      Code.ensure_loaded?(module)
+      Logger.info("Dynamically loaded #{module}")
+    end)
+  end
+  
+  Code.put_compiler_option(:ignore_module_conflict, false)
+
+  for subdir <- dirs do
+    load(Path.join(dir, subdir))
+  end
+
+  :ok
+end
+```
+
+---
+
+Énumérer les applications
+
+```elixir
+  def get_dynamic_dev_apps() do
+    :code.all_available()
+    |> Enum.filter(fn {name, _, _} ->
+      dynamic_dev_app?("#{name}")
+    end)
+    |> Enum.map(fn {mod, _, _} -> to_map(:"#{mod}") end)
+  end
+
+
+  def to_map(module) do
+    %{
+      module: module,
+      path: module.route_path(),
+      friendly_name: module.friendly_name(),
+      capabilities: module.capabilities(),
+      url_template: module.url_template()
+    }
+  end
+```
+
+---
+
+![](/pics/hotcodeelixirfr/dev_apps.png)
+
+---
+
+### 2 chemins différents : en prod
+
+Gestion :
+
+- `mix alzo.app.package client/app` produit un .tar.gz
+- uploadé via une interface d'administration
+- pour créer ou mettre à jour une app existante
+- métadonnées en DB + code dans s3
+
+Chargement :
+- au boot, `Alzo.AppCompiler` rafraîchit les apps et charge les modules **par noeud**
+- une app créee sur un noeud après le boot est chargée à la première ouverture sur un autre noeud
+- une mise à jour d'app broadcast `{:app_updated, ...}` dans le cluster
+- si besoin de process persistants : link à la liveview / link via Alzo.DynamicSupervisor / link via Horde
+
+---
+
+```elixir
+defmodule Alzo.AppCompiler do
+  use GenServer
+
+  def init() do
+    AppNotifier.subscribe()
+    if prod?(), do: send(self(), :compile_all_apps)
+    {:ok, %{}}
+  end
+
+  def handle_info({:app_updated, app_id}, state) do
+    app = App.get!(app_id)
+    App.invalidate_app_cache(app.disk_path)
+    compile_app(app)
+    {:noreply, state}
+  end
+
+  def compile_app(app) do
+    {_app, dir} = App.get_live_app_files(app)
+    files = Path.wildcard(Path.join(dir, "*.ex"))  
+    module = Enum.map(files, &Code.eval_file/1) |> find_entrypoint()
+    if function_exported?(module, :persistent_setup, 0), do: module.persistent_setup()
+    module
+  end
+```
+
+---
+
+```elixir
+defmodule AlzoWeb.ApplicationLive do
+  use AlzoWeb, :live_view
+
+  # GET /live/apps_live/:url
+  def mount(%{"url" => url}, _session, socket) do
+    module = load_app(socket.assigns.current_scope, url)
+    {:ok, assign(socket, dynamic_module: module, dynamic_id: "app-#{url}")}
+  end
+
+  defp load_app(scope, url) do
+    case App.get_live_app_from_url(scope, url) do
+      {app, _dir} ->
+        Alzo.Apps.AppCompiler.compile_app(app)
+
+      nil ->
+        ...
+    end
+  end
+  
+  def render(assigns) do
+    ~H"""
+    <.live_component module={@dynamic_module} id={@dynamic_id} {assigns} />
+    """
+  end
+end
+```
+
+---
+
+![](/pics/hotcodeelixirfr/prod_apps.png)
+
+---
+
+![](/pics/hotcodeelixirfr/exemple2.png)
+
+
+---
+
+## Vous utilisez déjà peut-être le hot code loading ! (bis)
+
+- le code reloader de Phoenix
+- Livebook — chaque cellule est du code compilé et évalué dans le noeud
+- en développement avec Nerves ?
+
+---
+
+## Après 3 ans avec 
+
+Avantages pour moi :
+- Simple à tester
+- Simple à mainliner
+- Isolation simple adaptée à mes déploiements on-prem
+- Pas de dérive entre le core et les apps
+
+Inconvénients :
+- Un peu plus de cérémonie depuis mon cluster
+- Incite à personnaliser, ce qui ne scale pas
+- Léger couplage à Liveview
+
+Aujourd'hui, je m'en éloigne mais avoir cette malléabilité en prod m'a beaucoup aidé.  
+Tous les outils sont dans le runtime et cela n'est pas si exotique !
+
+---
+
+Documentation :
+- https://hexdocs.pm/elixir/Code.html
+- https://www.erlang.org/doc/apps/kernel/code.html
+- https://www.erlang.org/doc/system/code_loading.html
+
+
+Un exemple de système live ou le code est *rechargé* en permanence :
+- Bryan Hunter — Waterpark: Distributed Actors vs the Pandemic : https://www.youtube.com/watch?v=9qUfX3XFi_4
+- https://www.erlang.org/doc/system/appup_cookbook.html (hot upgrades OTP)

@@ -1,0 +1,156 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "34 days in an Elixir tunnel to refactor my SaaS without a rewrite"
+description: "34 days of refactoring, from single-instance single-tenant to a multi-tenant cluster. How I fought the idea of a rewrite and used the elixir compiler and architecture linting to refactor Alzo layer by layer."
+pubDate: "May 20 2026"
+tags: ["programming", "elixir", "alzo", "introspection"]
+frenchTitle: "34 jours dans un tunnel Elixir pour refactorer mon SaaS sans le réécrire"
+frenchSummary: "34 jours de refactoring, d'une instance unique mono-tenant à un cluster multi-tenant. Comment j'ai évité une réécriture en m'appuyant sur le compilateur elixir et le linting d'architecture pour refactorer Alzo couche par couche."
+---
+
+Alzo is my Elixir SaaS for architecture firms, built over four years as a deliberately small, single-tenant, single-instance system. That choice let me leverage the BEAM in interesting ways, but it didn't really survive turning into a real company. This post is about the ~34 days I spent turning Alzo into a clustered multi-tenant app, without rewriting it.
+
+Maybe you've read some of my posts about Elixir, some mentioning what I'm doing in Alzo like [where I demonstrate hot-loading code per-client in production](https://lucassifoni.info/blog/leveraging-hot-code-loading-for-fun-and-profit/).
+
+Most of those posts mention my architecture choices that could be summed up with : stay small, stay single-instance, stay single-tenant, and allow yourself to leverage the BEAM to do magic stateful runtime stuff. 
+
+Well, life happens, yesterday's deliberate choice becomes today's burden, and we structured a real company around Alzo, meaning that some of my most crazy experiments like [Proxying ViteJS dev servers in production](/blog/beaming-online-meetup/) or [compiling elixir to PHP on-the-fly, then using java anyway to write office documents](/blog/lang-x-from-elixir) cannot really fly anymore.
+
+I'm not dismissing them though, all of this allowed to experiment with clients one-on-one and find novel and interesting use-cases. But my linear scaling model could not really continue.
+
+I've spent about 34 work days in a long tunnel in february and march, assisted with LLMs, to pull off a refactor I thought impossible for me alone.
+
+I chose to write this post because I've not seen a lot of writeups of a small elixir app needing to become bigger.
+
+This article is quite long, here is a TOC :
+
+- [Architecture changes](#architecture-changes)
+- [Removing the broker](#removing-the-broker)
+- [1 tenant = 1 schema](#1-tenant--1-schema)
+- [Explicit scope passing](#explicit-scope-passing)
+- [The compiler is a task queue](#the-compiler-is-a-task-queue)
+- [A task queue is great for robots](#a-task-queue-is-great-for-robots)
+- [And we need architecture tests](#and-we-need-architecture-tests)
+- [Query exceptions are another task queue](#query-exceptions-are-another-task-queue)
+- [Clustering and singletons](#clustering-and-singletons)
+- [Storage migrations](#storage-migrations)
+- [Still hot loadin'](#still-hot-loadin)
+- [Was it worth it?](#was-it-worth-it)
+
+## Architecture changes
+
+My architecture was designed to allow deploys in NAT-walled server closets, with a message broker being a phoenix app that was routing messages between alzo instances and isolated apps consuming them, each thing either getting messages by pushes, or pulling them. Well, that was very ergonomic (routing was configured in a GUI and very dynamic) but this central broker would quickly become a bottleneck, leading to "grapes" of instances connected to various brokers. 
+
+Each alzo node was a VM running alzo+meilisearch+postgres on docker-compose. This would actually be fine because the actual operations we provide to architecture firms are linked to their projects macro lifecycle, which evolves quite slowly in time. The biggest architecture firm with 40 years of data useful to my app that I onboarded represents a postgres dump of around 1gb before gzip, and around 80GB of media. 
+
+The new architecture is more standard : a few nodes, a big managed postgres, and S3 storage.
+
+The challenges were numerous though, Alzo had :
+- no concept of a tenant
+- was fully based on a predictable on-disk structure
+- was hot-loading code at runtime for client-specific in-app apps
+- leveraged singleton genservers to back some features up
+
+In a cluster, and with remote storage, all those great developer experience perks that node-local deployment offers became architectural issues.
+
+### Removing the broker
+
+The first bottleneck that I wanted to eliminate was the broker, despite it being really practical. Being able to graphically see instances, clients, and click to create mappings from a prod instance to a staging website, then revoke the link, for example, was very handy. It was a very minimal phoenix app with service-to-service auth, but this was a blocker both because of its bottleneck status, and because of its non-standardness.
+
+Now alzo-as-a-cluster is a pretty standard OAuth provider, which opens up other things I want to test, like becoming an MCP server, or running a separate experiments platform for my more "beta-tester" inclined clients.
+
+### 1 tenant = 1 schema
+
+Given our new need to scale, but our preference to be strictly B2B and more of a services business backed by software, than a self-service SaaS, I opted to one postgres schema per tenant. This allows easy migration from the previous model, easy deletion of tenants, and should scale well to 500 tenants before real operational issues arise. When/if we reach this scale, I would logically be able to delegate the next migration to a team. This brought tradeoffs with cross-schema concerns, given some surface of the data is global in nature. I've used migration tagging with an `@scope :tenant` or `@scope :global` tag in migration modules, and built an UI to migrate one or all tenants.
+
+### Explicit scope passing
+
+I've chosen to use explicit scope passing instead of a `Process.put/2` call which is often seen in multi-tenant elixir codebases. This flies very well for codebases that are created this way, but with four years of code behind me, I wanted to be able to reason about tenant isolation in a mechanical way. I chose to pass a `%Scope{ user_id, role, tenant_id, tenant_prefix }` struct around and thread it explicitly as a first argument to every context function. This is verbose, but the least surprising choice, and I really dislike global implicit state. This meant that I was able to break every caller at once ! 
+
+### The compiler is a task queue
+
+And, breaking every caller at once was a fantastic tool for the next step. By adding 1 unit of arity to all functions, all callers are detected as broken by the compiler, because the function they previously called `Context.get_item!(id)` does not exist anymore. It became `Context.get_item!(scope, id)`. In terms of volume, I am speaking of 231 functions, with more than 600 call sites. So this was a list of more than 600 compilation errors.
+
+Breaking everything at once is in my opinion a better tool than keeping everything green while we work, in a TDD fashion, but lower in the correctness stack, since compilation itself breaks.
+
+### A task queue is great for robots
+
+..and it turns out, this list of 600 compilation errors is the perfect match for an LLM. I've chosen to treat it as a queue, handled by a single agent, fixing 10 call sites by 10, with me reviewing every edit. It still is faster than handling this refactor manually, but is verified manually. Then, with the call sites updated and compiling, all the tests were broken. So I've used the same method to fix all the tests, and add isolation testing. Again, a lot of manual review was made. Despite following along and reviewing everything, I let three call sites slip, and had to go back and fix them manually.
+
+### And we need architecture tests
+
+Another friendly tool for this refactor was the creation of an "abstractions checker script". It is an elixir script that I run manually and in CI to supervise that my code uses the right abstraction level. It is a pattern I use in other, newer projects and it was nice to bring it along. It ran both in CI and dev while I worked on the refactor, catching violations before they could get hidden in the volume of changes. Maybe this could be described as a "taste linting tool" ?
+
+```elixir
+{:error, "Alzo.Clients.",
+  scope: "lib/alzo/**/*.ex",
+  whitelist: ["lib/alzo/application.ex", "lib/alzo/apps/app.ex"],
+  hint: "never reference Alzo.Clients.* from core code"},
+
+{:error, "Alzo.Clients.",
+  scope: "lib/alzo_web/**/*.ex",
+  whitelist: [],
+  hint: "never reference Alzo.Clients.* from web code"},
+
+{:error, "PubSub.",
+  whitelist: [
+    "lib/alzo/notifiers/project_notifier.ex",
+    "lib/alzo/notifiers/partners_notifier.ex",
+    "lib/alzo/broker/messages_handler.ex",
+    "lib/alzo/apps/app_notifier.ex"
+    ...
+  ],
+  use_instead: "a notifier module in lib/alzo/contents/notifiers/"},
+
+{:error, "Req.",
+  whitelist: [
+    "lib/alzo/broker/broker_transport.ex",
+    "lib/alzo/open_ai/open_ai_api_request.ex",
+    "lib/alzo/mapbox/mapbox_request.ex",
+    "lib/alzo/contents/external_downloader.ex"
+    ...
+  ],
+  use_instead: "a dedicated transport/service module"},
+
+```
+
+### Query exceptions are another task queue
+
+And, well, what about untested, or missed, code paths ? Since I am slightly but within reason paranoid about user separation (who isn't ?), I chose to keep a register of tenant-specific and global tables. This caught a few other queries that were missing their scope, and let me log them, using `Repo.prepare_query/3`.
+
+```elixir
+def prepare_query(_operation, query, opts) do
+  if tenant_query?(query) and not Keyword.has_key?(opts, :prefix) do
+    table = table_name(query)
+
+    maybe_log_unscoped_violation(table)
+
+    raise Alzo.UnscopedTenantQueryError,
+      message:
+        "Query on tenant table \"#{table}\" without :prefix. " <>
+          "Pass Repo.scoped_opts(scope) to scope this query."
+  end
+
+  {query, opts}
+end
+```
+
+This allowed me to find a few call sites that were missed by the mechanical refactor.
+
+### Clustering and singletons
+
+Overall, I had 12 singleton GenServers that performed various but lightweight tasks, on each alzo deploy. Those were switched to Horde-managed GenServers, receiving a scope at initialization, and passing it around. This is another area where I chose to favour explicitness rather than the process dictionary - which is a fine choice, but maybe more suited for a day-1 multi-tenant app.
+
+### Storage migrations
+
+All file storage was thought to be local in Alzo, which was a feature that made the "app-in-server-closet" behaviour possible and easy. I had created a Storage module that proxied all file operations initially, which allowed me to make it a `@behaviour`, and branch out to `LocalStorage` and `S3` implementations. I also created a `LocalFS` abstraction for actual-node-local `File.` calls, which allowed me to migrate all stray calls to the correct `Storage` gate, or migrate the legit ones to `LocalFS`, again with a task list auto-generated by the forementioned abstractions checker script. All `File` calls were simply forbidden outside of `LocalStorage` and `LocalFS`, enforced by the abstractions checker.
+
+### Still hot loadin'
+
+I had to migrate my hot-code-loading system from a single deploy perspective, to a clustered perspective. My recent [talk in french at the Elixir-FR meetup](/blog/elixir-fr-meetup-hot-code-loading-talk) goes over the details, but it involved adding a layer of pubsub to notify each node of code changes on dynamic application updates, having an AppCompiler genserver per node, and maintaining a dynamic app code cache per node. This system isn't really suited to building long-term and broadly-used features. Those would now be shipped as part of the core app now. But it has been truly useful for my first 3 years with Alzo, and offers a nice escape hatch to have a single-tenant feature, or to give a future feature to a technically-inclined client who wants to beta test it. Migrating from a hot loaded to a core feature is still as easy as before : it is a matter of moving a few files around and adding a route.
+
+### Was it worth it?
+
+Well, I would say yes. I am now more at peace with immediate growth, and avoided a full rewrite, which would have been the wrong call for this kind of refactor. Maybe LLMs made this possible, maybe they simply made it easier. Now, I am migrating clients one by one to the new cluster and deprecating standalone instances. A question that could come up could be : would I start small again, with an unscalable system ? I think I would, except for multi-tenancy which is always painful to bolt onto an existing system. But starting small has a lot of other advantages, mainly in using brain cycles to work closely with a client.
+
+So... throughout all this work, I tamed and cut down the more unhinged edges, but still get to keep a bit of the fun parts :).
