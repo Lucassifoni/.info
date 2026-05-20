@@ -13,13 +13,6 @@ const url_en = "/" + no_lang.join("/");
     <nav>
         <h2><a href="/" style="text-decoration: none;">Lucas Sifoni</a></h2>
 
-        {have_langs && (
-            <span class="lang_selector">
-                <a href={url_en} class={active_lang === "en" ? "active" : ""}>EN</a>
-                {" | "}
-                <a href={url_fr} class={active_lang === "fr" ? "active" : ""}>FR</a>
-            </span>
-        )}
     </nav>
     <div class="nav_links">
         <HeaderLink href="/">Home</HeaderLink>
