@@ -1,3 +1,63 @@
+@font-face {
+    font-family: "Brut Grotesque";
+    src: url("/fonts/Brut_Grotesque-Book.otf") format("opentype");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Brut Grotesque";
+    src: url("/fonts/Brut_Grotesque-Book_Italic.otf") format("opentype");
+    font-weight: 400;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Brut Grotesque";
+    src: url("/fonts/Brut_Grotesque-Medium.otf") format("opentype");
+    font-weight: 500 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Brut Grotesque";
+    src: url("/fonts/Brut_Grotesque-Medium_Italic.otf") format("opentype");
+    font-weight: 500 700;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Brut Grotesque Mono";
+    src: url("/fonts/Brut_Grotesque_Mono-Regular.otf") format("opentype");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Droulers Clarendon";
+    src: url("/fonts/DroulersClarendon-Book.otf") format("opentype");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Droulers Clarendon";
+    src: url("/fonts/DroulersClarendon-BookItalic.otf") format("opentype");
+    font-weight: 400;
+    font-style: italic;
+    font-display: swap;
+}
+
+:root {
+    --ink: #263a2e;
+}
+
 html {
     background: url("/bg.png");
     background-repeat: repeat;
@@ -6,6 +66,7 @@ html {
     -moz-text-size-adjust: none;
     -webkit-text-size-adjust: none;
     text-size-adjust: none;
+    font-synthesis: none;
 }
 
 html img {
@@ -16,10 +77,11 @@ body {
     max-width: 960px;
     margin: auto;
     padding: 1em;
+    color: var(--ink);
 }
 
 a {
-    color: black;
+    color: var(--ink);
     text-decoration: underline;
 }
 
@@ -37,12 +99,12 @@ html * {
 }
 
 a {
-    color: black;
+    color: var(--ink);
 }
 
 html {
     font-size: 15.5px;
-    font-family: Helvetica, Arial, sans-serif;
+    font-family: "Brut Grotesque", Helvetica, Arial, sans-serif;
     margin: 0;
     padding: 0;
 }
@@ -50,7 +112,7 @@ html {
 h1,
 h2,
 h3 {
-    font-family: Helvetica, Arial, sans-serif;
+    font-family: "Droulers Clarendon", Georgia, "Times New Roman", serif;
     margin-top: 0;
 }
 
@@ -76,7 +138,7 @@ ul {
     font-size: 1em;
     background: none;
     font-family: inherit;
-    border: 1px solid black;
+    border: 1px solid var(--ink);
 }
 
 img {
@@ -89,7 +151,7 @@ pre.astro-code {
     line-height: 1.6;
     border-radius: 2px;
     padding: 8px;
-    font-family: monospace;
+    font-family: "Brut Grotesque Mono", monospace;
     font-weight: 300;
     font-size: 12px;
     background-color: #eee !important;
@@ -104,7 +166,7 @@ code,
 .message,
 p code {
     font-size: 12px;
-    font-family: monospace;
+    font-family: "Brut Grotesque Mono", monospace;
     box-shadow: 1px 1px rgb(127, 156, 194);
     background: rgb(180, 211, 251);
     border-radius: 2px;
@@ -131,7 +193,7 @@ ul {
 
 ul.news time {
     font-weight: bold;
-    font-family: Helvetica, Arial, sans-serif;
+    font-family: "Brut Grotesque", Helvetica, Arial, sans-serif;
     font-size: 0.8em;
     margin-left: -16px;
 }
@@ -171,12 +233,12 @@ ul ul {
     margin: 1px;
     display: inline-block;
     border-radius: 10px;
-    font-family: monospace, Helvetica, sans-serif;
+    font-family: "Brut Grotesque Mono", monospace;
     font-size: 0.65em;
     padding: 2px 6px;
     background: transparent;
-    color: black;
-    border: 1px solid black;
+    color: var(--ink);
+    border: 1px solid var(--ink);
     &:hover {
         border: 1px solid transparent;
     }

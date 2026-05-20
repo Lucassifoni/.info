@@ -2,144 +2,279 @@
 import BaseHead from "../components/BaseHead.astro";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
-import { SITE_TITLE, SITE_DESCRIPTION } from "../config";
-import { getCollection } from "astro:content";
-import Introduction from "../components/Introduction.astro";
-import Announcement from "../components/Announcement.astro";
+import { SITE_TITLE } from "../config";
 
 const posts = Object.values(
     import.meta.glob("./blog/*.{md,mdx}", { eager: true }),
-).sort(
-    (a, b) =>
-        new Date(b?.frontmatter?.pubDate).valueOf() -
-        new Date(a?.frontmatter?.pubDate).valueOf(),
-);
+)
+    .filter((post) => !post?.frontmatter?.draft)
+    .sort(
+        (a, b) =>
+            new Date(b?.frontmatter?.pubDate).valueOf() -
+            new Date(a?.frontmatter?.pubDate).valueOf(),
+    );
+const latestPosts = posts.slice(0, 10);
 
-const tags = await getCollection("tags");
+const currentlyUpdated = "May 2026";
+const currently = [
+    "Building Alzo with the team, and migrating isolated deploys to a BEAM cluster.",
+    "Open to one new Elixir / BEAM engagement, see the hire page.",
+    "Building : the tiniest dobsonian telescope I know of : a 28mm f/4.",
+];
+
+const projects = [
+    {
+        title: "Alzo",
+        body: "The company I co-founded. Alzo is a database, communication and publishing tool for architecture firms and technical offices, built to remove the repetitive overhead of running their projects. It is where most of my Elixir time goes today.",
+        href: "https://alzo.archi",
+        linkLabel: "alzo.archi",
+        img: "",
+    },
+    {
+        title: "An elixir telescope build log",
+        body: "An experimental project, presented at Code BEAM EU 2023. A terrestrial telescope I built to watch birds, trees and nearby things up close. It ran on Nerves on a RISC-V single-board computer, with Rust NIFs for the image work and a Phoenix LiveView interface, and could be driven from a phone or from a physical remote I wired and printed.",
+        href: "/blog/Scope-sim-2",
+        linkLabel: "Read the series",
+        img: "",
+    },
+    {
+        title: "Ovo2, a small language",
+        body: "A programming language designed and written from scratch in Elixir. Lexer, parser, interpreter, and a basic visual editor. It does only one thing: pure transformations of JSON-like data, without I/O, and looks like elixir, so it could be used as a kind of sandbox. I used it to talk through language design at ElixirConf EU 2024.",
+        href: "/blog/small-lang-elixir-5",
+        linkLabel: "Read the series",
+        img: "",
+    },
+    {
+        title: "Telescope mirrors",
+        body: "I grind telescope mirrors by hand to within tens of nanometers of the right curve, and build instruments around them. The most recent is a fully working 76/300 telescope that folds down small enough to fit in a jacket pocket. You will also find optics simulations, in rust and elixir, under the astronomy tag on the blog.",
+        href: "/blog/miniscope-tiny-telescope",
+        linkLabel: "Read the write-up",
+        img: "",
+    },
+];
+
+const contactRoutes = [
+    {
+        label: "Elixir / BEAM work",
+        body: "A fresh look at your codebase, prospective research, NIFs, Nerves, general consulting. Email me directly or see the \"hire\" page.",
+        links: [
+            {
+                href: "mailto:contact@lucassifoni.info",
+                label: "contact@lucassifoni.info",
+            },
+            { href: "/hire", label: "the hire page" },
+        ],
+    },
+    {
+        label: "Custom software for small or mid-size businesses",
+        body: "If you need software shaped around how your business actually works, that is what my studio, Turing-Express, is for.",
+        links: [
+            { href: "https://turing-express.fr", label: "turing-express.fr" },
+        ],
+    },
+    {
+        label: "Architecture firms and technical offices",
+        body: "Alzo and its companion applications could likely be what you need. If you create tenders and find that generic AI tools confuse more than they help, Alzo takes a different approach.",
+        links: [{ href: "https://alzo.archi", label: "alzo.archi" }],
+    },
+];
 ---
 
 <!doctype html>
 <html lang="en">
     <head>
         <BaseHead
-            title={"Lucas Sifoni – Independent product-focused Elixir / BEAM developer"}
-            description={SITE_DESCRIPTION}
+            title={SITE_TITLE + " — independent Elixir / BEAM developer"}
+            description="Lucas Sifoni — independent Elixir and BEAM developer in Cahors, co-founder of Alzo and telescope maker. Projects, consulting, and a blog on Elixir and optics."
             type="website"
         />
-        <style scoped>
-            ul {
-                list-style-type: none;
-                padding: unset;
+        <style>
+            section {
+                margin-top: 2.5em;
             }
-
-            ul li {
+            h2 {
+                font-weight: 400;
+                border-bottom: 1px dotted gray;
+                padding-bottom: 0.2em;
+            }
+            .currently-date {
+                font-style: italic;
+                font-size: 0.85em;
+                color: #333;
+            }
+            ul.currently {
+                padding-left: 1.1em;
+            }
+            ul.currently li {
+                margin-bottom: 0.3em;
+            }
+            ul.projects {
+                list-style: none;
+                padding: 0;
+                max-width: none;
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1.6em;
+            }
+            ul.projects li {
+                margin: 0;
+            }
+            ul.projects img,
+            ul.projects .placeholder {
+                width: 100%;
+                aspect-ratio: 3 / 2;
+                object-fit: cover;
+                margin-bottom: 0.5em;
+            }
+            ul.projects .placeholder {
+                background: #eee;
                 display: flex;
-                align-items: baseline;
-                margin-bottom: 0.75em;
+                align-items: center;
+                justify-content: center;
+                color: #999;
+                font-size: 0.8em;
+                box-shadow: none;
+            }
+            ul.projects h3 {
+                margin: 0 0 0.3em 0;
+            }
+            ul.projects p {
+                margin: 0 0 0.4em 0;
+            }
+            ul.contact {
+                list-style: none;
+                padding: 0;
+                max-width: none;
+            }
+            ul.contact li {
+                margin-bottom: 0.9em;
                 padding-top: 0.75em;
-                flex-wrap: wrap;
                 border-top: 1px dotted lightgray;
             }
-
+            ul.contact .label {
+                font-weight: 700;
+            }
+            .clink + .clink::before {
+                content: " · ";
+            }
             ul.posts-list {
-                padding-left: 0;
+                list-style: none;
+                padding: 0;
+                max-width: none;
             }
-
-            .tags-container {
-                flex: 0 0 100%;
-                padding-left: 10.5ch;
+            ul.posts-list li {
+                display: flex;
+                align-items: baseline;
+                flex-wrap: wrap;
+                margin-bottom: 0.5em;
+                padding-top: 0.5em;
+                border-top: 1px dotted lightgray;
             }
-
-            ul li time {
+            ul.posts-list time {
                 flex: 0 0 13ch;
                 font-style: italic;
-                color: #000000;
                 font-size: 0.85em;
             }
-
-            ul li a {
-                color: black;
+            ul.posts-list a {
                 text-decoration: none;
             }
-            ul li a:hover {
+            ul.posts-list a:hover {
                 text-decoration: underline;
             }
-
-            ul li a:visited {
-                color: black;
-            }
-
-            @media screen and (max-width: 767px) {
-                ul li time {
+            @media screen and (max-width: 700px) {
+                ul.projects {
+                    grid-template-columns: 1fr;
+                }
+                ul.posts-list time {
                     flex: 0 0 100%;
-                }
-
-                .tags-container {
-                    padding-left: 0;
-                    margin-left: -0.25em;
-                }
-                ul li {
-                    flex-wrap: wrap;
-                    margin-bottom: 1em;
                 }
             }
         </style>
     </head>
     <body>
-        <Header have_langs={true} />
+        <Header have_langs={false} />
         <main>
-            <Introduction />
-
-            <div class="tags">
-                {
-                    tags
-                        .filter((t) => t.data.entries > 3)
-                        .map((t) => (
-                            <a href={"/blog/tag/" + t.id}>
-                                <span class={"tag " + t.id}>
-                                    {t.id} ({t.data.entries - 1})
-                                </span>
-                            </a>
-                        ))
-                }
+            <div class="intro">
+                <p>
+                    I'm Lucas Sifoni, an independent developer since 2015, based in Cahors, in southwest France. Since 2018 I've worked mostly with Elixir and the BEAM. In 2022, I created <a href="https://alzo.archi">Alzo</a>, a tool that takes hours of repetitive work off the hands of architecture firms and technical offices. Alzo is now developed by a dedicated company I co-founded in 2026.<br/>Alongside this, I run
+                    <a href="https://turing-express.fr">Turing-Express</a>, a
+                    small studio for custom software and consulting.
+                </p>
+                <p>
+                    I'm also an amateur telescope builder and mirror maker. You'll find the content of this site shaped by both programming and precision optics.
+                </p>
             </div>
-            <section>
-                <ul class="posts-list">
-                    {
-                        posts
-                            .filter((post) => !post.frontmatter.draft)
-                            .map((post) => (
-                                <li>
-                                    <time datetime={post.frontmatter.pubDate}>
-                                        {post.frontmatter.pubDate}
-                                    </time>
 
-                                    <a
-                                        href={post.url}
-                                        set:html={post.frontmatter.title.replace(
-                                            "--",
-                                            "<br/>",
-                                        )}
-                                    />
-                                    <div class="tags-container">
-                                        <div class="tags">
-                                            {(post.frontmatter.tags || []).map(
-                                                (t) => (
-                                                    <a href={"/blog/tag/" + t}>
-                                                        <span
-                                                            class={"tag " + t}
-                                                        >
-                                                            {t}
-                                                        </span>
-                                                    </a>
-                                                ),
-                                            )}
-                                        </div>
-                                    </div>
-                                </li>
-                            ))
+            <section>
+                <h2>Currently</h2>
+                <p class="currently-date">Updated {currentlyUpdated}</p>
+                <ul class="currently">
+                    {currently.map((item) => <li>{item}</li>)}
+                </ul>
+            </section>
+
+            <section>
+                <h2>Selected works</h2>
+                <p>
+                    Client work mostly stays private, but my journal might be the best way to see how I think both in systems and components. Feel free to explore both the <a href="/blog/tag/elixir"> <span class="tag elixir"> elixir
+                    </span> </a> and <a href="/blog/tag/astronomy"> <span class="tag astronomy"> astronomy
+                    </span> </a> tags to have a peek on the technical challenges I am interested in.
+                </p>
+                <ul class="projects">
+                    {
+                        projects.map((p) => (
+                            <li>
+                                <h3>{p.title}</h3>
+                                <p>{p.body}</p>
+                                <a href={p.href}>{p.linkLabel} →</a>
+                            </li>
+                        ))
                     }
                 </ul>
+            </section>
+
+            <section>
+                <h2>Get in touch</h2>
+                <ul class="contact">
+                    {
+                        contactRoutes.map((r) => (
+                            <li>
+                                <span class="label">{r.label}</span> : {r.body}{" "}
+                                {r.links.map((l) => (
+                                    <span class="clink">
+                                        <a href={l.href}>{l.label}</a>
+                                    </span>
+                                ))}
+                            </li>
+                        ))
+                    }
+                </ul>
+            </section>
+
+            <section>
+                <h2>Fresh articles from the blog</h2>
+                <p>
+                    It now lives at <a href="/blog">/blog</a>.
+                </p>
+                <ul class="posts-list">
+                    {
+                        latestPosts.map((post) => (
+                            <li>
+                                <time datetime={post.frontmatter.pubDate}>
+                                    {post.frontmatter.pubDate}
+                                </time>
+                                <a
+                                    href={post.url}
+                                    set:html={post.frontmatter.title.replace(
+                                        "--",
+                                        "<br/>",
+                                    )}
+                                />
+                            </li>
+                        ))
+                    }
+                </ul>
+                <p><a href="/blog">Read the blog →</a></p>
             </section>
         </main>
         <Footer />

@@ -1,0 +1,171 @@
+---
+import BaseHead from "../components/BaseHead.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import { SITE_TITLE } from "../config";
+
+const offers = [
+    {
+        title: "A fresh pair of eyes on your Elixir codebase",
+        body: "Maybe you feel something isn't right anymore in a corner of your codebase. Or something could be expressed more elegantly. Or there is *this module* which is very hard to understand for new developers. I read the necessary subset of your codebase, not more, and bring conceptual alternatives, demonstrated by small prototypes. When we validate a direction, I can join on your codebase to implement it, or write a handoff report for your team.",
+    },
+    {
+        title: "Introduce your team to Elixir and the BEAM",
+        body: "Your team has chosen or inherited Elixir for a project. Members are happy with this choice, but wonder : are we using OTP right ? Are the patterns we reach for, with non-BEAM experience, really sustainable ? I can help mold a concrete problem in the shape that will work with the platform rather than against it. In this age of LLMs, it is easy to switch languages, but design taste for a platform takes time. If you wish, I can join until production.",
+    },
+    {
+        title: "Prospective and exploratory work",
+        body: "Questions you don't have the time to explore on the BEAM, and exploratory prototypes. Sometimes the starting point is technical (can we actually do that ?) and you'd like someone to explore the problem space, the tradeoffs, and the problems that could appear two years down the line. Or you are looking for help to refine a fuzzy goal and the paths allowing to reach it. Elixir is a great exploration tool, and I could hand you off full Livebooks about different directions.",
+    },
+];
+
+const faq = [
+    {
+        q: "Where are you, and do you work remotely?",
+        a: "Cahors, in southwest France. Remote, with regular calls. If you don't have time or it is difficult to synchronize, you will have frequent video reports in your inbox.",
+    },
+    {
+        q: "Which languages do you work in?",
+        a: "English or French, written and spoken.",
+    },
+    {
+        q: "How do contracts and invoicing work?",
+        a: "Through Turing-Express, my studio, with a service contract invoiced in EUR.",
+    },
+    {
+        q: "What's the smallest engagement you'll take on ?",
+        a: "I prefer to start small. You have a focused question, we discuss it as often as needed to truly understand the problem, then I work to produce an initial report and maybe an initial prototype. Then we can extend according to needs, or things get handed off to your team.",
+    }
+];
+---
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <BaseHead
+            title={"Hire " + SITE_TITLE + " — Elixir & BEAM"}
+            description="Elixir and BEAM work with Lucas Sifoni: a structured outside look at your codebase, bringing a team up to speed on the platform, and specific topics — hot code loading, on-prem architecture, NIFs and language interop."
+            type="website"
+        />
+        <style>
+            h1 {
+                font-weight: 400;
+            }
+            h2 {
+                font-weight: 400;
+                border-bottom: 1px dotted gray;
+                padding-bottom: 0.2em;
+                margin-top: 2.2em;
+            }
+            .offer {
+                margin-bottom: 1.4em;
+            }
+            .offer h3 {
+                margin: 0 0 0.25em 0;
+            }
+            .offer p {
+                margin: 0;
+            }
+            .problems {
+                margin: 0;
+                padding-left: 1.2em;
+            }
+            .problems li {
+                margin-bottom: 0.7em;
+            }
+            .work {
+                margin-bottom: 1.3em;
+            }
+            .work h3 {
+                font-weight: 400;
+                font-style: italic;
+                margin: 0 0 0.2em 0;
+            }
+            .work p {
+                margin: 0;
+            }
+            .sample-tag {
+                font-size: 0.6em;
+                font-style: normal;
+                border: 1px solid #999;
+                border-radius: 10px;
+                padding: 1px 6px;
+                color: #777;
+                margin-left: 0.6ch;
+                vertical-align: middle;
+            }
+            .todo {
+                color: #b00;
+            }
+            .qa {
+                margin-bottom: 0.9em;
+            }
+            .qa .q {
+                font-weight: 700;
+                margin: 0;
+            }
+            .qa .a {
+                margin: 0.15em 0 0 0;
+            }
+        </style>
+    </head>
+    <body>
+        <Header have_langs={false} />
+        <main>
+            <h1 style="margin-top: 1.5em">Work with me on Elixir and the BEAM</h1>
+            <p>
+                I've worked as an independent developer since 2015, and with
+                Elixir and the BEAM since 2018. From 2022 to 2026 I designed
+                and built <a href="https://alzo.archi">Alzo</a> on my own; it's
+                now run by a dedicated company I co-founded.</p>
+
+            <p>You might have stumbled on my website before. If you didn't, the <a href="/">homepage</a> and the <a href="/blog">blog</a> will give you a sense of how I think.
+            </p>
+
+            <p>
+                We should start with a call about your problem, maybe some code if you can share it. The first discussion is free and aims to understand both your immediate need and its surrounding context. An important thing : if I am not the right person for your need, I will tell you quickly and usually will be able to point to someone suited. When we decide we should work together, we will work out the specifics for the problem you presented. I prefer fixed-price contracts delivered in small phases because that is more predictable for you, but can also work hourly for longer engagements.
+            </p>
+
+            <section>
+                <h2>What I could bring</h2>
+                {
+                    offers.map((o) => (
+                        <div class="offer">
+                            <h3>{o.title}</h3>
+                            <p>{o.body}</p>
+                        </div>
+                    ))
+                }
+            </section>
+
+            <section>
+                <h2>Availability</h2>
+                <p>
+                    As of may 2026, I have room for up to two billable days per week. I only take a single BEAM engagement at a time.
+                </p>
+            </section>
+
+            <section>
+                <h2>Questions</h2>
+                {
+                    faq.map((item) => (
+                        <div class="qa">
+                            <p class="q">{item.q}</p>
+                            <p class="a">{item.a}</p>
+                        </div>
+                    ))
+                }
+            </section>
+
+            <section>
+                <h2>Get in touch</h2>
+                <p>
+                    Email me a few lines about your system and what's on your mind at <a href="mailto:contact@lucassifoni.info"
+                        >contact@lucassifoni.info</a
+                    >.
+                </p>
+            </section>
+        </main>
+        <Footer />
+    </body>
+</html>
