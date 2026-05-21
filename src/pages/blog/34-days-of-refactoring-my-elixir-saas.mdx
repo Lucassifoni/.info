@@ -75,7 +75,9 @@ Breaking everything at once is in my opinion a better tool than keeping everythi
 
 ### A task queue is great for robots
 
-..and it turns out, this list of 600 compilation errors is the perfect match for an LLM. I've chosen to treat it as a queue, handled by a single agent, fixing 10 call sites by 10, with me reviewing every edit. It still is faster than handling this refactor manually, but is verified manually. Then, with the call sites updated and compiling, all the tests were broken. So I've used the same method to fix all the tests, and add isolation testing. Again, a lot of manual review was made. Despite following along and reviewing everything, I let three call sites slip, and had to go back and fix them manually.
+..and it turns out, this list of 600 compilation errors is the perfect match for an LLM. I've chosen to treat it as a queue, handled by a single agent, fixing 10 call sites by 10, with me reviewing every edit. It still is faster than handling this refactor manually, but is verified manually. Then, with the call sites updated and compiling, all the tests were broken. So I've used the same method to fix all the tests, and add isolation testing. Again, a lot of manual review was made. Despite following along and reviewing everything, I let three call sites slip, and had to go back and rewrite them a second time.
+
+This wasn't a problem, because I've opted to not deploy until the end of this "stop the world" refactor. Our turning point in terms of company structure was the second best opportunity to perform this, the first having been thinking in terms of scaling, even if just a little, at the start. 
 
 ### And we need architecture tests
 
