@@ -1,0 +1,204 @@
+---
+import fs from "fs";
+import path from "path";
+import BaseHead from "../components/BaseHead.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import { SITE_TITLE } from "../config";
+
+const KIND_BADGES: Record<string, string> = {
+    video: "Video",
+    slides: "Slides",
+    podcast: "Podcast",
+    event: "Event",
+};
+
+const displayTitle = (title: string) => title.replace(/^\s*\[[^\]]*\]\s*/, "");
+
+const hasThumbnail = (thumbnail?: string) =>
+    !!thumbnail &&
+    fs.existsSync(path.resolve("./public", thumbnail.replace(/^\//, "")));
+
+const talks = Object.values(
+    import.meta.glob("./blog/*.{md,mdx}", { eager: true }),
+)
+    .filter((post) => !post?.frontmatter?.draft)
+    .filter((post) => (post?.frontmatter?.tags || []).includes("talk"))
+    .sort(
+        (a, b) =>
+            new Date(b?.frontmatter?.pubDate).valueOf() -
+            new Date(a?.frontmatter?.pubDate).valueOf(),
+    );
+---
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <BaseHead
+            title={"Talks — " + SITE_TITLE}
+            description="Conference talks, meetups, a podcast and events by Lucas Sifoni — recordings, slides and write-ups on Elixir, the BEAM, optics and amateur astronomy."
+            type="website"
+        />
+        <style>
+            main {
+                max-width: 1000px;
+                margin: 0 auto;
+            }
+
+            h2 {
+                font-weight: 400;
+                margin: 0.6em 0 0.2em;
+            }
+
+            .lead {
+                margin: 0 0 1.6em;
+                max-width: 65ch;
+            }
+
+            ul {
+                width: 100%;
+                list-style-type: none;
+                padding: unset;
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 1.2em;
+            }
+
+            ul li {
+                display: flex;
+                flex-direction: column;
+                border-bottom: 1px dotted #ccc;
+                padding-bottom: 0.8em;
+            }
+
+            ul li a {
+                text-decoration: none;
+                color: inherit;
+            }
+
+            ul li a:hover h3 {
+                text-decoration: underline;
+            }
+
+            ul li img {
+                width: 100%;
+                aspect-ratio: 4 / 3;
+                object-fit: cover;
+                border-radius: 3px;
+                margin-bottom: 0.5em;
+            }
+
+            ul li .placeholder {
+                width: 100%;
+                aspect-ratio: 4 / 3;
+                background: #eee;
+                border-radius: 3px;
+                margin-bottom: 0.5em;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #999;
+                font-size: 0.85em;
+            }
+
+            .kinds {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 4px;
+                margin-bottom: 0.4em;
+            }
+
+            ul li h3 {
+                margin: 0 0 0.2em 0;
+                font-weight: 400;
+                font-size: 0.95em;
+            }
+
+            ul li time {
+                color: #555;
+                font-size: 0.78em;
+                font-style: italic;
+            }
+
+            @media screen and (max-width: 800px) {
+                ul {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+            }
+
+            @media screen and (max-width: 500px) {
+                ul {
+                    grid-template-columns: 1fr;
+                }
+            }
+
+            .talk-show-host-street-spirit {
+                filter: grayscale(100%);
+            }
+            .talk-show-host-street-spirit:hover {
+                filter: grayscale(0%);
+            }
+
+            .tag.inert {
+                pointer-events: none;
+            }
+        </style>
+    </head>
+    <body>
+        <Header have_langs={false} />
+        <main>
+            <h2>Talks and presentations</h2>
+            <section>
+                <ul>
+                    {
+                        talks.map((talk) => {
+                            const fm = talk.frontmatter;
+                            const kinds = (fm.kinds || []).filter(
+                                (k) => KIND_BADGES[k],
+                            );
+                            return (
+                                <li>
+                                    <a href={talk.url}>
+                                        {hasThumbnail(fm.thumbnail) ? (
+                                            <img
+                                                src={fm.thumbnail}
+                                                class="talk-show-host-street-spirit"
+                                                alt={displayTitle(fm.title)}
+                                            />
+                                        ) : (
+                                            <div class="placeholder">
+                                                No image yet
+                                            </div>
+                                        )}
+                                        {kinds.length > 0 && (
+                                            <div class="kinds">
+                                                {kinds.map((k) => (
+                                                <span class="tag inert">{KIND_BADGES[k]}</span>
+                                                ))}
+                                                {(talk.frontmatter.tags || []).filter(t => t!="talk").map(
+                                                    (t) => (
+                                                        <a href={"/blog/tag/" + t}>
+                                                            <span class={"tag " + t}>
+                                                                {t}
+                                                            </span>
+                                                        </a>
+                                                    ),
+                                                )}
+                                            </div>
+
+                                        )}
+
+
+                                        <h3>{displayTitle(fm.title)}</h3>
+                                        <time>{fm.pubDate}</time>
+                                    </a>
+                                </li>
+                            );
+                        })
+                    }
+                </ul>
+            </section>
+        </main>
+        <Footer />
+    </body>
+</html>
