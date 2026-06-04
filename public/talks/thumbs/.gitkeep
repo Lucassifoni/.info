@@ -1,0 +1,3 @@
+# Talk thumbnails. Drop cover images here named to match each article's
+# `thumbnail:` frontmatter, e.g. fxdesign.png, elixir-wizards-s13.png.
+# ~4:3, >=800px wide. Missing files fall back to a placeholder on the /talks grid.
