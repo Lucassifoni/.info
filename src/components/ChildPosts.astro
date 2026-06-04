@@ -1,0 +1,134 @@
+---
+import fs from "fs";
+import path from "path";
+
+
+export interface Props {
+    parentUrl?: string;
+    title?: string;
+}
+
+const { parentUrl, title = "Sub-posts" } = Astro.props;
+
+const hasThumbnail = (thumbnail?: string) =>
+    !!thumbnail &&
+    fs.existsSync(path.resolve("./public", thumbnail.replace(/^\//, "")));
+
+const base = (parentUrl || "").replace(/\/+$/, "");
+
+const childPosts = base
+    ? Object.values(
+          import.meta.glob("/src/pages/blog/*/*.{md,mdx}", { eager: true }),
+      )
+          .filter((post) => (post.url || "").startsWith(base + "/"))
+          .filter((post) => !post.frontmatter?.draft)
+          .sort(
+              (a, b) =>
+                  new Date(a.frontmatter?.pubDate || 0).valueOf() -
+                  new Date(b.frontmatter?.pubDate || 0).valueOf(),
+          )
+    : [];
+
+if (childPosts.length === 0) return null;
+---
+
+<div class="child-posts">
+    <h3 set:html={title} />
+    <ul>
+        {
+            childPosts.map((post) => {
+                const fm = post.frontmatter || {};
+                return (
+                    <li>
+                        <a class="item" href={post.url}>
+                            {hasThumbnail(fm.thumbnail) && (
+                                <img
+                                    class="thumb"
+                                    src={fm.thumbnail}
+                                    alt={fm.title || ""}
+                                    loading="lazy"
+                                />
+                            )}
+                            <span
+                                class="t"
+                                set:html={(fm.title || post.url).replace(
+                                    "--",
+                                    "<br/>",
+                                )}
+                            />
+                            {fm.pubDate && (
+                                <time datetime={fm.pubDate}>{fm.pubDate}</time>
+                            )}
+                            {fm.description && (
+                                <p class="description">{fm.description}</p>
+                            )}
+                        </a>
+                    </li>
+                );
+            })
+        }
+    </ul>
+</div>
+
+<style>
+    .child-posts {
+        margin: 1.5rem 0;
+        padding-top: 1rem;
+        border-top: 1px solid #eee;
+    }
+
+    .child-posts h3 {
+        font-size: 1.2em;
+        font-weight: 400;
+        margin-bottom: 1rem;
+    }
+
+    .child-posts ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 320px));
+        gap: 1.2em;
+    }
+
+    .child-posts li {
+        max-width: 320px;
+    }
+
+    .child-posts .item {
+        display: flex;
+        flex-direction: column;
+        color: inherit;
+        text-decoration: none;
+    }
+
+    .child-posts .thumb {
+        width: 100%;
+        max-width: 320px;
+        aspect-ratio: 4 / 3;
+        object-fit: cover;
+        border-radius: 3px;
+        margin-bottom: 0.45em;
+    }
+
+    .child-posts .t {
+        line-height: 1.2;
+    }
+
+    .child-posts .item:hover .t {
+        text-decoration: underline;
+    }
+
+    .child-posts time {
+        font-size: 0.7rem;
+        font-style: italic;
+        margin-top: 0.15rem;
+    }
+
+    .child-posts .description {
+        margin: 0.3rem 0 0;
+        font-size: 0.9em;
+        opacity: 0.8;
+    }
+</style>

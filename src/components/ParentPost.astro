@@ -1,0 +1,39 @@
+---
+
+export interface Props {
+    currentUrl?: string;
+}
+
+const { currentUrl } = Astro.props;
+
+const segments = (currentUrl || "").split("/").filter(Boolean);
+const parentUrl =
+    segments[0] === "blog" && segments.length > 2
+        ? "/" + segments.slice(0, -1).join("/")
+        : null;
+
+const parent = parentUrl
+    ? Object.values(
+          import.meta.glob("/src/pages/blog/*.{md,mdx}", { eager: true }),
+      ).find((post) => post.url === parentUrl)
+    : null;
+
+if (!parent) return null;
+
+const parentTitle = (parent.frontmatter?.title || parent.url).replace(
+    "--",
+    " — ",
+);
+---
+
+<nav class="parent-post">
+    A sub-post of : <a href={parent.url}>{parentTitle}</a>
+</nav>
+
+<style>
+    .parent-post {
+
+        margin-bottom: 1.5em;
+    }
+
+</style>

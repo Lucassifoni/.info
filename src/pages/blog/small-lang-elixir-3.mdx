@@ -18,6 +18,7 @@ frenchSummary: "Partie 3 d'Ovo2 : construction de combinateurs de parsers en Eli
 - Part 6 : [basic recursion : environment as processes](/blog/small-lang-elixir-6)
 - Part 7 : [weird features, towards a global stateful machine](/blog/small-lang-elixir-7)
 - Part 8 : [a graphical environment with liveview](/blog/small-lang-elixir-8)
+- Part 9 : [talk — ElixirConf EU 24: Let's write a toy language from scratch in Elixir](/blog/lets_write_a_toy_language_elixirconf_eu_24)
 
 After the last post, I took a bit of time to extend the tokenizer.
 The `defpat` macro has been quite useful. Numbers were tokenized with a strategy similar to the one I had for strings. A digit marks the start of a number, that can then contain either a digit or a dot, but no more than one dot. A regex could handle that just fine but I came to like the character-per-character recursion, avoiding peeking and backtracking. The clause matching on digits could be optimized by not looking into a list, but again, I liked the simplicity of using a single function clause here.

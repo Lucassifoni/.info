@@ -3,6 +3,8 @@ import BaseHead from "../components/BaseHead.astro";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import Navigation from "../components/Navigation.astro";
+import ParentPost from "../components/ParentPost.astro";
+import ChildPosts from "../components/ChildPosts.astro";
 import RelatedPosts from "../components/RelatedPosts.astro";
 import BreadcrumbSchema from "../components/BreadcrumbSchema.astro";
 import { SITE_TITLE } from "../config";
@@ -28,6 +30,7 @@ const {
         updatedDate,
         tags = [],
         author = "Lucas Sifoni",
+        childPostsTitle,
     },
 } = Astro.props;
 
@@ -97,6 +100,7 @@ const breadcrumbItems = [
         <Header have_langs={false} />
         <main style="margin-top: 2em;">
             <article>
+
                 <h1 class="title" set:html={title.replace("--", "<br/>")} />
                 {
                     (tags || []).length && (
@@ -139,8 +143,12 @@ const breadcrumbItems = [
                         </aside>
                     )
                 }
+                <ParentPost currentUrl={url} />
                 <slot />
             </article>
+
+
+            <ChildPosts parentUrl={url} title={childPostsTitle} />
 
             {
                 (tags || []).length > 0 && (
