@@ -1,0 +1,101 @@
+---
+export interface Props {
+    sources: string[];
+    alt?: string;
+    maxWidth?: string;
+}
+
+const { sources, alt = "", maxWidth = "460px" } = Astro.props;
+---
+
+<div
+    class="video-sequence"
+    role="img"
+    aria-label={alt}
+    style={`max-width: ${maxWidth};`}
+>
+    {
+        sources.map((src, i) => (
+            <video
+                class={i === 0 ? "is-active" : ""}
+                src={src}
+                muted
+                playsinline
+                preload="none"
+            />
+        ))
+    }
+</div>
+
+<style>
+    .video-sequence {
+        position: relative;
+        width: 100%;
+        margin: 1.5rem;
+        aspect-ratio: 1 / 1;
+    }
+
+    .video-sequence video {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        opacity: 0;
+        transition: opacity 220ms ease;
+    }
+
+    .video-sequence video.is-active {
+        opacity: 1;
+    }
+</style>
+
+<script>
+    function setupSequence(root: HTMLElement) {
+        const clips = Array.from(root.querySelectorAll("video"));
+        if (clips.length === 0) return;
+
+        let current = 0;
+        let primed = false;
+
+        const activate = (index: number) => {
+            clips.forEach((clip, i) =>
+                clip.classList.toggle("is-active", i === index),
+            );
+        };
+
+        clips.forEach((clip, i) => {
+            clip.addEventListener("ended", () => {
+                if (i !== current) return;
+                current = (current + 1) % clips.length;
+                const next = clips[current];
+                next.currentTime = 0;
+                activate(current);
+                next.play().catch(() => {});
+            });
+        });
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                for (const entry of entries) {
+                    if (entry.isIntersecting) {
+                        if (!primed) {
+                            clips.forEach((clip) => (clip.preload = "auto"));
+                            primed = true;
+                        }
+                        clips[current].play().catch(() => {});
+                    } else {
+                        clips[current].pause();
+                    }
+                }
+            },
+            { threshold: 0.2 },
+        );
+
+        observer.observe(root);
+    }
+
+    document
+        .querySelectorAll<HTMLElement>(".video-sequence")
+        .forEach(setupSequence);
+</script>
