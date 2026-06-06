@@ -1,11 +1,22 @@
 ---
 export interface Props {
-    sources: string[];
+    sources: string[][];
     alt?: string;
     maxWidth?: string;
 }
 
 const { sources, alt = "", maxWidth = "460px" } = Astro.props;
+
+const mimeTypes: Record<string, string> = {
+    mp4: "video/mp4",
+    webm: "video/webm",
+    ogg: "video/ogg",
+    ogv: "video/ogg",
+    mov: "video/quicktime",
+};
+
+const typeFor = (src: string) =>
+    mimeTypes[src.split(".").pop()?.toLowerCase() ?? ""];
 ---
 
 <div
@@ -15,14 +26,17 @@ const { sources, alt = "", maxWidth = "460px" } = Astro.props;
     style={`max-width: ${maxWidth};`}
 >
     {
-        sources.map((src, i) => (
+        sources.map((variants, i) => (
             <video
                 class={i === 0 ? "is-active" : ""}
-                src={src}
                 muted
                 playsinline
                 preload="none"
-            />
+            >
+                {variants.map((src) => (
+                    <source src={src} type={typeFor(src)} />
+                ))}
+            </video>
         ))
     }
 </div>

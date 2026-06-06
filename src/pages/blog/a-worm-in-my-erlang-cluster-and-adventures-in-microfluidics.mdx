@@ -53,12 +53,12 @@ But what if `d` itself has neighbors ? I can ask `c` to ask `d` to query their o
 
 <VideoSequence
   sources={[
-    "/pics/erlang-worm-and-microfluidics/line.mp4",
-    "/pics/erlang-worm-and-microfluidics/circle.mp4",
-    "/pics/erlang-worm-and-microfluidics/bowtie.mp4",
-    "/pics/erlang-worm-and-microfluidics/web.mp4",
+    ["/pics/erlang-worm-and-microfluidics/line.mp4", "/pics/erlang-worm-and-microfluidics/line.webm"],
+    ["/pics/erlang-worm-and-microfluidics/circle.mp4", "/pics/erlang-worm-and-microfluidics/circle.webm"],
+    ["/pics/erlang-worm-and-microfluidics/bowtie.mp4", "/pics/erlang-worm-and-microfluidics/bowtie.webm"],
+    ["/pics/erlang-worm-and-microfluidics/web.mp4", "/pics/erlang-worm-and-microfluidics/web.webm"],
   ]}
-  alt="Flood filling a graph to traverse it from a single point of entry"
+  alt="Graph traversals played in sequence: line, circle, bowtie, web"
 />
 
 I've promised I'd talk about fluids : the graph traversal illustrations here and lower were done by moving ink in channels, and there are a few details about that in this child post : [behind the scenes post](/blog/a-worm-in-my-erlang-cluster-and-adventures-in-microfluidics/floodfill-in-ink).
@@ -373,10 +373,11 @@ Now we can flood fill complex graphs :-) .
 
 <VideoSequence
   sources={[
-    "/pics/erlang-worm-and-microfluidics/complex_cluster.mp4",
+    ["/pics/erlang-worm-and-microfluidics/complex_cluster.mp4", "/pics/erlang-worm-and-microfluidics/complex_cluster.webm"],
   ]}
-  alt="Flood filling a complex graph to traverse it from a single point of entry"
+  alt="Graph traversal of a complex cluster."
 />
+
 
 Flood filling a complex graph to traverse it from a single point of entry : see the [behind the scenes post](/blog/a-worm-in-my-erlang-cluster-and-adventures-in-microfluidics/floodfill-in-ink) for details.
 
