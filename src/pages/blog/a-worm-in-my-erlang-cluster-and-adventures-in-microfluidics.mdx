@@ -82,7 +82,7 @@ end
 ```
 into iEx, and you call `:code.get_object_code(Probe)`, despite the module being defined, you get an `:error`.
 
-So, our first task is to create a module that we can paste in a first node, and that makes this first node have access to the module binary. I settled to use `Kernel.ParallelCompiler.compile_to_path/2` which produces a `.beam` file, and to add the temporary compilation path to the code server via `Code.append_path/1`.
+So, our first task is to create a module that we can paste in a first node, and that makes this first node have access to the module binary. I settled to use `Kernel.ParallelCompiler.compile_to_path/2` which produces a `.beam` file, and to add the temporary compilation path to the code server via `Code.append_path/1`. I resorted to this function from the elixir compiler itself because I did not find an equivalent in `:code` that gave later access to the object code.
 
 ```elixir
 defmodule ProbeWrapper do
@@ -227,7 +227,7 @@ To build our cluster, Erlang provides tools like the `:peer` module, that allows
       })
 ```
 
-We will create a module that allows us to track the peers, nodes, and edges, and setup all the peers.
+We will create a module that allows us to track the peers, nodes, and edges, and setup all the peers. To mesh it, since we have access to all nodes, we call `:kernel.connect_node` on a node, targeting the other, via `:erpc`.
 
 ```elixir
 defmodule LocalCluster do
@@ -288,19 +288,10 @@ defmodule LocalCluster do
     }
     """
   end
-
-  def parse_graph(graph) do
-    graph |> String.split("\n") |> Enum.reduce([], fn (line, out) ->
-      case Regex.run(~r/([^\s]+)\s*--\s*([^\s;]+);/, line) do
-        nil -> out
-        [_, n1, n2] -> [{:"#{n1}", :"#{n2}"} | out]
-      end
-    end)
-  end
 end
 ```
 
-A few utility functions (graph, parse_graph, unique_edges, edges_to_nodes...) are removed so we can focus on the mechanisms, but the full code is at the end of the post.
+A few utility functions (`graph`, `parse_graph`, `unique_edges`, `edges_to_nodes`...) are removed so we can focus on the mechanisms, but the full code is at the end of the post.
 When we paste it into iex, we can start a sample cluster :
 
 ```
@@ -324,7 +315,7 @@ iex(2)> LocalCluster.start(LocalCluster.sample())
 [true, true, true, true, true, true, true]
 ```
 
-Given that we own the list of nodes thanks to the accumulation in a struct, we can observe its topology by directly asking each node which neighbors it sees :
+Given that we own the list of nodes thanks to the accumulation in a struct, we can observe its actual topology by directly asking each node which neighbors it sees :
 
 ```
 iex> cl = LocalCluster.start(LocalCluster.sample())
@@ -386,7 +377,4 @@ Flood filling a complex graph to traverse it from a single point of entry : see 
 - I've forgotten more than once to call `:peer.call(pid, :code, :add_pathsa, [:code.get_path()])` to load the Elixir stdlib on the bare Erlang nodes. Without it, `MapSet` as used in the probe cannot run.
 - Everything looked fine until my first execution of the whole sequence : in the bowtie-shaped cluster, the worm reported a connexion from `a` to `f`. This is because using `:erpc.call` calls the remote function with the group leader of the calling process. This meant that a pid from `a` rides along the propagation, and nodes have to grab a connection to `a`. By default, the VM uses `dist_auto_connect: :always`, which is orthogonal to `connect_all` that only prevents a full meshing. So all nodes could see `a` during the worm propagation despite not being actually connected, as seen in the LocalCluster.graph call. The answer was to reset the group leader to the current node by calling `:erlang.group_leader(:erlang.whereis(:init), self())`. But this is interfering with the cluster in a way. Can we really perform a measurement without interference ? Your guess ;-) .
 
-
-
-
-This post is inspired by Joe Armstrong's post ["My favorite erlang program"](https://joearms.github.io/published/2013-11-21-My-favorite-erlang-program.html) which I've read a few years ago. It came again to my mind recently, and after those years in the VM, I feel that I only start to truly grasp why this code was so elegant to him.
+This post is inspired by Joe Armstrong's post ["My favorite erlang program"](https://joearms.github.io/published/2013-11-21-My-favorite-erlang-program.html) which I've read a few years ago. It came again to my mind recently, and after those years in the VM, I feel that I only start to truly grasp why this code was so elegant to him. This made me want to continue my explorations of the introspection abilities of our runtime.
