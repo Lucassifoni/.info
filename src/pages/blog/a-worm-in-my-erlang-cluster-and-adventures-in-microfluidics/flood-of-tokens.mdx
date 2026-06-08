@@ -1,0 +1,16 @@
+---
+layout: "../../../layouts/BlogPost.astro"
+title: "Flood of tokens... a few doubts and comments about LLM codegen"
+description: ""
+pubDate: "June 8 2026"
+tags: []
+---
+
+Quick follow-up on the parent article, there's something I wished to share but did not quite fit in it.
+
+On a new, quite small, contract, I've set out to not use AI at all, as an experiment, now that I have a handful of months of agentic use behind me. It's a fixed price contract, not billed hourly, so I'm taking the loss if velocity is down (and it is) compared to with-AI. Let's say I'm financing a small experiment. 
+I'm a bit shocked of the difference, my code is so much smaller and focused on the actual design than what I feel I learned to accept from claude in the last 12 to 18 months. Sure, I'm slower. Slower than the machine, not slower than before. 
+
+So, what's the link with this article ? Well, my blog *content* is another territory where it does not make sense to use AI. I sometimes use it to restructure the layout, tag hierarchy, etc, and read back my english. But it finds so much issues that I leave a lot of them in. I'm just not a native speaker and there would be no point in pretending so.
+
+So I've then briefed claude to write a POC of the things I describe in the article, to follow on my suspicion. It did splendidly. But there was so much going on. Eight files. A module that generates arbitrary cluster shapes by composing primitives (trees, diamonds, rings, circles), the parallel version I did not implement (but not the hard part of it, aka the distributed data structure). Benchmarks. Documentation. Tests. Markdown guides. So much stuff everywhere. It's correct in the sense that it fulfills the purpose of exploring the POC in my post. I guess I could throw other instances at it to reduce it to its core proposition. But so much things get generated because claude itself will be able to clean up later. Will it get done ? Are we making sure we focus on needs, or has the ability to build eclipsed that question ?
