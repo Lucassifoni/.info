@@ -1,0 +1,233 @@
+---
+import BaseHead from "../components/BaseHead.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import { SITE_TITLE } from "../config";
+
+type CvEntry = {
+    start: number;
+    end?: number;
+    name: string;
+    location: string;
+    description: string;
+    outcomes?: string[];
+};
+
+const experiences: CvEntry[] = [
+    {
+        start: 2021,
+        name: "Turing-Express",
+        location: "Cahors, France",
+        description:
+            "Independent software practice, solving business problems from initial discussion to later maintenance, selecting providers, sometimes managing business-specific devices. An actual full-stack ownership starting with gathering requirements. Most software for this period is written in Elixir.",
+    },
+    {
+        start: 2022,
+        name: "Alzo",
+        location: "Toulouse, France",
+        description:
+            "Alzo and its companion products are a B2B SaaS for unified communication ownership and streamlined tender submission, for architecture and construction companies. I created the project in 2022, and it took its name in 2023. In 2026 I co-founded a company that now develops it.",
+    },
+    {
+        start: 2018,
+        end: 2021,
+        name: "Documents.design studio",
+        location: "Toulouse, France",
+        description:
+            "Co-ran this 5-person design studio, managing and developing all web and software projects for its clients. Earlier projects were done with Laravel and Node, and later projects with Elixir and Phoenix.",
+    },
+    {
+      start: 2015,
+      end: 2018,
+      name: "Freelancer",
+      location: "Toulouse, France",
+      description: "Built custom web-facing sites and applications on-demand for diverse customers. Technologies encountered included Laravel, Rust, Node.js, and Wordpress."
+    }
+];
+
+const education: CvEntry[] = [
+    {
+        start: 2013,
+        end: 2015,
+        name: "Design curriculum (Diplôme supérieur d'Arts appliqués)",
+        location: "Les Arènes, Toulouse, France",
+        description:
+            "Diploma : built an app that automated ingestion of French press releases and prepared them for a layout & publishing system.",
+    },
+    {
+        start: 2011,
+        end: 2013,
+        name: "Design curriculum (BTS Design graphique)",
+        location: "Les Arènes, Toulouse, France",
+        description:
+            "Built a kinect-powered gestural interface to navigate and curate press releases.",
+    },
+    {
+        start: 2010,
+        end: 2011,
+        name: "Gateway year to design studies (MaNAA)",
+        location: "Lycée Loritz, Nancy, France",
+    },
+    {
+        start: 2008,
+        end: 2010,
+        name: "Electronics curriculum high school (Bac Génie Électronique)",
+        location: "Lycée Loritz, Nancy, France",
+        description:
+            "Diploma class project : built a sun-tracking solar panel system for a camping-car.",
+    },
+];
+
+const other: CvEntry[] = [
+  {
+    start: 2022,
+    name: "Optics making group and conference",
+    location: "Online",
+    description: "I co-animate an optics-making channel on an astronomy Discord server, and in 2026 organized the first edition of a yearly French-speaking optics online conference."
+  },
+  {
+    start: 2022,
+    end: 2024,
+    name: "Mirror making workshop",
+    location: "L'Union, France",
+    description: "I ran a mirror-making workshop at Neptunion, an astronomy club, introducing members to the discipline, providing both theory and practice sessions. See more about mirror making on the blog section of my site."
+  },
+    {
+        start: 2017,
+        end: 2018,
+        name: "HTML/CSS/JS workshop for non-coders",
+        location: "Toulouse, France",
+        description:
+            "Two years in a row, a 48h course over 8 weeks given to young adults studying graphic design : thinking about a website, designing and developing it, using versioning, getting a domain, deploying it through github pages. Some of them now build websites for their own clients :-).",
+    },
+    {
+        start: 2006,
+        end: 2009,
+        name: "Ubuntu install parties",
+        location: "Nancy, France",
+        description:
+            "As a teenager fond of Linux, I gathered install CDs and helped classmates build their own or refurbish old PCs to install Ubuntu, from install CDs we ordered. Some of those now are IT professionals.",
+    },
+];
+
+const sections = [
+    { title: "Software development experience", entries: experiences },
+    { title: "Groups/Teaching experiences", entries: other },
+    { title: "Education", entries: education },
+];
+
+const years = (e: CvEntry) =>
+    e.end === undefined
+        ? `${e.start} —`
+        : e.end === e.start
+          ? `${e.start}`
+          : `${e.start} — ${e.end}`;
+---
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <BaseHead
+            title={"CV — " + SITE_TITLE}
+            description="Short bio, education and work experience of Lucas Sifoni."
+            type="website"
+        />
+        <style>
+            h1 {
+                font-weight: 400;
+                margin-top: 1.5em;
+            }
+            h2 {
+                font-weight: 400;
+                border-bottom: 1px dotted gray;
+                padding-bottom: 0.2em;
+                margin-top: 2.2em;
+            }
+            .entry {
+                display: grid;
+                grid-template-columns: 7em 1fr;
+                gap: 0 1.5ch;
+                margin-bottom: 1.4em;
+            }
+            .entry .years {
+                margin: 0;
+                color: #555;
+                font-size: 0.9em;
+                line-height: 1.65;
+            }
+            .entry h3 {
+                margin: 0 0 0.25em 0;
+            }
+            .entry .location {
+                font-weight: 400;
+                color: #777;
+            }
+            .entry .description {
+                margin: 0;
+            }
+            .entry .outcomes {
+                margin: 0.4em 0 0 0;
+                padding-left: 1.2em;
+            }
+            .entry .outcomes li {
+                margin-bottom: 0.3em;
+            }
+            @media screen and (max-width: 600px) {
+                .entry {
+                    grid-template-columns: 1fr;
+                }
+                .entry .years {
+                    margin-bottom: 0.15em;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <Header have_langs={false} />
+        <main>
+            <h1>Resume</h1>
+            <p>
+                I've worked as an independent developer since 2015, and with
+                Elixir and the BEAM since 2018. From 2022 to 2026 I designed
+                and built <a href="https://alzo.archi">Alzo</a>.<br/>This page lists work, education, and group-organizing experiences.<br/>To have a better feel of how I think, you can head to the <a href="/blog">blog</a> section.
+            </p>
+            <p>
+                For current availability and ways we could work together, see
+                the <a href="/hire">hire page</a>.
+            </p>
+
+            {
+                sections.map((section) => (
+                    <section>
+                        <h2>{section.title}</h2>
+                        {section.entries.map((e) => (
+                            <article class="entry">
+                                <p class="years">{years(e)}</p>
+                                <div>
+                                    <h3>
+                                        {e.name}
+
+                                    </h3>
+                                    {e.location && (
+                                        <div class="location">
+                                            {e.location}
+                                        </div>
+                                    )}
+                                    <p class="description">{e.description}</p>
+                                    {e.outcomes && (
+                                        <ul class="outcomes">
+                                            {e.outcomes.map((o) => (
+                                                <li>{o}</li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </div>
+                            </article>
+                        ))}
+                    </section>
+                ))
+            }
+        </main>
+        <Footer />
+    </body>
+</html>
