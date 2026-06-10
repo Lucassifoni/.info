@@ -8,11 +8,11 @@ frenchTitle: "Introspection de code pour l'exécution sécurisée de scripts à 
 frenchSummary: "Comment l'introspection de code de la VM Elixir permet de créer des scripts de nettoyage de données sécurisés, découvrables et pilotés par une interface utilisateur."
 ---
 
-My services startup [Alzo](https://alzo.archi) makes me have the need for one-off data cleaning scripts – those inevitable "fix this batch of data" or "migrate these records" tasks that come up in any growing application where I offer to import user data gathered from unstructured sources.
+My services startup [Alzo](https://alzo.archi) makes me have the need for one-off data cleaning scripts - those inevitable "fix this batch of data" or "migrate these records" tasks that come up in any growing application where I offer to import user data gathered from unstructured sources.
 
 One-off scattered script files or manual database queries are both risky and unmaintainable. SSH'ing into running docker containers to access the IEX remote is annoying. Clustering with them from the outside is annoying too. I chose to leverage Elixir's runtime introspection capabilities to build a discoverable, UI-driven script runner system that makes data operations safer than invoking them from a CLI.
 
-*This post focuses on the runtime code discovery patterns that make this possible – how behaviours, module filtering, and dynamic UI generation create a self-registering system for infrequent (thus dangerous) operations.*
+*This post focuses on the runtime code discovery patterns that make this possible - how behaviours, module filtering, and dynamic UI generation create a self-registering system for infrequent (thus dangerous) operations.*
 
 I first created a lib/scripts/ directory in the repository. But remembering the number of arguments, their format or order is quite hard for tasks that are not meant to be frequently executed.
 
@@ -36,7 +36,7 @@ defp implements_behaviour?(module) do
 end
 ```
 
-This uses the fact that loaded modules are queryable at runtime. No manual registration is needed, no configuration files – just code discovery based on module names and exported functions. As soon as a module is loaded and implements the required functions, it becomes discoverable. This eliminates the common problem of forgetting to register a new script in some configuration file.
+This uses the fact that loaded modules are queryable at runtime. No manual registration is needed, no configuration files - just code discovery based on module names and exported functions. As soon as a module is loaded and implements the required functions, it becomes discoverable. This eliminates the common problem of forgetting to register a new script in some configuration file.
 
 Note that another way of seeing if a module implements a behaviour would be to query the module information :
 
