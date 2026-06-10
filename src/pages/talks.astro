@@ -11,6 +11,7 @@ const KIND_BADGES: Record<string, string> = {
     slides: "Slides",
     podcast: "Podcast",
     event: "Event",
+    fr: "FR",
 };
 
 const displayTitle = (title: string) => title.replace(/^\s*\[[^\]]*\]\s*/, "");
@@ -36,7 +37,7 @@ const talks = Object.values(
     <head>
         <BaseHead
             title={"Talks — " + SITE_TITLE}
-            description="Conference talks, meetups, a podcast and events by Lucas Sifoni — recordings, slides and write-ups on Elixir, the BEAM, optics and amateur astronomy."
+            description="Conference talks, meetups, a podcast and event recordings, slides and write-ups on Elixir, the BEAM, optics and amateur astronomy."
             type="website"
         />
         <style>
@@ -45,9 +46,9 @@ const talks = Object.values(
                 margin: 0 auto;
             }
 
-            h2 {
+            h1 {
                 font-weight: 400;
-                margin: 0.6em 0 0.2em;
+                margin: 1.5em 0 0.2em;
             }
 
             .lead {
@@ -147,7 +148,13 @@ const talks = Object.values(
     <body>
         <Header have_langs={false} />
         <main>
-            <h2>Talks and presentations</h2>
+            <h1>Talks and presentations</h1>
+            <p class="lead">
+                Conference, podcast, and meetup talks, and an
+                event I organized, on Elixir, the BEAM, optics and amateur
+                astronomy. Each entry links to a write-up with the recording
+                or slides when available. Entries marked FR are in French.
+            </p>
             <section>
                 <ul>
                     {
