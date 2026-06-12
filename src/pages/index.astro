@@ -15,11 +15,11 @@ const posts = Object.values(
     );
 const latestPosts = posts.slice(0, 10);
 
-const currentlyUpdated = "May 2026";
+const currentlyUpdated = "June 2026";
 const currently = [
+    "Working on a hardware contract with Elixir, which will be presented at <a href=\"https://codebeameurope.com/\">Code BEAM EU</a> this fall in Haarlem",
     "Building Alzo, and migrating isolated deploys to a BEAM cluster.",
     "Open to one new Elixir / BEAM engagement, see the hire page.",
-    "Building the tiniest dobsonian telescope I know of : a 28mm f/4.",
 ];
 
 const projects = [
@@ -213,7 +213,7 @@ const contactRoutes = [
                 <h2>Currently</h2>
                 <p class="currently-date">Updated {currentlyUpdated}</p>
                 <ul class="currently">
-                    {currently.map((item) => <li>{item}</li>)}
+                    {currently.map((item) => <li set:html={item}></li>)}
                 </ul>
             </section>
 
