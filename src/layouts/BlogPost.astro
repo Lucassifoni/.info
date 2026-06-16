@@ -43,6 +43,24 @@ const breadcrumbItems = [
     { name: "Blog", url: "/blog" },
     { name: title, url: canonicalURL.pathname },
 ];
+
+const NEWSLETTER_FORMS = {
+    elixir: {
+        href: "https://fda0e546.sibforms.com/serve/MUIFAJTN6nTgQVcag39026SctPFkI68M9chZWELrJgsezqA_OCR8PmS9I3I71GV4a__jH7xcSMHfRIIN84_007LSiVw9uuFGF9odrqxHXOP6ohQ61PPqC-9oqWtwEIFiK1r-7COh7LAku-81f0t3nknqnL-UNgEYqvcMY7gAjnJCw4avG7nC2TBpvC_uEmsx9Kvr2xYO39O5eH65",
+        intro:
+            "You can be notified of new Elixir posts (and only Elixir posts) by subscribing to my newsletter.",
+    },
+    astronomy: {
+        href: "https://fda0e546.sibforms.com/serve/MUIFAAnbWSa9_5rUBkuEYQpginHHl1W6SiNNsdo9baHkYd44o0yQwnMAK-oHG5pNC0sXyDoGdNqhiGOIsFrdylkvuIUXSofOTsEIg9XByNzn20cKhzyQSTlnJGtqaEm8ZCDb7eySybx9j2X6tSbm5-io3uIPmJ1LJ4XpePXyMIzz6x8gRvGutniFoaNtyWlf5h1Ax_OGn47V4pAG",
+        intro:
+            "You can be notified of new astronomy posts (and only astronomy posts) by subscribing to my newsletter.",
+    },
+};
+
+const newsletter =
+    (tags.includes("elixir") && NEWSLETTER_FORMS.elixir) ||
+    (tags.includes("astronomy") && NEWSLETTER_FORMS.astronomy) ||
+    null;
 ---
 
 <html lang="en">
@@ -92,6 +110,29 @@ const breadcrumbItems = [
             }
             .elixir-cta p {
                 margin: 0;
+            }
+            .newsletter-cta {
+                margin: 2.5rem 0 0;
+                padding: 1rem 0;
+                border-top: 1px dotted var(--ink);
+                border-bottom: none;
+                max-width: 65ch;
+                font-size: 0.9em;
+            }
+            .newsletter-cta p {
+                margin: 0 0 0.7rem;
+                max-width: none;
+            }
+            .newsletter-cta__btn {
+                display: inline-block;
+                border: 1px dotted var(--ink);
+                border-radius: 4px;
+                padding: 4px 12px;
+                text-decoration: none;
+            }
+            .newsletter-cta__btn:hover {
+                background: var(--ink);
+                color: #fff;
             }
         </style>
     </head>
@@ -145,6 +186,21 @@ const breadcrumbItems = [
                 }
                 <ParentPost currentUrl={url} />
                 <slot />
+                {
+                    newsletter && (
+                        <aside class="newsletter-cta">
+                            <p>{newsletter.intro}</p>
+                            <a
+                                class="newsletter-cta__btn"
+                                href={newsletter.href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Subscribe &rarr;
+                            </a>
+                        </aside>
+                    )
+                }
             </article>
 
 
