@@ -1,0 +1,417 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "Hot-swappable LiveView components"
+description: "What if your components could be contracts for runtime implementations, instead of concrete materialized components ?"
+pubDate: "Jun 22 2026"
+tags: ["elixir", "programming", "liveview", "phoenix", "hot-loading"]
+series: "runtime-mechanics"
+---
+
+I'm continuing my dives in the capabilities of our beloved runtime, the BEAM. The problem behind this experiment is simple : how can you provide a site-farm like SaaS (I'm *not* speaking of Alzo there !) that has okay designs and templates, but allows editors to replace parts of them like shopify does ? Or, maybe you have an open-source project that renders a website, and want to allow to customize it without forking ? It turns out the BEAM still has everything needed to do that.
+
+### Runtime-swapped Phoenix.Components
+
+This post will first explore how you can *do* it, then how you can make it safe. The first part is enough to provide tenant-specific customization to an employee or platform administrator, for example, or platform operator, but not to a client of your SaaS, so a trusted admin model. The second part explores ways to achieve user-facing modding abilities.
+
+Tl;dr :
+- Phoenix.Component provides contracts through `:attr`
+- Each component is `{m, f, a}` and can resolve to `{t, m, f, a}` in a registry where `t` is a tenant scope
+- A `ThemableComponent` macro provides `themable foo(assigns) do` instead of `def foo(assigns) do`
+- Themables are listed in a registry and wrapped in a dynamic dispatch outer function
+- An admin panel provides the ability to override each `{m, f, a}` component for each `t` tenant
+- An admin-written variant is compiled to a sandbox module and rendered with known valid inputs
+- At runtime, all component renders transparently do an additionnal ETS lookup to render the correct variant
+- Still Elixir code for the first part, so stored RCE
+- If we swap HEEX for a dumber template engine in the second part, we achieve safe server-side customization
+- Of course there still are a lot of client-side measures to take if this kind of feature was to be built
+
+### Themable components
+
+Of course, the mechanism to build this is still the ability to compile and load new code at runtime. We need to know each component's intended data needs, compile an user-supplied component to an isolated module, run it with fixture data, and check if we get a `%Phoenix.LiveView.Rendered{}` struct as output instead of an error.
+
+I will start with the desired API :
+
+```elixir
+defmodule SwapperWeb.DemoComponent do
+  use SwapperWeb.ThemableComponent
+  
+  themable greeting(assigns), fixture: %{name: "preview"} do
+    ~H"""
+    <p>Hello, {@name}.</p>
+    """
+  end
+end
+```
+
+We can see that instead of `use Phoenix.Component`, we `use SwapperWeb.ThemableComponent`, which provides a `themable` macro. The themable component also gets a "fixture" key that allows to pass a map of known-good data to render, so we can test alternative implementations against it when users supply new templates.
+
+The __using__ macro uses Phoenix.Component, imports `themable/{2, 3}`, imports `sigil_TEMPLATE` (we'll see later what that does), and registers two module attributes `@stock_source` and `@stock_fixture` with the accumulate: true option, as well as a before_compile callback.
+
+```elixir
+defmacro __using__(_opts) do
+  quote do
+    use Phoenix.Component
+    import SwapperWeb.ThemableComponent, only: [themable: 2, themable: 3]
+    import Swapper.Template, only: [sigil_TEMPLATE: 2]
+    Module.register_attribute(__MODULE__, :stock_source, accumulate: true)
+    Module.register_attribute(__MODULE__, :stock_fixture, accumulate: true)
+    @before_compile SwapperWeb.ThemableComponent
+  end
+end
+```
+
+You probably used module attributes in your own projects. If we read [the docs](https://elixir.hexdocs.pm/1.20.1/Module.html), we can see that the accumulate flag allows to accumulate @stock_source and @stock_fixtures attributes in a list instead of overriding the value (which is the default behaviour of attributes).
+
+Here is the themable macro : 
+
+```elixir
+defmacro themable({name, _meta, args} = signature, opts \\ [], block) do
+  body = Keyword.fetch!(block, :do)
+  fixture = Keyword.get(opts, :fixture, Macro.escape(%{}))
+  arity = length(args)
+  default = :"__default_#{name}__"
+  source = Macro.to_string({:def, [], [signature, [do: body]]})
+
+  quote do
+    @stock_source {unquote(name), unquote(arity), unquote(source)}
+    @stock_fixture {unquote(name), unquote(arity), unquote(fixture)}
+
+    def unquote(signature) do
+      target = {__MODULE__, unquote(name), unquote(arity)}
+
+      SwapperWeb.ThemableComponent.dispatch(
+        target,
+        [unquote_splicing(args)],
+        fn args2 -> apply(__MODULE__, unquote(default), args2) end
+      )
+    end
+
+    def unquote(default)(unquote_splicing(args)), do: unquote(body)
+  end
+end
+```
+
+I am not very well versed in macros, so there might be more elegant ways to write this. What it *does* is take our earlier 
+
+```elixir
+themable greeting(assigns), fixture: %{name: "preview"} do
+  ~H"""
+  <p>Hello, {@name}.</p>
+  """
+end
+```
+
+definition, and rewrites it to (pseudo-code) :
+
+```elixir
+@stock_source {greeting, 1, source AST}
+@stock_fixture {greeting, 1, fixture map AST}
+def greeting(assigns) do
+  target = {__MODULE__, :greeting, 1}
+  SwapperWeb.ThemableComponent.dispatch(
+        target,
+        [args],
+        fn args2 -> apply(__MODULE__, __default_greeting__, args2) end
+  )
+end
+
+def __default_greeting__(args) do
+  ~H"""
+  <p>Hello, {@name}.</p>
+  """
+end
+```
+
+Which means it generates a phoenix component definition that takes in an assigns map and ultimately returns a `%Phoenix.LiveView.Rendered{}` struct, but through an indirection level in `SwapperWeb.ThemableComponent.dispatch/3`. Here, target is \{m, f, arity\} which references our original component. If we were building this for a multi-tenant platform like the one I described in the intro, we would extend this 3-tuple to be a 4-tuple with a tenant identifier, maybe with a key convention in the assigns. But you get the idea. Instead of rendering, we dispatch to a render function registry.
+
+We implement `dispatch/3` by looking up our component in ETS, and either render it or pass through the stock in-source component if there was no registered override. There also is a "template" branch and we'll see that later. If the overriding render fails, we demote the component by marking it as non-working so future renders directly pass through to the stock render. Both an error and returning something that isn't a `Rendered` struct fails.
+
+```elixir
+def dispatch(target, args, fallback) do
+  case Swapper.Theming.lookup(target) do
+    nil -> fallback.(args)
+    {:template, template} -> Swapper.Template.render(template, hd(args))
+    {:module, module, fun} -> run_override(target, module, fun, args, fallback)
+  end
+end
+
+defp run_override(target, module, fun, args, fallback) do
+  case apply(module, fun, args) do
+    %Phoenix.LiveView.Rendered{} = rendered -> rendered
+    bad -> demote(target, {:bad_return, bad}, fallback, args)
+  end
+rescue
+  error -> demote(target, error, fallback, args)
+end
+
+defp demote(target, reason, fallback, args) do
+  Swapper.Theming.demote(target, reason)
+  fallback.(args)
+end
+```
+
+### Providing alternative implementations of components
+
+To provide alternative implementations, we need a few things in my opinion :   
+- An editor UX
+- A component playground
+
+We can build both in one go, but this means we need to collect metadata about what can be themed. This is what is done in the `__before_compile__` compiler callback in the `ThemableComponent` module :
+
+```elixir
+defmacro __before_compile__(env) do
+  sources =
+    for {name, arity, source} <- Module.get_attribute(env.module, :stock_source) do
+      quote do
+        def __stock_source__(unquote(name), unquote(arity)), do: unquote(source)
+      end
+    end
+
+  fixtures =
+    for {name, arity, fixture} <- Module.get_attribute(env.module, :stock_fixture) do
+      quote do
+        def __fixture__(unquote(name), unquote(arity)), do: unquote(Macro.escape(fixture))
+      end
+    end
+
+  targets =
+    env.module
+    |> Module.get_attribute(:stock_source)
+    |> Enum.map(fn {name, arity, _} -> {name, arity} end)
+    |> Enum.uniq()
+
+  quote do
+    unquote_splicing(sources)
+    def __stock_source__(_name, _arity), do: nil
+
+    unquote_splicing(fixtures)
+    def __fixture__(_name, _arity), do: %{}
+
+    def __theme_targets__, do: unquote(Macro.escape(targets))
+  end
+end
+```
+
+Again, in pseudo-code, for our demo component, this generates something like :
+
+```elixir
+def __stock_source__(:greeting, 1), do: source AST
+def __stock_source__(_, _), do: nil
+
+def __fixture__(:greeting, 1), do: fixture map
+def __fixture__(_, _), do: %{}
+
+def __theme_targets__, do: [{:greeting, 1}]
+```
+
+So each module that uses `ThemableComponent` provides introspection capabilities, and is able to return a list of the functions (components) that are themable, and for each one, sample valid data and the component source.
+
+Swapper.Theming here is a GenServer holding an ETS table and provides lookup, registration, previewing, and demotion. It is very simplified for brevity.
+
+```elixir
+defmodule Swapper.Theming do
+  def lookup(target) do
+    case :ets.lookup(@table, target) do
+      [{^target, ref}] -> ref
+      [] -> nil
+    end
+  end
+
+  def register_elixir({_m, f, _a} = target, source) do
+    with {:ok, _rendered} <- preview(target, {:elixir, source}),
+         {:ok, module} <- Swapper.Compiler.compile(target, source) do
+      put(target, {:module, module, f})
+      {:ok, module}
+    end
+  end
+
+  def register_template(target, source) do
+    with {:ok, _rendered} <- preview(target, {:template, source}),
+         {:ok, template} <- Swapper.Template.compile(source) do
+      put(target, {:template, template})
+    end
+  end
+  
+  def preview({m, f, a}, {:template, source}) do
+    {:ok, template} = Swapper.Template.compile(source)
+    {:ok, Swapper.Template.render(template, m.__fixture__(f, a))}
+  end
+
+  def preview({m, f, a} = target, {:elixir, source}) do
+    {:ok, module} = Swapper.Compiler.compile(target, source) 
+    render(module, f, m.__fixture__(f, a))
+  end
+
+  def render(module, fun, fixture) do
+    case apply(module, fun, [Map.put(fixture, :__changed__, nil)]) do
+      %Phoenix.LiveView.Rendered{} = rendered -> {:ok, rendered}
+      other -> {:error, {:bad_return, other}}
+    end
+  end
+end
+```
+
+The enigmatic "compiler" seen above is very simple : it just wraps source in a namespaced module, compiles it, and returns the module. We ignore module conflicts because there will be a lot of re-definitions during the editing UX.
+
+```elixir
+defmodule Swapper.Compiler do
+  def compile({m, f, a}, source) do
+    name = :"Elixir.Swapper.Temporary.#{m}__#{f}__#{a}"
+    imports =
+      if String.contains?(source, "~TEMPLATE"),
+        do: "import Swapper.Template, only: [sigil_TEMPLATE: 2]\n",
+        else: ""
+
+    wrapped = """
+    defmodule #{inspect(name)} do
+      use Phoenix.Component
+      #{imports}
+      #{source}
+    end
+    """
+
+    Code.put_compiler_option(:ignore_module_conflict, true)
+
+    case Code.compile_string(wrapped) do
+      [{name, _bin}] -> {:ok, name}
+      other -> {:error, {:compile_failed, other}}
+    end
+  end
+end
+```
+
+So, just to be clear here, this is again a case of stored RCE, so doing this means whoever is allowed to write the code that reaches the compiler fully owns your node. This is why I introduced the `~TEMPLATE` option a bit earlier.
+
+But we have everything needed to :
+- build a simple LiveView that lists modules that export __theme_targets__/0  
+- in this liveview, for each component, show the original source, the necessary assigns shape
+- allows an user to edit a new source
+- run it in the compiler to one-shot render and preview it
+- if the preview succeeds, allow the user to promote it (register it in the theming ETS table)
+
+What we don't have yet is security, and global registration, since in a cluster all nodes should know what overrides are present. You can see other posts about propagating code to other nodes in a cluster by using the TOC on top of this post.
+
+### You can build `%Rendered{}` structs yourself
+
+So, throughout the post I've let a `TEMPLATE` sigil show through. The goal is to show that this kind of runtime-loaded code swap could be made safe with alternative template engines that do not require executing Elixir code to run. Anything can be a LiveView component as long as it takes in an assigns map and returns a %Rendered struct, so this is, as an example, a valid component :
+
+```elixir
+  def valid_component(assigns) do
+    %Phoenix.LiveView.Rendered{
+      static: ["foo"],
+      dynamic: fn _ -> [] end
+    }
+  end
+```
+
+Of course, all the change tracking happens in the dynamic function, and implementing proper change tracking is harder than the toy example shown below. But if you use LiveView, take a few minutes to read https://phoenix-live-view.hexdocs.pm/Phoenix.LiveView.Engine.html to understand the rendering mechanism better :) .
+
+You also have the right to register custom sigils, quite easily in fact, by simply defining a sigil function :
+
+```elixir
+def sigil_SHOUTING(content, options) do
+  %Phoenix.LiveView.Rendered{
+    static: [String.upcase(content)],
+    dynamic: fn _ -> [] end
+  }
+end
+```
+
+and then 
+
+```elixir
+~SHOUTING"""
+This was meant to be calm and quiet...
+"""
+```
+
+could render THIS WAS MEANT TO BE CALM AND QUIET if used as the body of a component. Multi-letter uppercase sigils, as opposed to single-letter lowercase sigils, purposefully disallow direct string interpolation inside of them. This means that an user could not do this :
+
+```elixir
+~TEMPLATE"""
+<p class="innocent">#{Code.eval_string(@user_supplied_param)}</p>
+"""
+```
+
+But the user who could do this in the first place is the developer, not the application user. So this prevents server-side interaction because there is no code evaluation coming from those dummy templates, the below compiler only doing interspersion. How the text inside a multi-letter sigil is handled is fully up to you. So a naïve template engine that only supports direct variable interpolation as text could look like : 
+
+```elixir
+defmodule Swapper.Template do
+  defstruct [:static, :vars]
+
+  def compile(source) when is_binary(source) do
+    parts =
+    ~r/\{@([a-zA-Z]+)\}/
+      |> Regex.split(source, include_captures: true)
+
+    {:dynamic, static, vars} =
+      parts
+      |> Enum.reduce({:static, [], []}, fn part, {kind, statics, vs} ->
+        case kind do
+          :static -> {:dynamic, [part | statics], vs}
+          :dynamic ->
+            [_, name] = Regex.run(~r/\{@([a-zA-Z]+)\}/, part)
+            {:static, statics, [String.to_atom(name) | vs]}
+        end
+      end)
+
+    {:ok, %__MODULE__{static: Enum.reverse(static), vars: Enum.reverse(vars)}}
+  end
+
+  defmacro sigil_TEMPLATE(term, _modifiers) do
+    {:ok, template} = term |> src() |> compile()
+    quote do
+      Swapper.Template.render(unquote(Macro.escape(template)), var!(assigns))
+    end
+  end
+
+  defp src(source) when is_binary(source), do: source
+  defp src({:<<>>, _meta, [source]}) when is_binary(source), do: source
+
+  def render(%__MODULE__{static: static, vars: vars}, assigns) do
+    %Phoenix.LiveView.Rendered{
+      static: static,
+      dynamic: fn _track -> Enum.map(vars, fn var -> 
+        {:safe, iodata} = Phoenix.HTML.html_escape(Map.get(assigns, var, ""))
+        iodata
+      end) end,
+      root: false
+    }
+  end
+end
+```
+
+The only "trick" here is that Regex.split when used with `include_captures: true` returns a list that will be padded with empty strings if the first/last elements were to be captured, so: `Regex.split(~r/(\d+)/, "123 foo 456 bar", include_captures: true)` will return `["", "123", " foo ", "456", " bar"]`, and `Regex.split(~r/(\d+)/, "123 foo bar 123", include_captures: true)` returns `["", "123", " foo bar ", "123", ""]`. This is very interesting for us, because the LiveView.Rendered struct needs us to respect that there is one more static part than dynamic parts. This allows to zip (intersperse) known static parts with dynamic parts at render time for efficiency.
+
+We would also need to validate var names against the keys in the fixture attribute of this themable component to avoid atom exhaustion.
+
+So, our toy template engine allows to write :
+
+```elixir
+themable greeting(assigns) do
+~TEMPLATE"""
+<p>Hello {@name}</p>
+"""
+end
+```
+
+and render it.
+
+So we technically have all the ingredients to build the next skinnable website platform in Elixir. Depending on your use case, that might mean pulling in Shopify's liquid templates, keying the templates by tenant, or even by user. But I find the in-source marking of editable components with a simple `themable` macro interesting. There's no registry to maintain, it is provided by code introspection. There is auto-healing with fallback of unrenderable components by deleting a registry entry if the component fails to render.
+
+While Elixir itself can't yet be allowed to be written by users, templates provide a safe escape hatch. But while we're thinking in the heat (I don't know about you, but temperature reached 40 degrees Celcius here today) about elixir runtime niceties, we could even envision future ways of doing this safely in a full elixir stack :
+
+- Use the Hologram compiler to compile Elixir to JS, run it into a sandboxed JS runtime
+- Use Popcorn to run the templates in a sandbox
+
+This does not remove the client-side security risks. If you remember the [Samy Myspace worm](https://en.wikipedia.org/wiki/Samy_\(computer_worm\)) that propagated with stored XSS, you would still have a lot of work to do to prevent a similar phenomenon :
+
+- isolating user content on strictly different domains
+- tightening CSP to disallow all fetches CSS-side
+- tightening CSP to disallow eval, inline scripts, event handlers
+- actually sanitizing HTML output
+- and, generally, moderating user content and customizations
+
+So this would maybe be more useful in a website-farm context when customization is provided as a service *by the platform*, without requiring any re-deployment and having very focused scope (per-component edits).
+
+In a way, what I described is very similar to mocking techniques but at function granularity. You address a function and its calling context with a tuple containing as little as \{m, f, a\} or as many as \{tenant, user, m, f, a\} and dispatch the underlying call dynamically. All of that without needing anything more than the runtime and 100 lines of glue, and the system provides self-introspection of the parts that can be customized. I find those reflection abilities very elegant.
