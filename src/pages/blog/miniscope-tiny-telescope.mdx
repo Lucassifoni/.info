@@ -3,7 +3,7 @@ layout: "../../layouts/BlogPost.astro"
 title: "The tiniest yet real telescope I've built"
 description: "76/300 Pocket Dobson: a tiny yet real telescope that comes with you everywhere"
 pubDate: "Nov 18 2025"
-tags: ["astronomy"]
+tags: ["astronomy", "telescope", "optics"]
 frenchTitle: "Un dobson 76/300 de poche mais sans compromis."
 frenchSummary: "Nouveau modèle de téléscope imprimable, tenant dans un tout petit volume, avec tout d'un vrai."
 
@@ -14,7 +14,7 @@ import Gallery from "../../components/Gallery.astro";
 <span style="font-style:normal;display:inline-block;background:#FF6600; color: white; width:1.2em; text-align: center; line-height: 1.2; height: 1.2em;position:relative;top:-.1em;"><span style="position: relative; top:.1em">Y</span></span> Discussion on HN : https://news.ycombinator.com/item?id=46241763
 
 <figure>
-![](/pics/miniscope/IMG_2285.webp)
+![](/pics/miniscope/gallery/IMG_2285.webp)
 </figure>
 
 A "relaxation" project, mostly drawn on planes to and from Norway this month, where I had to travel to setup a digital art installation in Kristiansand with friends from the digital art collective Lab212. It has been drawn with one major constraint: it must fit in the inner pocket of my jacket (well, one specific jacket), except for the rods.
@@ -49,29 +49,7 @@ The alt/az movements use "teflon pads" (actually gray HDPE or UHMW for furniture
 
 If you build it, the real trick for ease of mounting is to chamfer the carbon rods with a 1mm chamfer at both ends and seal it with CA glue. See the chamfer pic in the gallery.
 
-<Gallery items={[
-  { src: "/pics/miniscope/IMG_2165.jpeg", alt: "Pocket dobson scale comparison" },
-  { src: "/pics/miniscope/IMG_2266.webp", alt: "Miniscope view 1" },
-  { src: "/pics/miniscope/IMG_2267.webp", alt: "Miniscope view 2" },
-  { src: "/pics/miniscope/IMG_2268.webp", alt: "Miniscope view 3" },
-  { src: "/pics/miniscope/IMG_2269.webp", alt: "Miniscope view 4" },
-  { src: "/pics/miniscope/IMG_2271.webp", alt: "Miniscope view 5" },
-  { src: "/pics/miniscope/IMG_2272.mp4" },
-  { src: "/pics/miniscope/IMG_2273.webp", alt: "Miniscope view 6" },
-  { src: "/pics/miniscope/IMG_2274.webp", alt: "Miniscope view 7" },
-  { src: "/pics/miniscope/IMG_2275.webp", alt: "Miniscope view 8" },
-  { src: "/pics/miniscope/IMG_2276.webp", alt: "Miniscope view 9" },
-  { src: "/pics/miniscope/IMG_2277.webp", alt: "Miniscope view 10" },
-  { src: "/pics/miniscope/chamfer.png", alt: "Chamfered carbon rod end" },
-  { src: "/pics/miniscope/IMG_2278.webp", alt: "Miniscope view 11" },
-  { src: "/pics/miniscope/IMG_2279.webp", alt: "Miniscope view 12" },
-  { src: "/pics/miniscope/IMG_2280.webp", alt: "Miniscope view 13" },
-  { src: "/pics/miniscope/IMG_2281.webp", alt: "Miniscope view 14" },
-  { src: "/pics/miniscope/IMG_2282.webp", alt: "Miniscope view 15" },
-  { src: "/pics/miniscope/IMG_2283.webp", alt: "Miniscope view 16" },
-  { src: "/pics/miniscope/IMG_2284.webp", alt: "Miniscope view 17" },
-  { src: "/pics/miniscope/IMG_2285.webp", alt: "Miniscope view 18" },
-]} />
+<Gallery folder="/pics/miniscope/gallery" />
 
 ## Optical tests
 
@@ -83,20 +61,7 @@ Sadly, the results aren't great. We were used to very good λ/6 or better recent
 
 **All test pictures below are before refiguring**
 
-<Gallery items={[
-  { src: "/pics/miniscope/tests/bench.png", alt: "Optical bench overview" },
-  { src: "/pics/miniscope/tests/_MG_0777.JPG", alt: "Bath interferometer setup" },
-  { src: "/pics/miniscope/tests/_MG_0778.JPG", alt: "Interferometry test view" },
-  { src: "/pics/miniscope/tests/_MG_0780.JPG", alt: "Test setup detail" },
-  { src: "/pics/miniscope/tests/igram.png", alt: "Interferogram 1" },
-  { src: "/pics/miniscope/tests/igram_2.png", alt: "Interferogram 2" },
-  { src: "/pics/miniscope/tests/igram_3.png", alt: "Interferogram 3" },
-  { src: "/pics/miniscope/tests/igram_4.png", alt: "Interferogram 4" },
-  { src: "/pics/miniscope/tests/dft_1.png", alt: "DFT analysis 1" },
-  { src: "/pics/miniscope/tests/dft_2.png", alt: "DFT analysis 2" },
-  { src: "/pics/miniscope/tests/dft_3.png", alt: "DFT analysis 3" },
-  { src: "/pics/miniscope/figuring.png", alt: "Refiguring the mirror on a little pitch lap" },
-]} />
+<Gallery folder="/pics/miniscope/tests" />
 
 **Update as of dec. 28th 2025** : there is now a 24.5mm eyepieces remix allowing to use older and lighter eyepieces. Files are on Printables along with the rest.
 

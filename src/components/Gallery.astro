@@ -1,4 +1,7 @@
 ---
+import fs from "node:fs";
+import path from "node:path";
+
 export interface GalleryItem {
     src: string;
     type?: "image" | "video";
@@ -7,18 +10,68 @@ export interface GalleryItem {
 }
 
 export interface Props {
-    items: GalleryItem[];
+    items?: GalleryItem[];
+    folder?: string;
     minWidth?: string;
 }
 
-const { items, minWidth = "250px" } = Astro.props;
+const { items: explicitItems, folder, minWidth = "250px" } = Astro.props;
 
 const videoExtensions = new Set(["mp4", "webm", "ogg", "ogv", "mov", "m4v"]);
+const imageExtensions = new Set([
+    "jpg",
+    "jpeg",
+    "png",
+    "webp",
+    "gif",
+    "avif",
+    "svg",
+]);
+
+const extOf = (name: string) =>
+    name.split("?")[0].split(".").pop()?.toLowerCase() ?? "";
+
+/**
+ * Reads every media file in `public/<folder>`, sorted naturally. For each
+ * media file `name.ext`, a sibling `name.txt` (if present) supplies the
+ * caption/alt text. Runs at build time only.
+ */
+const readFolder = (folder: string): GalleryItem[] => {
+    const urlBase = "/" + folder.replace(/^\/+|\/+$/g, "");
+    const diskDir = path.join(process.cwd(), "public", folder);
+
+    if (!fs.existsSync(diskDir)) {
+        console.warn(`[Gallery] folder not found: ${diskDir}`);
+        return [];
+    }
+
+    return fs
+        .readdirSync(diskDir)
+        .filter((name) => {
+            const ext = extOf(name);
+            return videoExtensions.has(ext) || imageExtensions.has(ext);
+        })
+        .sort((a, b) =>
+            a.localeCompare(b, undefined, {
+                numeric: true,
+                sensitivity: "base",
+            }),
+        )
+        .map((name) => {
+            const base = name.slice(0, name.length - (extOf(name).length + 1));
+            const captionPath = path.join(diskDir, `${base}.txt`);
+            const alt = fs.existsSync(captionPath)
+                ? fs.readFileSync(captionPath, "utf8").trim()
+                : "";
+            return { src: `${urlBase}/${name}`, alt };
+        });
+};
+
+const items = explicitItems ?? (folder ? readFolder(folder) : []);
 
 const resolveType = (item: GalleryItem): "image" | "video" => {
     if (item.type) return item.type;
-    const ext = item.src.split("?")[0].split(".").pop()?.toLowerCase() ?? "";
-    return videoExtensions.has(ext) ? "video" : "image";
+    return videoExtensions.has(extOf(item.src)) ? "video" : "image";
 };
 ---
 
@@ -30,15 +83,22 @@ const resolveType = (item: GalleryItem): "image" | "video" => {
                     class="gallery-item"
                     data-type={resolveType(item)}
                     data-src={item.src}
+                    data-caption={item.alt ?? ""}
                 >
                     {resolveType(item) === "video" ? (
-                        <video
-                            src={item.thumb ?? item.src}
-                            playsinline
-                            muted
-                            autoplay
-                            loop
-                        />
+                        <>
+                            <video
+                                src={`${item.thumb ?? item.src}#t=0.1`}
+                                playsinline
+                                muted
+                                preload="metadata"
+                            />
+                            <span class="gallery-play" aria-hidden="true">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M8 5v14l11-7z" />
+                                </svg>
+                            </span>
+                        </>
                     ) : (
                         <img src={item.thumb ?? item.src} alt={item.alt ?? ""} />
                     )}
@@ -81,6 +141,33 @@ const resolveType = (item: GalleryItem): "image" | "video" => {
         transform: scale(1.05);
     }
 
+    .gallery-play {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+    }
+
+    .gallery-play svg {
+        width: 56px;
+        height: 56px;
+        padding: 14px;
+        box-sizing: border-box;
+        fill: #fff;
+        background: rgba(0, 0, 0, 0.55);
+        border-radius: 50%;
+        transition:
+            transform 0.3s ease,
+            background 0.3s ease;
+    }
+
+    .gallery-item:hover .gallery-play svg {
+        transform: scale(1.08);
+        background: rgba(0, 0, 0, 0.75);
+    }
+
     @media (max-width: 768px) {
         .gallery-grid {
             grid-template-columns: repeat(
@@ -114,19 +201,33 @@ const resolveType = (item: GalleryItem): "image" | "video" => {
         max-width: 90%;
         max-height: 90%;
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
+        gap: 0.75rem;
     }
 
     .gallery-lightbox-content img,
     .gallery-lightbox-content video {
         max-width: 100%;
-        max-height: 90vh;
+        max-height: 85vh;
         object-fit: contain;
     }
 
     .gallery-lightbox-content img:not(.active),
     .gallery-lightbox-content video:not(.active) {
+        display: none;
+    }
+
+    .gallery-lightbox-caption {
+        color: #eee;
+        font-size: 0.95rem;
+        line-height: 1.4;
+        text-align: center;
+        max-width: 70ch;
+    }
+
+    .gallery-lightbox-caption:empty {
         display: none;
     }
 
@@ -190,7 +291,7 @@ const resolveType = (item: GalleryItem): "image" | "video" => {
 
 <script>
     type GalleryItemEl = HTMLElement & {
-        dataset: { type?: string; src?: string };
+        dataset: { type?: string; src?: string; caption?: string };
     };
 
     interface Lightbox {
@@ -205,6 +306,7 @@ const resolveType = (item: GalleryItem): "image" | "video" => {
             <div class="gallery-lightbox-content">
                 <img class="gallery-lightbox-image" src="" alt="" />
                 <video class="gallery-lightbox-video" controls playsinline></video>
+                <p class="gallery-lightbox-caption"></p>
             </div>
             <button class="gallery-lightbox-prev">&#10094;</button>
             <button class="gallery-lightbox-next">&#10095;</button>
@@ -216,6 +318,9 @@ const resolveType = (item: GalleryItem): "image" | "video" => {
         )!;
         const video = root.querySelector<HTMLVideoElement>(
             ".gallery-lightbox-video",
+        )!;
+        const caption = root.querySelector<HTMLElement>(
+            ".gallery-lightbox-caption",
         )!;
         const closeBtn = root.querySelector(".gallery-lightbox-close")!;
         const prevBtn = root.querySelector(".gallery-lightbox-prev")!;
@@ -229,14 +334,17 @@ const resolveType = (item: GalleryItem): "image" | "video" => {
             if (!item) return;
             index = i;
             const src = item.dataset.src ?? "";
+            caption.textContent = item.dataset.caption ?? "";
 
             if (item.dataset.type === "video") {
                 video.src = src;
                 video.classList.add("active");
                 image.classList.remove("active");
+                image.alt = "";
                 video.play().catch(() => {});
             } else {
                 image.src = src;
+                image.alt = item.dataset.caption ?? "";
                 image.classList.add("active");
                 video.classList.remove("active");
                 video.pause();
