@@ -1,0 +1,293 @@
+---
+export interface GalleryItem {
+    src: string;
+    type?: "image" | "video";
+    thumb?: string;
+    alt?: string;
+}
+
+export interface Props {
+    items: GalleryItem[];
+    minWidth?: string;
+}
+
+const { items, minWidth = "250px" } = Astro.props;
+
+const videoExtensions = new Set(["mp4", "webm", "ogg", "ogv", "mov", "m4v"]);
+
+const resolveType = (item: GalleryItem): "image" | "video" => {
+    if (item.type) return item.type;
+    const ext = item.src.split("?")[0].split(".").pop()?.toLowerCase() ?? "";
+    return videoExtensions.has(ext) ? "video" : "image";
+};
+---
+
+<div class="gallery" style={`--gallery-min: ${minWidth};`}>
+    <div class="gallery-grid">
+        {
+            items.map((item) => (
+                <div
+                    class="gallery-item"
+                    data-type={resolveType(item)}
+                    data-src={item.src}
+                >
+                    {resolveType(item) === "video" ? (
+                        <video
+                            src={item.thumb ?? item.src}
+                            playsinline
+                            muted
+                            autoplay
+                            loop
+                        />
+                    ) : (
+                        <img src={item.thumb ?? item.src} alt={item.alt ?? ""} />
+                    )}
+                </div>
+            ))
+        }
+    </div>
+</div>
+
+<style>
+    .gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(
+            auto-fill,
+            minmax(var(--gallery-min, 250px), 1fr)
+        );
+        gap: 1rem;
+        margin: 2rem 0;
+    }
+
+    .gallery-item {
+        position: relative;
+        overflow: hidden;
+        border-radius: 8px;
+        cursor: pointer;
+        aspect-ratio: 1;
+        background: #f5f5f5;
+    }
+
+    .gallery-item img,
+    .gallery-item video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+
+    .gallery-item:hover img,
+    .gallery-item:hover video {
+        transform: scale(1.05);
+    }
+
+    @media (max-width: 768px) {
+        .gallery-grid {
+            grid-template-columns: repeat(
+                auto-fill,
+                minmax(150px, 1fr)
+            );
+            gap: 0.5rem;
+        }
+    }
+</style>
+
+<style is:global>
+    .gallery-lightbox {
+        display: none;
+        position: fixed;
+        z-index: 9999;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.95);
+    }
+
+    .gallery-lightbox.active {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .gallery-lightbox-content {
+        position: relative;
+        max-width: 90%;
+        max-height: 90%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .gallery-lightbox-content img,
+    .gallery-lightbox-content video {
+        max-width: 100%;
+        max-height: 90vh;
+        object-fit: contain;
+    }
+
+    .gallery-lightbox-content img:not(.active),
+    .gallery-lightbox-content video:not(.active) {
+        display: none;
+    }
+
+    .gallery-lightbox-close {
+        position: absolute;
+        top: 20px;
+        right: 40px;
+        color: #fff;
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 10000;
+    }
+
+    .gallery-lightbox-close:hover {
+        color: #ccc;
+    }
+
+    .gallery-lightbox-prev,
+    .gallery-lightbox-next {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: none;
+        font-size: 30px;
+        padding: 16px 20px;
+        cursor: pointer;
+        border-radius: 4px;
+        z-index: 10000;
+    }
+
+    .gallery-lightbox-prev:hover,
+    .gallery-lightbox-next:hover {
+        background: rgba(255, 255, 255, 0.4);
+    }
+
+    .gallery-lightbox-prev {
+        left: 20px;
+    }
+
+    .gallery-lightbox-next {
+        right: 20px;
+    }
+
+    @media (max-width: 768px) {
+        .gallery-lightbox-close {
+            top: 10px;
+            right: 20px;
+            font-size: 30px;
+        }
+
+        .gallery-lightbox-prev,
+        .gallery-lightbox-next {
+            font-size: 20px;
+            padding: 10px 14px;
+        }
+    }
+</style>
+
+<script>
+    type GalleryItemEl = HTMLElement & {
+        dataset: { type?: string; src?: string };
+    };
+
+    interface Lightbox {
+        open: (items: GalleryItemEl[], index: number) => void;
+    }
+
+    function buildLightbox(): Lightbox {
+        const root = document.createElement("div");
+        root.className = "gallery-lightbox";
+        root.innerHTML = `
+            <span class="gallery-lightbox-close">&times;</span>
+            <div class="gallery-lightbox-content">
+                <img class="gallery-lightbox-image" src="" alt="" />
+                <video class="gallery-lightbox-video" controls playsinline></video>
+            </div>
+            <button class="gallery-lightbox-prev">&#10094;</button>
+            <button class="gallery-lightbox-next">&#10095;</button>
+        `;
+        document.body.appendChild(root);
+
+        const image = root.querySelector<HTMLImageElement>(
+            ".gallery-lightbox-image",
+        )!;
+        const video = root.querySelector<HTMLVideoElement>(
+            ".gallery-lightbox-video",
+        )!;
+        const closeBtn = root.querySelector(".gallery-lightbox-close")!;
+        const prevBtn = root.querySelector(".gallery-lightbox-prev")!;
+        const nextBtn = root.querySelector(".gallery-lightbox-next")!;
+
+        let items: GalleryItemEl[] = [];
+        let index = 0;
+
+        const show = (i: number) => {
+            const item = items[i];
+            if (!item) return;
+            index = i;
+            const src = item.dataset.src ?? "";
+
+            if (item.dataset.type === "video") {
+                video.src = src;
+                video.classList.add("active");
+                image.classList.remove("active");
+                video.play().catch(() => {});
+            } else {
+                image.src = src;
+                image.classList.add("active");
+                video.classList.remove("active");
+                video.pause();
+            }
+            root.classList.add("active");
+        };
+
+        const close = () => {
+            root.classList.remove("active");
+            video.pause();
+            video.src = "";
+            image.src = "";
+        };
+
+        const next = () => show((index + 1) % items.length);
+        const prev = () => show((index - 1 + items.length) % items.length);
+
+        closeBtn.addEventListener("click", close);
+        nextBtn.addEventListener("click", next);
+        prevBtn.addEventListener("click", prev);
+        root.addEventListener("click", (e) => {
+            if (e.target === root) close();
+        });
+        document.addEventListener("keydown", (e) => {
+            if (!root.classList.contains("active")) return;
+            if (e.key === "Escape") close();
+            if (e.key === "ArrowRight") next();
+            if (e.key === "ArrowLeft") prev();
+        });
+
+        return {
+            open: (galleryItems, startIndex) => {
+                items = galleryItems;
+                show(startIndex);
+            },
+        };
+    }
+
+    let lightbox: Lightbox | null = null;
+    const getLightbox = () => (lightbox ??= buildLightbox());
+
+    function setupGallery(root: HTMLElement) {
+        const items = Array.from(
+            root.querySelectorAll<GalleryItemEl>(".gallery-item"),
+        );
+        items.forEach((item, i) => {
+            item.addEventListener("click", () => getLightbox().open(items, i));
+        });
+    }
+
+    document
+        .querySelectorAll<HTMLElement>(".gallery")
+        .forEach(setupGallery);
+</script>

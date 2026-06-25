@@ -9,6 +9,8 @@ frenchSummary: "Nouveau modèle de téléscope imprimable, tenant dans un tout p
 
 ---
 
+import Gallery from "../../components/Gallery.astro";
+
 <span style="font-style:normal;display:inline-block;background:#FF6600; color: white; width:1.2em; text-align: center; line-height: 1.2; height: 1.2em;position:relative;top:-.1em;"><span style="position: relative; top:.1em">Y</span></span> Discussion on HN : https://news.ycombinator.com/item?id=46241763
 
 <figure>
@@ -47,73 +49,29 @@ The alt/az movements use "teflon pads" (actually gray HDPE or UHMW for furniture
 
 If you build it, the real trick for ease of mounting is to chamfer the carbon rods with a 1mm chamfer at both ends and seal it with CA glue. See the chamfer pic in the gallery.
 
-<div className="miniscope-gallery">
-  <div className="gallery-grid">
-    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/IMG_2165.jpeg">
-      <img src="/pics/miniscope/IMG_2165.jpeg" alt="Pocket dobson scale comparison" />
-    </div>
-    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/IMG_2266.webp">
-      <img src="/pics/miniscope/IMG_2266.webp" alt="Miniscope view 1" />
-    </div>
-    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/IMG_2267.webp">
-      <img src="/pics/miniscope/IMG_2267.webp" alt="Miniscope view 2" />
-    </div>
-    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/IMG_2268.webp">
-      <img src="/pics/miniscope/IMG_2268.webp" alt="Miniscope view 3" />
-    </div>
-    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/IMG_2269.webp">
-      <img src="/pics/miniscope/IMG_2269.webp" alt="Miniscope view 4" />
-    </div>
-    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/IMG_2271.webp">
-      <img src="/pics/miniscope/IMG_2271.webp" alt="Miniscope view 5" />
-    </div>
-    <div className="gallery-item" data-type="video" data-src="/pics/miniscope/IMG_2272.mp4">
-      <video src="/pics/miniscope/IMG_2272.mp4" playsInline muted autoPlay loop></video>
-    </div>
-    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/IMG_2273.webp">
-      <img src="/pics/miniscope/IMG_2273.webp" alt="Miniscope view 6" />
-    </div>
-    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/IMG_2274.webp">
-      <img src="/pics/miniscope/IMG_2274.webp" alt="Miniscope view 7" />
-    </div>
-    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/IMG_2275.webp">
-      <img src="/pics/miniscope/IMG_2275.webp" alt="Miniscope view 8" />
-    </div>
-    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/IMG_2276.webp">
-      <img src="/pics/miniscope/IMG_2276.webp" alt="Miniscope view 9" />
-    </div>
-    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/IMG_2277.webp">
-      <img src="/pics/miniscope/IMG_2277.webp" alt="Miniscope view 10" />
-    </div>
-    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/chamfer.png">
-      <img src="/pics/miniscope/chamfer.png" alt="Miniscope view 10" />
-    </div>
-    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/IMG_2278.webp">
-      <img src="/pics/miniscope/IMG_2278.webp" alt="Miniscope view 11" />
-    </div>
-    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/IMG_2279.webp">
-      <img src="/pics/miniscope/IMG_2279.webp" alt="Miniscope view 12" />
-    </div>
-    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/IMG_2280.webp">
-      <img src="/pics/miniscope/IMG_2280.webp" alt="Miniscope view 13" />
-    </div>
-    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/IMG_2281.webp">
-      <img src="/pics/miniscope/IMG_2281.webp" alt="Miniscope view 14" />
-    </div>
-    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/IMG_2282.webp">
-      <img src="/pics/miniscope/IMG_2282.webp" alt="Miniscope view 15" />
-    </div>
-    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/IMG_2283.webp">
-      <img src="/pics/miniscope/IMG_2283.webp" alt="Miniscope view 16" />
-    </div>
-    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/IMG_2284.webp">
-      <img src="/pics/miniscope/IMG_2284.webp" alt="Miniscope view 17" />
-    </div>
-    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/IMG_2285.webp">
-      <img src="/pics/miniscope/IMG_2285.webp" alt="Miniscope view 18" />
-    </div>
-  </div>
-</div>
+<Gallery items={[
+  { src: "/pics/miniscope/IMG_2165.jpeg", alt: "Pocket dobson scale comparison" },
+  { src: "/pics/miniscope/IMG_2266.webp", alt: "Miniscope view 1" },
+  { src: "/pics/miniscope/IMG_2267.webp", alt: "Miniscope view 2" },
+  { src: "/pics/miniscope/IMG_2268.webp", alt: "Miniscope view 3" },
+  { src: "/pics/miniscope/IMG_2269.webp", alt: "Miniscope view 4" },
+  { src: "/pics/miniscope/IMG_2271.webp", alt: "Miniscope view 5" },
+  { src: "/pics/miniscope/IMG_2272.mp4" },
+  { src: "/pics/miniscope/IMG_2273.webp", alt: "Miniscope view 6" },
+  { src: "/pics/miniscope/IMG_2274.webp", alt: "Miniscope view 7" },
+  { src: "/pics/miniscope/IMG_2275.webp", alt: "Miniscope view 8" },
+  { src: "/pics/miniscope/IMG_2276.webp", alt: "Miniscope view 9" },
+  { src: "/pics/miniscope/IMG_2277.webp", alt: "Miniscope view 10" },
+  { src: "/pics/miniscope/chamfer.png", alt: "Chamfered carbon rod end" },
+  { src: "/pics/miniscope/IMG_2278.webp", alt: "Miniscope view 11" },
+  { src: "/pics/miniscope/IMG_2279.webp", alt: "Miniscope view 12" },
+  { src: "/pics/miniscope/IMG_2280.webp", alt: "Miniscope view 13" },
+  { src: "/pics/miniscope/IMG_2281.webp", alt: "Miniscope view 14" },
+  { src: "/pics/miniscope/IMG_2282.webp", alt: "Miniscope view 15" },
+  { src: "/pics/miniscope/IMG_2283.webp", alt: "Miniscope view 16" },
+  { src: "/pics/miniscope/IMG_2284.webp", alt: "Miniscope view 17" },
+  { src: "/pics/miniscope/IMG_2285.webp", alt: "Miniscope view 18" },
+]} />
 
 ## Optical tests
 
@@ -125,283 +83,23 @@ Sadly, the results aren't great. We were used to very good λ/6 or better recent
 
 **All test pictures below are before refiguring**
 
-<div className="tests-gallery">
-  <div className="gallery-grid">
-    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/tests/bench.png">
-      <img src="/pics/miniscope/tests/bench.png" alt="Optical bench overview" />
-    </div>
-    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/tests/_MG_0777.JPG">
-      <img src="/pics/miniscope/tests/_MG_0777.JPG" alt="Bath interferometer setup" />
-    </div>
-    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/tests/_MG_0778.JPG">
-      <img src="/pics/miniscope/tests/_MG_0778.JPG" alt="Interferometry test view" />
-    </div>
-    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/tests/_MG_0780.JPG">
-      <img src="/pics/miniscope/tests/_MG_0780.JPG" alt="Test setup detail" />
-    </div>
-    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/tests/igram.png">
-      <img src="/pics/miniscope/tests/igram.png" alt="Interferogram 1" />
-    </div>
-    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/tests/igram_2.png">
-      <img src="/pics/miniscope/tests/igram_2.png" alt="Interferogram 2" />
-    </div>
-    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/tests/igram_3.png">
-      <img src="/pics/miniscope/tests/igram_3.png" alt="Interferogram 3" />
-    </div>
-    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/tests/igram_4.png">
-      <img src="/pics/miniscope/tests/igram_4.png" alt="Interferogram 4" />
-    </div>
-    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/tests/dft_1.png">
-      <img src="/pics/miniscope/tests/dft_1.png" alt="DFT analysis 1" />
-    </div>
-    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/tests/dft_2.png">
-      <img src="/pics/miniscope/tests/dft_2.png" alt="DFT analysis 2" />
-    </div>
-    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/tests/dft_3.png">
-      <img src="/pics/miniscope/tests/dft_3.png" alt="DFT analysis 3" />
-    </div>
-    <div className="gallery-item" data-type="image" data-src="/pics/miniscope/figuring.png">
-      <img src="/pics/miniscope/figuring.png" alt="Refiguring the mirror on a little pitch lap" />
-    </div>
-  </div>
-</div>
+<Gallery items={[
+  { src: "/pics/miniscope/tests/bench.png", alt: "Optical bench overview" },
+  { src: "/pics/miniscope/tests/_MG_0777.JPG", alt: "Bath interferometer setup" },
+  { src: "/pics/miniscope/tests/_MG_0778.JPG", alt: "Interferometry test view" },
+  { src: "/pics/miniscope/tests/_MG_0780.JPG", alt: "Test setup detail" },
+  { src: "/pics/miniscope/tests/igram.png", alt: "Interferogram 1" },
+  { src: "/pics/miniscope/tests/igram_2.png", alt: "Interferogram 2" },
+  { src: "/pics/miniscope/tests/igram_3.png", alt: "Interferogram 3" },
+  { src: "/pics/miniscope/tests/igram_4.png", alt: "Interferogram 4" },
+  { src: "/pics/miniscope/tests/dft_1.png", alt: "DFT analysis 1" },
+  { src: "/pics/miniscope/tests/dft_2.png", alt: "DFT analysis 2" },
+  { src: "/pics/miniscope/tests/dft_3.png", alt: "DFT analysis 3" },
+  { src: "/pics/miniscope/figuring.png", alt: "Refiguring the mirror on a little pitch lap" },
+]} />
 
 **Update as of dec. 28th 2025** : there is now a 24.5mm eyepieces remix allowing to use older and lighter eyepieces. Files are on Printables along with the rest.
-
-<div id="lightbox" className="lightbox">
-  <span className="lightbox-close">&times;</span>
-  <div className="lightbox-content">
-    <img id="lightbox-image" src="" alt="" />
-    <video id="lightbox-video" controls playsInline muted autoplay></video>
-  </div>
-  <button className="lightbox-prev">&#10094;</button>
-  <button className="lightbox-next">&#10095;</button>
-</div>
 
 **Update as of monday Jan 5th** : Laurent Bourrasseau has created a strock-like remix (see below) where the movement parts act as a box that keeps all the pieces together, see it here on Printables : https://www.printables.com/model/1543041-microbe-76300-dobson-de-table/
 
 ![](/pics/miniscope/lb_remix.webp)
-<style>{`
-  .gallery-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 1rem;
-    margin: 2rem 0;
-  }
-
-  .gallery-item {
-    position: relative;
-    overflow: hidden;
-    border-radius: 8px;
-    cursor: pointer;
-    aspect-ratio: 1;
-    background: #f5f5f5;
-  }
-
-  .gallery-item img,
-  .gallery-item video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.3s ease;
-  }
-
-  .gallery-item:hover img,
-  .gallery-item:hover video {
-    transform: scale(1.05);
-  }
-
-  .lightbox {
-    display: none;
-    position: fixed;
-    z-index: 9999;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.95);
-  }
-
-  .lightbox.active {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .lightbox-content {
-    position: relative;
-    max-width: 90%;
-    max-height: 90%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .lightbox-content img,
-  .lightbox-content video {
-    max-width: 100%;
-    max-height: 90vh;
-    object-fit: contain;
-  }
-
-  #lightbox-image.active {
-    display: block;
-  }
-
-  #lightbox-video.active {
-    display: block;
-  }
-
-  #lightbox-image:not(.active),
-  #lightbox-video:not(.active) {
-    display: none;
-  }
-
-  .lightbox-close {
-    position: absolute;
-    top: 20px;
-    right: 40px;
-    color: #fff;
-    font-size: 40px;
-    font-weight: bold;
-    cursor: pointer;
-    z-index: 10000;
-  }
-
-  .lightbox-close:hover {
-    color: #ccc;
-  }
-
-  .lightbox-prev,
-  .lightbox-next {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
-    border: none;
-    font-size: 30px;
-    padding: 16px 20px;
-    cursor: pointer;
-    border-radius: 4px;
-    z-index: 10000;
-  }
-
-  .lightbox-prev:hover,
-  .lightbox-next:hover {
-    background: rgba(255, 255, 255, 0.4);
-  }
-
-  .lightbox-prev {
-    left: 20px;
-  }
-
-  .lightbox-next {
-    right: 20px;
-  }
-
-  @media (max-width: 768px) {
-    .gallery-grid {
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 0.5rem;
-    }
-
-    .lightbox-close {
-      top: 10px;
-      right: 20px;
-      font-size: 30px;
-    }
-
-    .lightbox-prev,
-    .lightbox-next {
-      font-size: 20px;
-      padding: 12px 16px;
-    }
-  }
-`}</style>
-
-<script>{`
-  (function() {
-    const lightbox = document.getElementById('lightbox');
-    const lightboxImage = document.getElementById('lightbox-image');
-    const lightboxVideo = document.getElementById('lightbox-video');
-    const closeBtn = document.querySelector('.lightbox-close');
-    const prevBtn = document.querySelector('.lightbox-prev');
-    const nextBtn = document.querySelector('.lightbox-next');
-    const testsGalleryItems = Array.from(document.querySelectorAll('.tests-gallery .gallery-item'));
-    const miniscopeGalleryItems = Array.from(document.querySelectorAll('.miniscope-gallery .gallery-item'));
-
-    let currentGalleryItems = [];
-    let currentIndex = 0;
-
-    function showMedia(index) {
-      const item = currentGalleryItems[index];
-      const type = item.dataset.type;
-      const src = item.dataset.src;
-
-      if (type === 'image') {
-        lightboxImage.src = src;
-        lightboxImage.classList.add('active');
-        lightboxVideo.classList.remove('active');
-        lightboxVideo.pause();
-      } else if (type === 'video') {
-        lightboxVideo.src = src;
-        lightboxVideo.classList.add('active');
-        lightboxImage.classList.remove('active');
-        lightboxVideo.play();
-      }
-
-      lightbox.classList.add('active');
-      currentIndex = index;
-    }
-
-    function closeModal() {
-      lightbox.classList.remove('active');
-      lightboxVideo.pause();
-      lightboxVideo.src = '';
-      lightboxImage.src = '';
-    }
-
-    function showNext() {
-      currentIndex = (currentIndex + 1) % currentGalleryItems.length;
-      showMedia(currentIndex);
-    }
-
-    function showPrev() {
-      currentIndex = (currentIndex - 1 + currentGalleryItems.length) % currentGalleryItems.length;
-      showMedia(currentIndex);
-    }
-
-    testsGalleryItems.forEach((item, index) => {
-      item.addEventListener('click', () => {
-        currentGalleryItems = testsGalleryItems;
-        showMedia(index);
-      });
-    });
-
-    miniscopeGalleryItems.forEach((item, index) => {
-      item.addEventListener('click', () => {
-        currentGalleryItems = miniscopeGalleryItems;
-        showMedia(index);
-      });
-    });
-
-    closeBtn.addEventListener('click', closeModal);
-    nextBtn.addEventListener('click', showNext);
-    prevBtn.addEventListener('click', showPrev);
-
-    lightbox.addEventListener('click', (e) => {
-      if (e.target === lightbox) {
-        closeModal();
-      }
-    });
-
-    document.addEventListener('keydown', (e) => {
-      if (!lightbox.classList.contains('active')) return;
-
-      if (e.key === 'Escape') closeModal();
-      if (e.key === 'ArrowRight') showNext();
-      if (e.key === 'ArrowLeft') showPrev();
-    });
-  })();
-`}</script>
