@@ -1,11 +1,17 @@
 ---
 layout: "../../layouts/BlogPost.astro"
-title: "Ambient impressions from an astronomy hike with Wallace"
+title: "Wallace the 6 inch f/2.8 dob, building it, and hiking with it"
 description: "Hiking with Wallace, my 6\" f/2.8 corrected dobsonian."
 pubDate: "Jun 25 2026"
 tags: ["astronomy", "telescope", "optics"]
 
 ---
+
+TOC :
+- [Walking with Wallace](#walking-with-wallace)
+- [Technical details](#technical-details)
+
+### Walking with Wallace
 
 import Gallery from "../../components/Gallery.astro";
 
@@ -25,15 +31,36 @@ The result is an "ambient impression". I hope you'll enjoy it as I did despite n
 
 <Gallery folder="/pics/hiking-with-wallace" />
 
-I also realize I didn't show wallace in details on the site yet. It's my best instrument to date because it has such a well defined purpose and fulfills it fully, it doesn't try to do anything else than ultra-wide deep sky views. And framing NGC7000 as a whole in a wide-field eyepiece is something magical.
+### Technical details
 
-So, here are a few more "technical" pics of Wallace, before it was adapted to work with 2" eyepieces. It has a hand-figured f/2.8 mirror, a dovetail base to be used as a finderscope for a bigger telescope, solid carbon rods, and a small alt-az base to use it standalone.
+I also realize I didn't show Wallace in detail on the site yet. It's my best instrument to date because it has such a well-defined purpose and fulfills it fully — it doesn't try to do anything other than ultra-wide deep-sky views. Framing NGC7000 whole in a wide-field eyepiece is something magical.
 
-And of course, [files are free and on Printables](https://www.printables.com/model/997327-wallace-6-f28-telescope) 
-
-Discussions on :
-- Astrosurf (http://www.astrosurf.com/topic/177708-wallace-petit-scope-et-grand-champ/)  
-- Cloudynights (https://www.cloudynights.com/forums/topic/911830-6-f28-second-attempt/#comments)  
-- Webastro (https://www.webastro.net/forums/topic/256031-wallace-mon-nouveau-chercheur-imprim%C3%A9-en-3d/)  
+So here are a few more "technical" pics of Wallace, before it was adapted to take 2" eyepieces.
 
 <Gallery folder="/pics/hiking-with-wallace/wallace-itself" />
+
+Wallace is 153mm at f/2.84, and that ultra-fast ratio is a bit of an accident: I was aiming for f/3, but misread the thickness of the shim needed on the sine table when I ground the curve the curve, ended up at nearly f/2.7, and decided to finish it anyway as a challenge.
+
+The primary mirror took me two attempts, the first ending (detailed in the cloudynights post) when I dug a deep scratch across the face trying to smooth down a central bump. So I went back to fine grinding. The second figure kept a central hole that the 59mm secondary fully masks, which is not a problem. Figuring that fast of an asphere and ending up with a rather smooth figure with a good edge was already a real challenge, and nothing guarantees that I would have ended up with a better figure after raising the central hole again (well at least in a reasonable timeframe). But above all, I was frightened of maybe not having eliminated the source of a scratch. So 0.92 in-instrument it is, and it is quite glorious on the sky.
+
+<Gallery folder="/pics/hiking-with-wallace/prototyping-and-figuring/figuring" />
+
+At f/2.8x, correcting coma is mandatory, so I used the 4-element GSO corrector designed by Roger Ceragioli, found on leboncoin for 65 euros. Most people think of this corrector as quite bad because of its low price and wrong-spacing out of the box. Indeed, if you use it as-bought, its backfocus is about 56mm, but its optical design calls for more than 70mm (in Wallace's case, the best fit determined visually was around 79mm), and it beats my MPCC+hyperbolic formula in K2, while showing a lot less chromatism.
+
+The two-modules-on-a-dovetail construction is a tribute to the legendary Coulter CT-100, and I printed in deep-blue ASA. In addition to the dovetail, there are six solid 6mm carbon rods. The primary cell is a simple 6-points on three levers cell.
+
+<Gallery folder="/pics/hiking-with-wallace/prototyping-and-figuring/prototyping" />
+
+Correction is great over 66% of the field and starts to fall a little at the edge, which isn't a problem since in a 100 degree eyepiece, this thing shows more than 4 degrees of true field and the outer part is more "context" that you have to turn your head towards to see it.
+
+And of course, [files are free and on Printables](https://www.printables.com/model/997327-wallace-6-f28-telescope).
+
+Discussions on:
+- Astrosurf (http://www.astrosurf.com/topic/177708-wallace-petit-scope-et-grand-champ/)
+- Cloudynights (https://www.cloudynights.com/forums/topic/911830-6-f28-second-attempt/#comments)
+- Webastro (https://www.webastro.net/forums/topic/256031-wallace-mon-nouveau-chercheur-imprim%C3%A9-en-3d/)
+
+The next iteration will be a lot harder to pull off, because with a lot of enthusiasm after actually observing with Wallace, we diamond-generated a new blank with a meniscus to make it very light. It is very thin, very sensitive to hand temperature while working, but will cool down very fast in the field, which is nice for a grab-and-go scope. The mirror of the first Wallace needs a good 30 minutes to cool down to ambient, in comparison, before correction settles. And this time, I'll have a revenge on the center bump/low and won't settle for less than 0.95 strehl, for the beauty of the craft.
+
+
+<Gallery folder="/pics/hiking-with-wallace/prototyping-and-figuring/next-gen-mirror" />
