@@ -48,10 +48,20 @@ pid |> Pwmx.Output.set_period(500_000, :us)
 
 Both libraries are **very simple** but will free your codebase of configfs/sysfs path wrangling and provide nicer ergonomics.
 
+A bit of benchmarking on the mangopi showed me that :
+
+- Writing a period/duty cycle change from elixir takes an average of 4100us, so can be driven at ~24Hz  
+- Reading a period/duty cycle from elixir value takes an average of 2700us  
+
+This is by using direct File.write! operations on sysfs (which pwmx does).
+
+And writing both period and duty cycle takes around 8200us, so it can be driven at ~12Hz
+
+So, this isn’t fast enough at all for robotics, but it is fast enough for a lot of applications and can even provide a low-resolution acceleration curve. For example, I will be able to remove a microcontroller that was between the board and motors on a three-axis motorized table for an interferometry rig.
+
 ### A bit of risc-v lore
 
 ![](/pics/pwmxdts/doc_0.jpeg)
-
 
  I started them in 2024 but hit a blocker on actually configuring the mangopi's pinmux controller to export the PWM channels on the physical header, and felt back to another board, despite the D1's manual (1300+ pages :p) containing the actual data about which CPU registers to write to get the pins out, this needed a sun20i-pwm linux driver to be written. Now, it has : https://lore.kernel.org/all/20250427142500.151925-1-privatesub2@gmail.com/
 
