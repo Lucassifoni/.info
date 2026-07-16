@@ -4,124 +4,204 @@ import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import { SITE_TITLE } from "../config";
 
+type L = { en: string; fr: string };
+
 type CvEntry = {
     start: number;
     end?: number;
-    name: string;
-    location: string;
-    description: string;
-    outcomes?: string[];
+    name: L;
+    location: L;
+    description?: L;
+    outcomes?: L[];
 };
+
+const t = (en: string, fr: string = en): L => ({ en, fr });
 
 const experiences: CvEntry[] = [
     {
         start: 2021,
-        name: "Turing-Express",
-        location: "Cahors, France",
-        description:
-            "Independent software practice, solving business problems from initial discussion to later maintenance, selecting providers, sometimes managing business-specific devices. An actual full-stack ownership starting with gathering requirements. Most software for this period is written in Elixir.",
+        name: t("Turing-Express"),
+        location: t("Cahors, France"),
+        description: t(
+            "Independent software practice, solving business problems from initial discussion to later maintenance, selecting providers, sometimes managing business-specific devices. Actual full-stack ownership with frequent user interviewing, providing business value with Elixir.",
+            "Pratique logicielle indépendante : problèmes métier traités de la discussion initiale à la maintenance, choix des prestataires, parfois du matériel spécifique. Responsabilité full-stack complète, entretiens utilisateurs fréquents, valeur métier livrée avec Elixir.",
+        ),
     },
     {
         start: 2022,
-        name: "Alzo",
-        location: "Toulouse, France",
-        description:
-            "Alzo and its companion products are a B2B SaaS for unified communication ownership and streamlined tender submission, for architecture and construction companies. I created the project in 2022, and it took its name in 2023. In 2026 I co-founded a company that now develops it.",
+        name: t("Alzo"),
+        location: t("Toulouse, France"),
+        description: t(
+            "Alzo and its companion products are a B2B SaaS for unified communication and streamlined tender submission, for architecture and construction companies. I created the project in 2022, and in 2026 co-founded the company that now runs it.",
+            "Alzo et ses produits associés : un SaaS B2B de communication unifiée et de réponse aux appels d'offres simplifiée, pour l'architecture et la construction. Créé en 2022 ; en 2026 j'ai cofondé la société qui le développe.",
+        ),
     },
     {
         start: 2018,
         end: 2021,
-        name: "Documents.design studio",
-        location: "Toulouse, France",
-        description:
-            "Co-ran this 5-person design studio, managing and developing all web and software projects for its clients. Earlier projects were done with Laravel and Node, and later projects with Elixir and Phoenix.",
+        name: t("Documents.design studio"),
+        location: t("Toulouse, France"),
+        description: t(
+            "Co-ran this 5-person design studio, managing and developing all web projects for its clients. Earlier projects with Laravel and Node, and later projects with Elixir and Phoenix.",
+            "Cogéré ce studio de design de 5 personnes, pilotant et développant tous les projets web clients. D'abord Laravel et Node, puis Elixir et Phoenix.",
+        ),
     },
     {
-      start: 2015,
-      end: 2018,
-      name: "Freelancer",
-      location: "Toulouse, France",
-      description: "Built custom web-facing sites and applications on-demand for diverse customers. Technologies encountered included Laravel, Rust, Node.js, and Wordpress."
-    }
+        start: 2015,
+        end: 2018,
+        name: t("Freelancer", "Indépendant"),
+        location: t("Toulouse, France"),
+        description: t(
+            "Built custom web-facing sites and applications on-demand for diverse customers. Technologies encountered included Laravel, Rust, Node.js, and Wordpress.",
+            "Sites et applications web sur mesure pour des clients variés. Technologies : Laravel, Rust, Node.js, WordPress.",
+        ),
+    },
 ];
 
 const education: CvEntry[] = [
     {
         start: 2013,
         end: 2015,
-        name: "Design curriculum (Diplôme supérieur d'Arts appliqués)",
-        location: "Les Arènes, Toulouse, France",
-        description:
+        name: t(
+            "Design curriculum (Diplôme supérieur d'Arts appliqués)",
+            "Diplôme supérieur d'Arts appliqués",
+        ),
+        location: t("Les Arènes, Toulouse"),
+        description: t(
             "Diploma : built an app that automated ingestion of French press releases and prepared them for a layout & publishing system.",
+            "Diplôme : application automatisant l'ingestion de communiqués de presse français et leur préparation pour un système de mise en page et publication.",
+        ),
     },
     {
         start: 2011,
         end: 2013,
-        name: "Design curriculum (BTS Design graphique)",
-        location: "Les Arènes, Toulouse, France",
-        description:
+        name: t(
+            "Design curriculum (BTS Design graphique)",
+            "BTS Design graphique",
+        ),
+        location: t("Les Arènes, Toulouse"),
+        description: t(
             "Built a kinect-powered gestural interface to navigate and curate press releases.",
+            "Interface gestuelle pilotée par Kinect pour naviguer et trier des communiqués de presse.",
+        ),
     },
     {
         start: 2010,
         end: 2011,
-        name: "Gateway year to design studies (MaNAA)",
-        location: "Lycée Loritz, Nancy, France",
+        name: t(
+            "Gateway year to design studies (MaNAA)",
+            "Mise à niveau en arts appliqués (MANAA)",
+        ),
+        location: t("Lycée Loritz, Nancy"),
     },
     {
         start: 2008,
         end: 2010,
-        name: "Electronics curriculum high school (Bac Génie Électronique)",
-        location: "Lycée Loritz, Nancy, France",
-        description:
+        name: t(
+            "Electronics curriculum high school (Bac Génie Électronique)",
+            "Lycée, filière électronique (Bac Génie Électronique)",
+        ),
+        location: t("Lycée Loritz, Nancy"),
+        description: t(
             "Diploma class project : built a sun-tracking solar panel system for a camping-car.",
+            "Projet de diplôme : système de panneau solaire suiveur pour camping-car.",
+        ),
     },
 ];
 
 const other: CvEntry[] = [
-  {
-    start: 2022,
-    name: "Optics making group and conference",
-    location: "Online",
-    description: "I co-animate an optics-making channel on an astronomy Discord server, and in 2026 organized the first edition of a yearly French-speaking optics online conference."
-  },
-  {
-    start: 2022,
-    end: 2024,
-    name: "Mirror making workshop",
-    location: "L'Union, France",
-    description: "I ran a mirror-making workshop at Neptunion, an astronomy club, introducing members to the discipline, providing both theory and practice sessions. See more about mirror making on the blog section of my site."
-  },
+    {
+        start: 2022,
+        name: t(
+            "Optics making group and conference",
+            "Groupe de fabrication optique et conférence",
+        ),
+        location: t("Online", "En ligne"),
+        description: t(
+            "Co-animate an optics-making channel on an astronomy Discord server; organized the first edition of a yearly French-speaking optics online conference in 2026.",
+            "Coanimation d'un canal de fabrication optique sur un Discord d'astronomie ; organisation en 2026 de la première édition d'une conférence en ligne francophone annuelle sur l'optique.",
+        ),
+    },
+    {
+        start: 2022,
+        end: 2024,
+        name: t("Mirror making workshop", "Atelier de polissage d'optiques"),
+        location: t("L'Union, France"),
+        description: t(
+            "Ran a mirror-making workshop at Neptunion astronomy club: theory and hands-on practice sessions introducing members to the discipline.",
+            "Atelier de taille de miroirs au club d'astronomie Neptunion : théorie et pratique pour initier les membres à la discipline.",
+        ),
+    },
     {
         start: 2017,
         end: 2018,
-        name: "HTML/CSS/JS workshop for non-coders",
-        location: "Toulouse, France",
-        description:
-            "Two years in a row, a 48h course over 8 weeks given to young adults studying graphic design : thinking about a website, designing and developing it, using versioning, getting a domain, deploying it through github pages. Some of them now build websites for their own clients :-).",
+        name: t(
+            "HTML/CSS/JS workshop for non-coders",
+            "Atelier HTML/CSS/JS pour non-développeurs",
+        ),
+        location: t("Toulouse, France"),
+        description: t(
+            "Taught a 8 weeks development course, two years in a row, to design students: designing, building, versioning, and deploying on GitHub Pages. Several now build sites for their clients.",
+            "Cours de développement de 8 semaines, deux ans de suite, pour étudiants en design : conception, réalisation, versionnage, déploiement sur GitHub Pages. Plusieurs créent aujourd'hui des sites.",
+        ),
     },
     {
         start: 2006,
         end: 2009,
-        name: "Ubuntu install parties",
-        location: "Nancy, France",
-        description:
-            "As a teenager fond of Linux, I gathered install CDs and helped classmates build their own or refurbish old PCs to install Ubuntu, from install CDs we ordered. Some of those now are IT professionals.",
+        name: t("Ubuntu install parties", "Install parties Ubuntu"),
+        location: t("Nancy, France"),
+        description: t(
+            "As a teenager, gathered install CDs and helped classmates refurbish old PCs to run Ubuntu. Several went on to IT careers.",
+            "Adolescent, je rassemblais des CD d'installation et aidais mes camarades à reconditionner de vieux PC et les passer sous Ubuntu. Plusieurs travaillent aujourd'hui dans l'informatique.",
+        ),
     },
 ];
 
-const sections = [
-    { title: "Software development experience", entries: experiences },
-    { title: "Groups/Teaching experiences", entries: other },
-    { title: "Education", entries: education },
+const sections: { title: L; entries: CvEntry[] }[] = [
+    {
+        title: t(
+            "Software development experience",
+            "Expérience en développement logiciel",
+        ),
+        entries: experiences,
+    },
+    {
+        title: t(
+            "Groups/Teaching experiences",
+            "Expériences de groupes / enseignement",
+        ),
+        entries: other,
+    },
+    { title: t("Education", "Formation"), entries: education },
 ];
+
+const interests: L[] = [
+    t(
+        "Telescope & mirror making, metrology and interferometry",
+        "Fabrication de télescopes et miroirs, métrologie, interférométrie",
+    ),
+    t("Astronomy", "Astronomie"),
+    t("Electronics & embedded devices", "Électronique et systèmes embarqués"),
+    t(
+        "Running, hiking & outdoor activities",
+        "Course à pied, randonnée, plein air",
+    ),
+    t("Graphic design & typography", "Design graphique et typographie"),
+    t(
+        "Elixir and the BEAM, both as runtime and community",
+        "Elixir et la BEAM, technologie et communauté",
+    ),
+];
+
+const interestsLine = (lang: "en" | "fr") =>
+    interests.map((i) => i[lang]).join(" · ");
 
 const years = (e: CvEntry) =>
     e.end === undefined
-        ? `${e.start} —`
+        ? `${e.start} →`
         : e.end === e.start
           ? `${e.start}`
-          : `${e.start} — ${e.end}`;
+          : `${e.start} → ${e.end}`;
 ---
 
 <!doctype html>
@@ -133,91 +213,200 @@ const years = (e: CvEntry) =>
             type="website"
         />
         <style>
+            main {
+                --baseline: 1.6rem;
+                line-height: var(--baseline);
+            }
             h1 {
                 font-weight: 400;
-                margin-top: 1.5em;
+                font-size: 1.8rem;
+                line-height: calc(var(--baseline) * 2);
+                margin-top: var(--baseline);
+                margin-bottom: var(--baseline);
             }
             h2 {
                 font-weight: 400;
+                font-size: 1.1rem;
+                line-height: var(--baseline);
                 border-bottom: 1px dotted gray;
-                padding-bottom: 0.2em;
-                margin-top: 2.2em;
+                padding-bottom: 0;
+                margin-top: calc(var(--baseline) * 2);
+                margin-bottom: calc(var(--baseline) / 2);
+            }
+            main > p {
+                line-height: var(--baseline);
+                margin-top: 0;
+                margin-bottom: var(--baseline);
             }
             .entry {
                 display: grid;
-                grid-template-columns: 7em 1fr;
+                grid-template-columns: 9em 1fr;
                 gap: 0 1.5ch;
-                margin-bottom: 1.4em;
+                align-items: baseline;
+                margin-bottom: var(--baseline);
             }
             .entry .years {
                 margin: 0;
                 color: #555;
                 font-size: 0.9em;
-                line-height: 1.65;
+                line-height: var(--baseline);
             }
             .entry h3 {
-                margin: 0 0 0.25em 0;
+                margin: 0;
+                font-size: 1rem;
+                line-height: var(--baseline);
             }
             .entry .location {
+                margin: 0;
                 font-weight: 400;
                 color: #777;
+                font-size: 0.85em;
+                line-height: var(--baseline);
             }
             .entry .description {
                 margin: 0;
+                line-height: var(--baseline);
+            }
+            .interests {
+                margin: 0;
+                line-height: var(--baseline);
+                color: #333;
             }
             .entry .outcomes {
-                margin: 0.4em 0 0 0;
+                margin: 0;
                 padding-left: 1.2em;
+                line-height: var(--baseline);
             }
             .entry .outcomes li {
-                margin-bottom: 0.3em;
+                margin: 0;
             }
             @media screen and (max-width: 600px) {
                 .entry {
                     grid-template-columns: 1fr;
                 }
-                .entry .years {
-                    margin-bottom: 0.15em;
+            }
+            :global(#cv-lang) {
+                display: none;
+            }
+            .lang-toggle {
+                display: inline-block;
+                margin: 0.5em 0 1.5em;
+                font-size: 0.85em;
+                color: #555;
+                cursor: pointer;
+                text-decoration: underline dotted;
+            }
+            :global(.t-fr) {
+                display: none;
+            }
+            :global(#cv-lang:checked ~ .lang-toggle .t-en),
+            :global(#cv-lang:checked ~ main .t-en) {
+                display: none;
+            }
+            :global(#cv-lang:checked ~ .lang-toggle .t-fr),
+            :global(#cv-lang:checked ~ main .t-fr) {
+                display: revert;
+            }
+            .print-name {
+                display: none;
+            }
+            @media print {
+                main {
+                    --baseline: 1.15rem;
+                    font-size: 12.5px;
+                    max-width: none;
+                }
+                :global(header),
+                :global(footer) {
+                    display: none !important;
+                }
+                .lang-toggle {
+                    display: none;
+                }
+                h1 {
+                    font-size: 1.4rem;
+                    margin-top: 0;
+                }
+                h1 .screen-title {
+                    display: none;
+                }
+                h1 .print-name {
+                    display: inline;
+                }
+                h2 {
+                    font-size: 1.05rem;
+                    margin-top: var(--baseline);
+                }
+                h3 {
+                    font-size: 0.95rem;
+                }
+                a {
+                    color: inherit;
+                    text-decoration: underline;
                 }
             }
         </style>
     </head>
     <body>
         <Header have_langs={false} />
+        <input type="checkbox" id="cv-lang" class="noprint" />
+        <label for="cv-lang" class="noprint lang-toggle">
+            <span class="t-en">Voir en français →</span>
+            <span class="t-fr">← View in English</span>
+        </label>
         <main>
-            <h1>Resume</h1>
-            <p>
-                I've worked as an independent developer since 2015, and with
-                Elixir and the BEAM since 2018. From 2022 to 2026 I designed
-                and built <a href="https://alzo.archi">Alzo</a>.<br/>This page lists work, education, and group-organizing experiences.<br/>To have a better feel of how I think, you can head to the <a href="/blog">blog</a> section.
+            <h1>
+                <span class="screen-title">
+                    <span class="t-en">Resume</span>
+                    <span class="t-fr">CV</span>
+                </span>
+                <span class="print-name">Lucas Sifoni</span>
+            </h1>
+            <p class="intro t-en">
+                I've owned full products from inception to maintenance as an independent developer since 2015, with
+                Elixir and the BEAM since 2018. From 2022 to 2026 I created
+                and built <a href="https://alzo.archi">Alzo</a>, an architecture-space SaaS company. I like to work with users, stakeholders, designers, developers, and managers.<br/>I'm good at building domain knowledge and sharing it, and at creating cohesion in groups.<br/>To have a better feel of how I think, see my articles and talks at <a href="https://lucassifoni.info">lucassifoni.info</a>.
             </p>
-            <p>
-                For current availability and ways we could work together, see
-                the <a href="/hire">hire page</a>.
+            <p class="intro t-fr">
+                Développeur indépendant depuis 2015, je porte des produits de la conception à la maintenance, avec
+                Elixir et la BEAM depuis 2018. De 2022 à 2026, j'ai créé
+                et développé <a href="https://alzo.archi">Alzo</a>, un SaaS pour le secteur de l'architecture. J'aime travailler avec users, designers, développeurs et responsables.<br/>Je construis une expertise métier et la partage, et crée de la cohésion dans les équipes.<br/>Pour mieux cerner ma façon de penser, retrouvez mes articles et conférences sur <a href="https://lucassifoni.info">lucassifoni.info</a>.
             </p>
 
             {
                 sections.map((section) => (
                     <section>
-                        <h2>{section.title}</h2>
+                        <h2>
+                            <span class="t-en">{section.title.en}</span>
+                            <span class="t-fr">{section.title.fr}</span>
+                        </h2>
                         {section.entries.map((e) => (
                             <article class="entry">
-                                <p class="years">{years(e)}</p>
+                                <div class="meta">
+                                    <p class="years">{years(e)}</p>
+                                    <div class="location">
+                                        <span class="t-en">{e.location.en}</span>
+                                        <span class="t-fr">{e.location.fr}</span>
+                                    </div>
+                                </div>
                                 <div>
                                     <h3>
-                                        {e.name}
-
+                                        <span class="t-en">{e.name.en}</span>
+                                        <span class="t-fr">{e.name.fr}</span>
                                     </h3>
-                                    {e.location && (
-                                        <div class="location">
-                                            {e.location}
-                                        </div>
+                                    {e.description && (
+                                        <p class="description">
+                                            <span class="t-en">{e.description.en}</span>
+                                            <span class="t-fr">{e.description.fr}</span>
+                                        </p>
                                     )}
-                                    <p class="description">{e.description}</p>
                                     {e.outcomes && (
                                         <ul class="outcomes">
                                             {e.outcomes.map((o) => (
-                                                <li>{o}</li>
+                                                <li>
+                                                    <span class="t-en">{o.en}</span>
+                                                    <span class="t-fr">{o.fr}</span>
+                                                </li>
                                             ))}
                                         </ul>
                                     )}
@@ -227,6 +416,17 @@ const years = (e: CvEntry) =>
                     </section>
                 ))
             }
+
+            <section>
+                <h2>
+                    <span class="t-en">Other interests</span>
+                    <span class="t-fr">Centres d'intérêt</span>
+                </h2>
+                <p class="interests">
+                    <span class="t-en">{interestsLine("en")}</span>
+                    <span class="t-fr">{interestsLine("fr")}</span>
+                </p>
+            </section>
         </main>
         <Footer />
     </body>
