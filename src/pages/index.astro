@@ -15,12 +15,16 @@ const posts = Object.values(
     );
 const latestPosts = posts.slice(0, 10);
 
-const currentlyUpdated = "July 2026";
+const currentlyUpdated = "August 2026";
 const currently = [
     "Soft-launched a femtoscaler side-project, chantepierre-optique.fr",
     "Working on a hardware contract with Elixir, which will be presented at <a href=\"https://codebeameurope.com/\">Code BEAM EU</a> this fall in Haarlem",
-    "Building Alzo, and migrating isolated deploys to a BEAM cluster.",
-    "Open to one new Elixir / BEAM engagement, see the hire page.",
+];
+
+const talks = [
+    "2026 09 24 : [Table ronde] Designing hardware with elixir @ Espace Brut, Toulouse, France",
+    "2026 10 16-18 : [Talk] Towards specialized instruments @ First Light Telescope Conference, Online + Portland, Oregon",
+    "2026 10 21-23 : [Talk] Designing hardware with elixir @ Code BEAM Europe, Haarlem, Netherlands"
 ];
 
 const projects = [
@@ -199,14 +203,19 @@ const contactRoutes = [
         <main>
             <div class="intro">
                 <p>
-                    I'm Lucas Sifoni, an independent developer since 2015, based in Cahors, in southwest France. Since 2018 I've worked mostly with Elixir and the BEAM. In 2022, I created <a href="https://alzo.archi">Alzo</a>, a tool that takes hours of repetitive work off the hands of architecture firms and technical offices. Alzo is now developed by a dedicated company I co-founded in 2026.<br/>Alongside this, I run
+                    I'm Lucas Sifoni, an independent developer since 2015, based in Cahors, in southwest France. Since 2018 I've worked mostly with Elixir and the BEAM. I created and run <a href="https://alzo.archi">Alzo</a>, a saas for architecture agencies.<br/>I also run
                     <a href="https://turing-express.fr">Turing-Express</a>, a
-                    small studio for custom software and consulting.
-                </p>
-                <p>
-                    I'm also an amateur telescope builder and mirror maker. You'll find the content of this site shaped by both programming and precision optics.
+                    micro studio for custom software and consulting. I believe no company is too small to benefit from Elixir and the BEAM.<br/>
+                    In addition to that, I am an amateur telescope builder and mirror/optics maker, and provide small-scale custom services at <a href="https://chantepierre-optique.fr">Chantepierre Optique</a>.
                 </p>
             </div>
+
+            <section>
+                <h2>Next public talks/interventions</h2>
+                <ul class="currently">
+                    {talks.map((item) => <li set:html={item}></li>)}
+                </ul>
+            </section>
 
             <section>
                 <h2>Currently</h2>
