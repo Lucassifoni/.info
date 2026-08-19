@@ -30,7 +30,7 @@ const talks = [
 const projects = [
     {
         title: "Alzo",
-        body: "The company I co-founded. Alzo is a database, communication and publishing tool for architecture firms and technical offices, built to remove the repetitive overhead of running their projects. It is where most of my Elixir time goes today.",
+        body: "Alzo is a database, communication and publishing tool for architecture firms and technical offices, built to remove the repetitive overhead of running their projects, with or without AI (their choice).",
         href: "https://alzo.archi",
         linkLabel: "alzo.archi",
         img: "",
@@ -60,27 +60,18 @@ const projects = [
 
 const contactRoutes = [
     {
-        label: "Elixir / BEAM work",
-        body: "A fresh look at your codebase, prospective research, NIFs, Nerves, general consulting. Email me directly or see the \"hire\" page.",
-        links: [
-            {
-                href: "mailto:contact@lucassifoni.info",
-                label: "contact@lucassifoni.info",
-            },
-            { href: "/hire", label: "the hire page" },
-        ],
-    },
-    {
         label: "Custom software for small or mid-size businesses",
-        body: "If you need software shaped around how your business actually works, that is what my studio, Turing-Express, is for.",
         links: [
-            { href: "https://turing-express.fr", label: "turing-express.fr" },
+            { href: "https://turing-express.fr", label: "Turing-Express" },
         ],
     },
     {
-        label: "Architecture firms and technical offices",
-        body: "Alzo and its companion applications could be what you need. If you create tenders and find that generic AI tools confuse more than they help, Alzo takes a different approach.",
-        links: [{ href: "https://alzo.archi", label: "alzo.archi" }],
+        label: "Architecture firms and technical offices who create tenders and are tired of 100%-AI takes",
+        links: [{ href: "https://alzo.archi", label: "Alzo" }],
+    },
+    {
+        label: "Ultrafast telescopes, custom optics, interferometry reports",
+        links: [{ href: "https://chantepierre-optique.fr", label: "Chantepierre Optique" }],
     },
 ];
 ---
@@ -226,26 +217,6 @@ const contactRoutes = [
             </section>
 
             <section>
-                <h2>Selected works</h2>
-                <p>
-                    Client work mostly stays private, but my journal is the best way to see how I think both in systems and components. Feel free to explore both the <a href="/blog/tag/elixir"> <span class="tag elixir"> elixir
-                    </span> </a> and <a href="/blog/tag/astronomy"> <span class="tag astronomy"> astronomy
-                    </span> </a> tags for a look at the technical challenges I am interested in.
-                </p>
-                <ul class="projects">
-                    {
-                        projects.map((p) => (
-                            <li>
-                                <h3>{p.title}</h3>
-                                <p>{p.body}</p>
-                                <a href={p.href}>{p.linkLabel} →</a>
-                            </li>
-                        ))
-                    }
-                </ul>
-            </section>
-
-            <section>
                 <h2>Get in touch</h2>
                 <ul class="contact">
                     {
@@ -264,10 +235,7 @@ const contactRoutes = [
             </section>
 
             <section>
-                <h2>Fresh articles from the blog</h2>
-                <p>
-                    It now lives at <a href="/blog">/blog</a>.
-                </p>
+                <h2>Last articles from the blog</h2>
                 <ul class="posts-list">
                     {
                         latestPosts.map((post) => (
