@@ -45,11 +45,7 @@ const breadcrumbItems = [
 ];
 
 const NEWSLETTER_FORMS = {
-    elixir: {
-        href: "https://fda0e546.sibforms.com/serve/MUIFAJTN6nTgQVcag39026SctPFkI68M9chZWELrJgsezqA_OCR8PmS9I3I71GV4a__jH7xcSMHfRIIN84_007LSiVw9uuFGF9odrqxHXOP6ohQ61PPqC-9oqWtwEIFiK1r-7COh7LAku-81f0t3nknqnL-UNgEYqvcMY7gAjnJCw4avG7nC2TBpvC_uEmsx9Kvr2xYO39O5eH65",
-        intro:
-            "You can be notified of new Elixir posts (and only Elixir posts) by subscribing to my newsletter.",
-    },
+
     astronomy: {
         href: "https://fda0e546.sibforms.com/serve/MUIFAAnbWSa9_5rUBkuEYQpginHHl1W6SiNNsdo9baHkYd44o0yQwnMAK-oHG5pNC0sXyDoGdNqhiGOIsFrdylkvuIUXSofOTsEIg9XByNzn20cKhzyQSTlnJGtqaEm8ZCDb7eySybx9j2X6tSbm5-io3uIPmJ1LJ4XpePXyMIzz6x8gRvGutniFoaNtyWlf5h1Ax_OGn47V4pAG",
         intro:
@@ -57,10 +53,7 @@ const NEWSLETTER_FORMS = {
     },
 };
 
-const newsletter =
-    (tags.includes("elixir") && NEWSLETTER_FORMS.elixir) ||
-    (tags.includes("astronomy") && NEWSLETTER_FORMS.astronomy) ||
-    null;
+const newsletter = (tags.includes("astronomy") && NEWSLETTER_FORMS.astronomy) || null;
 ---
 
 <html lang="en">
@@ -170,20 +163,6 @@ const newsletter =
                 }
                 <Navigation me={url} />
                 <hr />
-                {
-                    (tags || []).includes("elixir") && (
-                        <aside class="elixir-cta">
-                            <p>
-                                Working on something in Elixir or on the BEAM
-                                where a fresh pair of eyes would help ? I take
-                                on a couple of days a week for consulting work
-                                : library design, structure review,
-                                exploratory prototypes...<br/>
-                                <a href="/hire">See how I can help &rarr;</a>
-                            </p>
-                        </aside>
-                    )
-                }
                 <ParentPost currentUrl={url} />
                 <slot />
                 {
