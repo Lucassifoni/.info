@@ -13,9 +13,19 @@ export interface Props {
     items?: GalleryItem[];
     folder?: string;
     minWidth?: string;
+    /**
+     * Shown below the grid. Also used in the lightbox for any item that has
+     * no caption of its own.
+     */
+    caption?: string;
 }
 
-const { items: explicitItems, folder, minWidth = "250px" } = Astro.props;
+const {
+    items: explicitItems,
+    folder,
+    minWidth = "250px",
+    caption,
+} = Astro.props;
 
 const videoExtensions = new Set(["mp4", "webm", "ogg", "ogv", "mov", "m4v"]);
 const imageExtensions = new Set([
@@ -83,7 +93,7 @@ const resolveType = (item: GalleryItem): "image" | "video" => {
                     class="gallery-item"
                     data-type={resolveType(item)}
                     data-src={item.src}
-                    data-caption={item.alt ?? ""}
+                    data-caption={item.alt || caption || ""}
                 >
                     {resolveType(item) === "video" ? (
                         <>
@@ -100,12 +110,16 @@ const resolveType = (item: GalleryItem): "image" | "video" => {
                             </span>
                         </>
                     ) : (
-                        <img src={item.thumb ?? item.src} alt={item.alt ?? ""} />
+                        <img
+                            src={item.thumb ?? item.src}
+                            alt={item.alt || caption || ""}
+                        />
                     )}
                 </div>
             ))
         }
     </div>
+    {caption && <p class="gallery-caption">{caption}</p>}
 </div>
 
 <style>
@@ -117,6 +131,14 @@ const resolveType = (item: GalleryItem): "image" | "video" => {
         );
         gap: 1rem;
         margin: 2rem 0;
+    }
+
+    .gallery-caption {
+        margin: -1.25rem 0 2rem;
+        font-size: 0.9rem;
+        line-height: 1.4;
+        text-align: center;
+        opacity: 0.75;
     }
 
     .gallery-item {

@@ -701,6 +701,39 @@ table.table {
     border-collapse: collapse;
 }
 
+article table:not(.table) {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+    margin: 1em 0;
+    td,
+    th {
+        padding: 0.25em 0.5em;
+        border: 1px dotted var(--ink);
+        text-align: left;
+        vertical-align: top;
+    }
+    tbody tr:nth-child(odd) {
+        background: color-mix(in srgb, var(--ink) 6%, transparent);
+    }
+}
+
+.callout {
+    margin: 1.5em 0;
+    max-width: 67ch;
+    padding: 0.75em 1em;
+    font-style: italic;
+    border: 1px dotted var(--ink);
+    border-radius: 3px;
+    > :first-child {
+        margin-top: 0;
+    }
+    > :last-child {
+        margin-bottom: 0;
+    }
+}
+
 .items-list {
     display: flex;
     width: 100%;
