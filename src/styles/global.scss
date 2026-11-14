@@ -7,6 +7,30 @@
 }
 
 @font-face {
+    font-family: "Brut Grotesque";
+    src: url("/fonts/brut_grotesque-bold_web.woff2") format("woff2");
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Brut Grotesque";
+    src: url("/fonts/brut_grotesque-book_italic_web.woff2") format("woff2");
+    font-weight: 400;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Brut Grotesque";
+    src: url("/fonts/brut_grotesque-bold_italic_web.woff2") format("woff2");
+    font-weight: 700;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
     font-family: "Droulers";
     src: url("/fonts/droulers-regular_web.woff2") format("woff2");
     font-weight: 400;
@@ -19,6 +43,22 @@
     src: url("/fonts/droulersclarendonweb-regular.woff2") format("woff2");
     font-weight: 400;
     font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Droulers Clarendon";
+    src: url("/fonts/droulersclarendonweb-bold.woff2") format("woff2");
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Droulers Clarendon";
+    src: url("/fonts/droulersclarendonweb-italic.woff2") format("woff2");
+    font-weight: 400;
+    font-style: italic;
     font-display: swap;
 }
 
@@ -68,6 +108,7 @@ a {
 html {
     font-size: 15.5px;
     font-family: "Brut Grotesque", Helvetica, Arial, sans-serif;
+    font-synthesis: none;
     margin: 0;
     padding: 0;
 }
