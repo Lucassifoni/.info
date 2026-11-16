@@ -85,12 +85,11 @@ I most often build a simulator to gain knowledge about hardware projects or repl
 
 I decided to make all the hardware as simple as possible code-wise. All the modules have absolutely no idea what they are used for and just provide raw inputs to the Elixir host. Some have outputs and they just have "receive bitmap, light LEDs" code, absolutely no business logic hints. This allowed to fully generate the ESP32 firmwares and make them a small implementation detail.
 
-As an example, the keyboard's firmware can be summarized as the following C++ snippet : read the key matrix, send it.
+As an example, the keyboard's firmware can be summarized as the following C++ snippet : read the key matrix, send it. Of course there is a shared library generated behind it and a bit of tooling, but it illustrates that at a high level electronics just send event identifiers.
 
 ```cpp
 void app_setup() {
   serial_link::begin(proto::kBaud, proto::kModuleId);
-
   g_key_spi.begin(kSck, kMiso, kMosi, -1);
   g_drive.begin();
   g_sense.begin();
@@ -99,13 +98,11 @@ void app_setup() {
 
 void app_loop() {
   serial_link::poll(apply_command);
-
   const unsigned long now = millis();
   if (now - g_last_scan_ms < kScanIntervalMs) {
     return;
   }
   g_last_scan_ms = now;
-
   g_keys.scan(on_key_event, nullptr);
 ```
 
