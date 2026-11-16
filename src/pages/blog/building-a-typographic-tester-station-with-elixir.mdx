@@ -34,7 +34,7 @@ TOC :
 
 ## Why a physical type tester ?
 
-Bureau Brut, a type foundry, asked me to imagine a type tester for a week-long exhibition-party to celebrate the 10 years of their type foundry. Around 500 people used the machine and printed nearly 2000 souvenir stickers in this week. I'm thankful for this commission because they could just have set up a computer showing their website and people could have used the type testers pictured below, but they were ambitious in giving visitors a joyful experience and trusted me to come up with a tangible (and no-maintenance) digital installation.
+[Bureau Brut](https://bureaubrut.com), an independent French type foundry, asked me to imagine a type tester for a week-long exhibition-party to celebrate the 10 years of their type foundry. Around 500 people used the machine and printed nearly 2000 souvenir stickers in this week. I'm thankful for this commission because they could just have set up a computer showing their website and people could have used the type testers pictured below, but they were ambitious in giving visitors a joyful experience and trusted me to come up with a tangible (and no-maintenance) digital installation.
 
 <Gallery folder="/pics/codebeam26/brief" caption="The type testers on the bureau brut website" />
 
@@ -433,6 +433,8 @@ PhysicalComponent.handle_event(id, :key_down, nil)
 ```
 
 To demonstrate it, I had an IMAP bridge running and changed the text alignment by sending "Centré" by mail to a demo address. While it worked fine I advise against trying that live, the uncertainty that suddenly builds up while the mail gets sent and received was a bit much :^) . Of course this also updated the liveview and the machine itself if it happened to be connected.
+
+![](/pics/codebeam26/mail_demo.png)
 
 I would change a few things if we are to re-exhibit it :
 
