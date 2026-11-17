@@ -36,14 +36,14 @@ TOC :
 
 [Bureau Brut](https://bureaubrut.com), an independent French type foundry, asked me to imagine a type tester for a week-long exhibition-party to celebrate the 10 years of their type foundry. Around 500 people used the machine and printed nearly 2000 souvenir stickers in this week. I'm thankful for this commission because they could just have set up a computer showing their website and people could have used the type testers pictured below, but they were ambitious in giving visitors a joyful experience and trusted me to come up with a tangible (and no-maintenance) digital installation.
 
-<Gallery folder="/pics/codebeam26/brief" caption="The type testers on the bureau brut website" />
+<Gallery compact folder="/pics/codebeam26/brief" caption="The type testers on the bureau brut website" />
 
 Moreso, they claim themselves of the heritage of William Morris, who wrote a lot about arts and craft during the industrial revolution, and did not reject new techniques, but claimed the dignity of the maker lay partly in the ability to craft with joy, even if with machine aid. Does this resonate today ?
 
 This guided the build a bit, and I set out to allow myself to build more than I would have imagined, doing everything from CAD to one-off circuit boards instead of ordering PCBs, which would have freed me of this manual labor. Given the tight deadline, this added control on the circuits was also quite welcome.
 
 
-<Gallery items={[
+<Gallery compact items={[
   { src: "/pics/codebeam26/Wmmorris3248.jpg", alt: "William Morris" },
   { src: "/pics/codebeam26/morris1.png", alt: "Craft by the people and for the people; as a happiness to the maker and to the user. William Morris, 1879" },
 ]} caption="William Morris and his famous quote (replaced Arts by Craft here)" />
@@ -53,6 +53,10 @@ This guided the build a bit, and I set out to allow myself to build more than I 
 It featured picking a font by picking a floppy disk, type size/kerning/leading levers with analog feedback gauges, two opentype feature pickers that both acted as toggles and feature availability signals, a trackball to roll to input random words from a bank, a little keypad to act on text alignemnt and text nature (user or pre-filled texts), a 196-key keyboard also driven from Elixir, and of course a "print" button. Every control was very tactile and gave instant feedback on-screen and on-paper.
 
 ![The Brutator in the exhibition room](/pics/codebeam26/IMG_6232.jpeg)
+
+<Gallery folder="/pics/codebeam26/exhibition" compact />
+
+Photos: [Bureau Brut](https://bureaubrut.com) and [Fabien Poisson](https://fabienpoisson.com) (@fabs_psn).
 
 - Hardware:
   - 196-key keyboard
@@ -73,13 +77,13 @@ For a bit of trivia, I used shift register daisy chains rather than more "modern
 
 Given I wanted to design, print, cut, solder and assemble everything, we couldn't wait for that to start writing the software. Plus, writing simulators forces to think about the states and their transitions and informs the physical build, while putting a software design in place that gets refined with the advancement of the build. Below are a few pictures of the first items starting to take shape.
 
-<Gallery folder="/pics/codebeam26/first-parts" />
+<Gallery folder="/pics/codebeam26/first-parts" compact />
 
 ## Previous little simulators
 
 I most often build a simulator to gain knowledge about hardware projects or replace a missing component, but they usually get recycled when the real system is brought up. Below are a few examples from previous project, a control panel, an optically dubious depth of focus simulation, and a little PWM/duty cycle curve tuner while we were missing a signal generator. Today those would be one-shot generated, and you'll see later in this post that thanks to LLMs, we can afford better UX for those prototypes. But I insisted on not bringing Claude early in the process in this project, to offer myself the pleasure of designing the software loop.
 
-<Gallery folder="/pics/codebeam26/simulators" />
+<Gallery compact folder="/pics/codebeam26/simulators" />
 
 ## Where does complexity go?
 
@@ -408,7 +412,7 @@ So if we follow the "Align left" key, with text centred and the "user text" lamp
 
 A few more build excerpts :
 
-<Gallery folder="/pics/codebeam26/first-sync" />
+<Gallery folder="/pics/codebeam26/first-sync" compact />
 
 Below we can see Liveview reacting to state changes (to avoid joystick event spam, I batched the updates every 200ms at the time) :
 
@@ -416,9 +420,7 @@ Below we can see Liveview reacting to state changes (to avoid joystick event spa
 
 Please excuse my wiring for the next galleries :
 
-<Gallery folder="/pics/codebeam26/fabrication" />
-
-<Gallery folder="/pics/codebeam26/assembly" />
+<Gallery folder="/pics/codebeam26/fabrication" compact />
 
 
 No matter how events come into the system, be it from the hardware, the liveview control panel, or whatever transport, they all go through the same path. 
