@@ -17,15 +17,6 @@ import Gallery from "../../components/Gallery.astro";
 
 This was presented at Code BEAM Europe 2026 ([slides, English PDF](/pics/codebeam26/Talk_English_Slides.pdf)).
 
-TOC :
-- [Why a physical type tester ?](#why-a-physical-type-tester-)
-- [The machine, dubbed "the brutator"](#the-machine-dubbed-the-brutator)
-- [Why bother with a system simulation](#why-bother-with-a-system-simulation)
-- [Previous little simulators](#previous-little-simulators)
-- [Where does complexity go?](#where-does-complexity-go)
-- [The software bridge doesn't know its purpose either](#the-software-bridge-doesnt-know-its-purpose-either)
-- [Try it here](#try-it-here)
-
 ## Why a physical type tester ?
 
 [Bureau Brut](https://bureaubrut.com), an independent French type foundry, asked me to imagine a type tester for a week-long exhibition-party to celebrate the 10 years of their type foundry. Around 500 people used the machine and printed nearly 2000 souvenir stickers in this week. I'm thankful for this commission because they could just have set up a computer showing their website and people could have used the type testers pictured below, but they were ambitious in giving visitors a joyful experience and trusted me to come up with a tangible (and no-maintenance) digital installation.
@@ -67,19 +58,15 @@ For a bit of trivia, I used shift register daisy chains rather than more "modern
 ![The four modules outlined on the machine](/pics/codebeam26/layout.png)
 </figure>
 
-## Why bother with a system simulation
+## Why bother with a system simulation ?
 
 Given I wanted to design, print, cut, solder and assemble everything, we couldn't wait for that to start writing the software. Plus, writing simulators forces to think about the states and their transitions and informs the physical build, while putting a software design in place that gets refined with the advancement of the build. Below are a few pictures of the first items starting to take shape.
 
 <Gallery folder="/pics/codebeam26/first-parts" compact />
 
-## Previous little simulators
-
 I most often build a simulator to gain knowledge about hardware projects or replace a missing component, but they usually get recycled when the real system is brought up. Below are a few examples from previous project, a control panel, an optically dubious depth of focus simulation, and a little PWM/duty cycle curve tuner while we were missing a signal generator. Today those would be one-shot generated, and you'll see later in this post that thanks to LLMs, we can afford better UX for those prototypes. 
 
 <Gallery compact folder="/pics/codebeam26/simulators" />
-
-## Where does complexity go?
 
 I decided to make all the hardware as simple as possible code-wise. All the modules have absolutely no idea what they are used for and just provide raw inputs to the Elixir host. Some have outputs and they just have "receive bitmap, light LEDs" code, absolutely no business logic hints. This allowed to fully generate the ESP32 firmwares and make them a small implementation detail.
 
@@ -103,8 +90,6 @@ void app_loop() {
   g_last_scan_ms = now;
   g_keys.scan(on_key_event, nullptr);
 ```
-
-## The software bridge doesn't know its purpose either
 
 I simply described each kind of element in Elixir : what is a button ? What is a joystick ? What is a gauge ? And write a simple struct and pure transition functions for it. An idle button through a press function gives a pressed button, and nothing more.
 
@@ -221,8 +206,6 @@ end
 
 ![Gauges and joysticks rendered in the control panel](/pics/codebeam26/components_rendered.png)
 
-- `apply(:"#{module}.Display", :render, [assigns])` in `ControlPanelLive`: resolved from the layout data by naming convention
-
 On startup, all instantiated components get registered in a registry and are restored from postgres.
 
 ```
@@ -233,7 +216,7 @@ On startup, all instantiated components get registered in a registry and are res
 [info] Start kerning_gauge via {:via, Registry, {Bbparty.ComponentsRegistry, :PhysicalComponent_kerning_gauge}}
 ```
 
-The runtime of components is handled by their process, broadcasting any changes, cascading events, and triggering effects on the world.
+The runtime of components is handled by their `PhysicalComponent` process who broadcasts any changes, cascades events, and triggering effects (`outputs` here) on the world.
 
 ```elixir
   defp step(id, event, payload, state, origin) do
