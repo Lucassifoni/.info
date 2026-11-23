@@ -17,12 +17,6 @@ import Gallery from "../../components/Gallery.astro";
 
 This was presented at Code BEAM Europe 2026 ([slides, English PDF](/pics/codebeam26/Talk_English_Slides.pdf)).
 
-<div class="callout">
-
-If my way of thinking could bring value to your team, don't hesitate to contact me as I am looking for a long-term contract (of course my preferred space would be close to the BEAM, but I'm looking to actively think hard with people deep in their domain). Current availability ~20 weekly hours.
-
-</div>
-
 TOC :
 - [Why a physical type tester ?](#why-a-physical-type-tester-)
 - [The machine, dubbed "the brutator"](#the-machine-dubbed-the-brutator)
@@ -81,7 +75,7 @@ Given I wanted to design, print, cut, solder and assemble everything, we couldn'
 
 ## Previous little simulators
 
-I most often build a simulator to gain knowledge about hardware projects or replace a missing component, but they usually get recycled when the real system is brought up. Below are a few examples from previous project, a control panel, an optically dubious depth of focus simulation, and a little PWM/duty cycle curve tuner while we were missing a signal generator. Today those would be one-shot generated, and you'll see later in this post that thanks to LLMs, we can afford better UX for those prototypes. But I insisted on not bringing Claude early in the process in this project, to offer myself the pleasure of designing the software loop.
+I most often build a simulator to gain knowledge about hardware projects or replace a missing component, but they usually get recycled when the real system is brought up. Below are a few examples from previous project, a control panel, an optically dubious depth of focus simulation, and a little PWM/duty cycle curve tuner while we were missing a signal generator. Today those would be one-shot generated, and you'll see later in this post that thanks to LLMs, we can afford better UX for those prototypes. 
 
 <Gallery compact folder="/pics/codebeam26/simulators" />
 
@@ -441,16 +435,7 @@ I would change a few things if we are to re-exhibit it :
 - No distinction between outputs and effects: my initial reason to separate them did not materialize
 - A dedicated Livebook instead of the codebase for all one-off commissioning scripts
 
-And I have been both pleased and frustrated by LLM assistance after I had considered my initial design fully implemented. Here is a list of remarks I kept :
-
-- Subsequent components and helpers: muddied my design too much for my taste
-- Very niche parts of the effects: efficient but bruteforce-y
-- Paper task-lists for soldering: very helpful, no regrets
-- Pimping the digital twin UI/UX: same
-- Generated firmwares: a few recurrent bugs despite the simplicity, blamed my soldering for firmware bugs
-- Today: refactor in progress of the non-human parts for the next exhibitions
-
-Globally I'm mid-way through a full refactor before the next exhibition because I don't like what the code organization has become. It's easy to do so thanks to elixir and my general rules but the great ability of LLMs is also their pitfall at points, if you want to keep a codebase human-managed.
+And I have been both pleased and frustrated by LLM assistance after I had considered my initial design fully implemented. Globally I'm mid-way through a full refactor before the next exhibition because I don't like what the code organization has become. It's easy to do so thanks to elixir and my general rules but their great ability is also their pitfall at points, if you want to keep a codebase human-manageable. For a codebase this small, the benefits of having a code quality harness outsizing the codebase could be up for debate.
 
 **So why bother managing state in that strictly split way in Elixir apps ?**
 
